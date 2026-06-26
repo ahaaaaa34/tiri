@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ケッペンの気候区分 暗記カード</title>
+<style>
+  :root{
+    --bg:#ffffff; --surface:#faf9f5; --surface2:#f1efe8; --text:#1f1f1d;
+    --muted:#6b6a64; --border:rgba(0,0,0,.12); --border2:rgba(0,0,0,.22);
+    --accent:#c2410c;
+    --ok:#639922; --okbg:rgba(99,153,34,.18); --oktx:#27500a;
+    --ng:#e24b4a; --ngbg:rgba(226,75,74,.16); --ngtx:#791f1f;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#262624; --surface:#30302e; --surface2:#3a3a37; --text:#f3f2ec;
+      --muted:#a8a79f; --border:rgba(255,255,255,.14); --border2:rgba(255,255,255,.26);
+      --oktx:#c0dd97; --ngtx:#f09595;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:24px 16px 60px; background:var(--bg); color:var(--text);
+    font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",Meiryo,system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased; line-height:1.6;
+  }
+  .wrap{max-width:680px; margin:0 auto}
+  h1{font-size:22px; font-weight:600; margin:0 0 4px; text-align:center}
+  .sub{font-size:13px; color:var(--muted); text-align:center; margin:0 0 20px}
+  .tabs{display:flex; gap:6px; background:var(--surface2); padding:4px; border-radius:12px; margin:0 auto 18px; max-width:560px}
+  .tab{flex:1; border:0; background:transparent; color:var(--muted); font-size:13px; font-weight:500; padding:9px 6px; border-radius:9px; cursor:pointer; font-family:inherit; white-space:nowrap}
+  .tab.active{background:var(--bg); color:var(--text); box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .row{display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; margin-bottom:14px}
+  .seg{display:inline-flex; background:var(--surface2); border-radius:9px; padding:3px}
+  .seg button{border:0; background:transparent; color:var(--muted); font-size:13px; padding:6px 12px; border-radius:7px; cursor:pointer; font-family:inherit}
+  .seg button.active{background:var(--bg); color:var(--text); font-weight:500; box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .btn{border:1px solid var(--border2); background:var(--surface); color:var(--text); font-size:14px; padding:9px 16px; border-radius:10px; cursor:pointer; font-family:inherit; transition:background .12s,transform .05s}
+  .btn:hover{background:var(--surface2)}
+  .btn:active{transform:scale(.97)}
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:30px 24px; min-height:220px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; cursor:pointer; transition:opacity .15s ease; user-select:none}
+  .badge{display:inline-block; color:#fff; font-size:13px; font-weight:600; padding:4px 12px; border-radius:20px; margin-bottom:14px; letter-spacing:.02em}
+  .term{font-size:30px; font-weight:600; line-height:1.3}
+  .term.mono{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; letter-spacing:.04em}
+  .hint{font-size:13px; color:var(--muted); margin-top:16px}
+  .ja{font-size:26px; font-weight:600; margin:2px 0 10px}
+  .code{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; font-size:34px; font-weight:600; letter-spacing:.06em; margin-bottom:8px}
+  .en{font-size:16px; font-style:italic; color:var(--muted); margin-bottom:12px}
+  .feat{font-size:14px; color:var(--text); background:var(--surface2); padding:8px 14px; border-radius:10px; max-width:100%}
+  .nav{display:flex; align-items:center; justify-content:center; gap:14px; margin-top:16px}
+  .nav .count{font-size:14px; color:var(--muted); min-width:60px; text-align:center; font-variant-numeric:tabular-nums}
+  .icon{width:42px; height:42px; border-radius:50%; border:1px solid var(--border2); background:var(--surface); color:var(--text); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center}
+  .icon:hover{background:var(--surface2)}
+  /* quiz */
+  .qlabel{font-size:14px; color:var(--muted); text-align:center; margin-bottom:6px}
+  .qterm{font-size:28px; font-weight:600; text-align:center; line-height:1.3}
+  .qterm.mono{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; letter-spacing:.05em}
+  .qfeat{font-size:13px; color:var(--muted); text-align:center; margin-top:8px}
+  .opts{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:22px}
+  .opt{border:1px solid var(--border2); background:var(--surface); color:var(--text); font-size:15px; padding:14px 12px; border-radius:12px; cursor:pointer; font-family:inherit; transition:background .12s; min-height:54px; display:flex; align-items:center; justify-content:center; gap:8px}
+  .opt:hover:not(:disabled){background:var(--surface2)}
+  .opt:disabled{cursor:default}
+  .opt .num{font-size:12px; color:var(--muted); border:1px solid var(--border); border-radius:5px; padding:0 6px; line-height:1.7}
+  .opt.mono .lab{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; font-size:18px; letter-spacing:.04em}
+  .opt.ok{background:var(--okbg); border-color:var(--ok); color:var(--oktx); font-weight:600}
+  .opt.ng{background:var(--ngbg); border-color:var(--ng); color:var(--ngtx); font-weight:600}
+  .reveal{margin-top:18px; text-align:center; font-size:14px; color:var(--muted); min-height:22px}
+  .reveal b{color:var(--text)}
+  .score{display:flex; justify-content:center; gap:20px; margin-bottom:14px; font-size:14px; color:var(--muted)}
+  .score b{color:var(--text); font-size:16px}
+  .center{text-align:center; margin-top:18px}
+  .winput{width:100%; max-width:300px; font-size:20px; padding:11px 14px; border:1px solid var(--border2); border-radius:10px; background:var(--bg); color:var(--text); font-family:inherit; text-align:center}
+  .winput:focus{outline:none; border-color:var(--accent)}
+  .winput.mono{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; letter-spacing:.05em}
+  .winput:disabled{opacity:1}
+  details{margin-top:34px; border-top:1px solid var(--border); padding-top:14px}
+  summary{cursor:pointer; font-size:14px; color:var(--muted); font-weight:500}
+  table{width:100%; border-collapse:collapse; margin-top:12px; font-size:13px}
+  th,td{text-align:left; padding:7px 8px; border-bottom:1px solid var(--border)}
+  th{color:var(--muted); font-weight:500}
+  td.c{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; font-weight:600; white-space:nowrap}
+  .dot{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align:middle}
+  #revCount{display:none; min-width:18px; background:var(--ng); color:#fff; border-radius:10px; font-size:11px; font-weight:600; padding:1px 6px; margin-left:4px}
+  #revCount.show{display:inline-block}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ケッペンの気候区分 暗記カード</h1>
+  <p class="sub">気候名 ↔ 記号 ↔ 英語名 をセットで覚える（教科書 p.42〜45）</p>
+
+  <div class="tabs">
+    <button class="tab active" id="tabFlash">フラッシュカード</button>
+    <button class="tab" id="tabQuiz">4択クイズ</button>
+    <button class="tab" id="tabWrite">筆記テスト</button>
+    <button class="tab" id="tabReview">復習<span id="revCount">0</span></button>
+  </div>
+
+  <!-- FLASHCARD -->
+  <div id="flashView">
+    <div class="row">
+      <div class="seg" id="dirSeg">
+        <button data-dir="ja2code" class="active">気候名 → 記号</button>
+        <button data-dir="code2ja">記号 → 気候名</button>
+      </div>
+      <button class="btn" id="shuffleBtn">シャッフル</button>
+    </div>
+    <div class="card" id="card"></div>
+    <div class="nav">
+      <button class="icon" id="prevBtn" aria-label="前へ">‹</button>
+      <span class="count" id="count"></span>
+      <button class="icon" id="nextBtn" aria-label="次へ">›</button>
+    </div>
+    <p class="sub" style="margin-top:14px">タップで答え表示 ／ Enter：答え→次のカード ／ ← → 移動・Space 裏返し</p>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="quizView" class="hide">
+    <div class="score">
+      <span>正解 <b id="qOk">0</b></span>
+      <span>出題 <b id="qN">0</b></span>
+      <span>連続 <b id="qStreak">0</b></span>
+    </div>
+    <div class="card" style="cursor:default; display:block; padding:26px 22px">
+      <div class="qlabel" id="qLabel"></div>
+      <div class="qterm" id="qTerm"></div>
+      <div class="qfeat" id="qFeat"></div>
+      <div class="opts" id="qOpts"></div>
+      <div class="reveal" id="qReveal"></div>
+    </div>
+    <div class="center"><button class="btn hide" id="qNext">次の問題 ›</button></div>
+    <p class="sub" style="margin-top:12px">1〜4 キーで選択 ／ 回答後に Enter で次の問題</p>
+  </div>
+
+  <!-- WRITE -->
+  <div id="writeView" class="hide">
+    <div class="score">
+      <span>正解 <b id="wOk">0</b></span>
+      <span>出題 <b id="wN">0</b></span>
+      <span>連続 <b id="wSt">0</b></span>
+    </div>
+    <div class="row">
+      <div class="seg" id="wseg">
+        <button data-w="code" class="active">記号を書く</button>
+        <button data-w="name">気候名を書く</button>
+      </div>
+    </div>
+    <div class="card" style="cursor:default; display:block; padding:26px 22px">
+      <div class="qlabel" id="wLabel"></div>
+      <div class="qterm" id="wTerm"></div>
+      <div class="qfeat" id="wFeat"></div>
+      <div style="text-align:center; margin-top:20px">
+        <input id="wInput" class="winput" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ここに入力">
+      </div>
+      <div class="center"><button class="btn" id="wCheck">答え合わせ</button></div>
+      <div class="reveal" id="wReveal"></div>
+    </div>
+    <div class="center"><button class="btn hide" id="wNext">次の問題 ›</button></div>
+    <p class="sub" style="margin-top:12px">Enter で答え合わせ → もう一度 Enter で次の問題</p>
+  </div>
+
+  <!-- REVIEW -->
+  <div id="reviewView" class="hide">
+    <div id="revEmpty" class="hide" style="text-align:center; padding:34px 10px; color:var(--muted)">
+      <div style="font-size:40px; margin-bottom:8px">🗂️</div>
+      <p style="margin:0">まだ間違えた問題はありません。<br>4択クイズや筆記テストで間違えると、ここに自動でたまります。</p>
+    </div>
+    <div id="revPlay">
+      <div class="score">
+        <span>残り <b id="revRemain">0</b></span>
+        <span>復習数 <b id="revN">0</b></span>
+        <button class="btn" id="revReset" style="padding:4px 12px; font-size:13px">消去</button>
+      </div>
+      <div class="row">
+        <div class="seg" id="rfseg">
+          <button data-f="choice" class="active">4択</button>
+          <button data-f="write">筆記</button>
+        </div>
+      </div>
+      <div class="card" style="cursor:default; display:block; padding:26px 22px">
+        <div class="qlabel" id="rLabel"></div>
+        <div class="qterm" id="rTerm"></div>
+        <div class="qfeat" id="rFeat"></div>
+        <div class="opts" id="rOpts"></div>
+        <div id="rWrap" class="hide">
+          <div style="text-align:center; margin-top:20px">
+            <input id="rInput" class="winput" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ここに入力">
+          </div>
+          <div class="center"><button class="btn" id="rCheck">答え合わせ</button></div>
+        </div>
+        <div class="reveal" id="rReveal"></div>
+      </div>
+      <div class="center"><button class="btn hide" id="rNext">次へ ›</button></div>
+      <p class="sub" style="margin-top:12px">正解するとリストから消えます ／ 4択は 1〜4 キー・筆記は Enter で答え合わせ</p>
+    </div>
+  </div>
+
+  <details>
+    <summary>全14区分の一覧を見る</summary>
+    <table>
+      <thead><tr><th>記号</th><th>気候名</th><th>英語名</th><th>特徴</th></tr></thead>
+      <tbody id="refBody"></tbody>
+    </table>
+  </details>
+</div>
+
+<script>
+const DATA=[
+  {code:"Af", ja:"熱帯雨林気候", en:"Tropical rainforest", feat:"年中高温多雨", g:"A"},
+  {code:"Am", ja:"熱帯モンスーン気候", en:"Tropical monsoon", feat:"年中高温多雨・弱い乾季がある", g:"A"},
+  {code:"Aw", ja:"サバナ気候", en:"Tropical savanna", feat:"年中高温・強い乾季がある", g:"A"},
+  {code:"BW", ja:"砂漠気候", en:"Desert (arid)", feat:"降水が少なく極度に乾燥", g:"B"},
+  {code:"BS", ja:"ステップ気候", en:"Steppe (semi-arid)", feat:"短期間にまとまった降水がある", g:"B"},
+  {code:"Cs", ja:"地中海性気候", en:"Mediterranean", feat:"温暖・夏に乾燥し冬に降水", g:"C"},
+  {code:"Cw", ja:"温暖冬季少雨気候", en:"Dry-winter subtropical", feat:"温暖・冬に乾燥し夏に降水", g:"C"},
+  {code:"Cfa", ja:"温暖湿潤気候", en:"Humid subtropical", feat:"夏は高温多湿・冬は寒冷", g:"C"},
+  {code:"Cfb・Cfc", ja:"西岸海洋性気候", en:"Oceanic (marine west coast)", feat:"年中適度の降水・夏冷涼で冬温暖", g:"C"},
+  {code:"Df", ja:"亜寒帯湿潤気候", en:"Subarctic, humid", feat:"年中降水が多く湿潤・夏は高温", g:"D"},
+  {code:"Dw", ja:"亜寒帯冬季少雨気候", en:"Subarctic, dry winter", feat:"冬に降水が少なく夏は高温多湿", g:"D"},
+  {code:"ET", ja:"ツンドラ気候", en:"Tundra", feat:"夏に凍土が融け冬は氷雪がおおう", g:"E"},
+  {code:"EF", ja:"氷雪気候", en:"Ice cap", feat:"年中氷雪がおおう", g:"E"},
+  {code:"H", ja:"高山気候", en:"Highland / Alpine", feat:"低緯度でも標高が高く低温になる", g:"H"},
+];
+const G={
+  A:{ja:"熱帯",color:"#A32D2D"}, B:{ja:"乾燥帯",color:"#854F0B"},
+  C:{ja:"温帯",color:"#3B6D11"}, D:{ja:"亜寒帯（冷帯）",color:"#0F6E56"},
+  E:{ja:"寒帯",color:"#185FA5"}, H:{ja:"高山",color:"#5F5E5A"},
+};
+const $=id=>document.getElementById(id);
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+
+/* ---- 間違いリスト（復習用・保存あり） ---- */
+let wrong=new Set();
+try{ const s=localStorage.getItem("koppen_wrong"); if(s) wrong=new Set(JSON.parse(s)); }catch(e){}
+function saveWrong(){ try{ localStorage.setItem("koppen_wrong",JSON.stringify([...wrong])); }catch(e){} }
+function updateRevBadge(){ const el=$("revCount"); if(!el) return; el.textContent=wrong.size; el.classList.toggle("show",wrong.size>0); }
+function markWrong(code){ wrong.add(code); saveWrong(); updateRevBadge(); }
+
+/* ---- flashcard ---- */
+let order=DATA.map((_,i)=>i), pos=0, flipped=false, dir="ja2code";
+function frontHTML(d){
+  if(dir==="ja2code") return `<div class="term">${d.ja}</div><div class="hint">タップで記号・英語を表示</div>`;
+  return `<div class="term mono" style="font-size:40px">${d.code}</div><div class="hint">タップで気候名を表示</div>`;
+}
+function backHTML(d){
+  const g=G[d.g];
+  return `<span class="badge" style="background:${g.color}">${d.g}群 ${g.ja}</span>
+    <div class="ja">${d.ja}</div>
+    <div class="code" style="color:${g.color}">${d.code}</div>
+    <div class="en">${d.en}</div>
+    <div class="feat">${d.feat}</div>`;
+}
+function renderFlash(){
+  const d=DATA[order[pos]];
+  const card=$("card");
+  card.style.opacity=0;
+  setTimeout(()=>{ card.innerHTML=flipped?backHTML(d):frontHTML(d); card.style.opacity=1; },120);
+  $("count").textContent=(pos+1)+" / "+DATA.length;
+}
+function flip(){ flipped=!flipped; renderFlash(); }
+function step(n){ pos=(pos+n+DATA.length)%DATA.length; flipped=false; renderFlash(); }
+$("card").onclick=flip;
+$("prevBtn").onclick=()=>step(-1);
+$("nextBtn").onclick=()=>step(1);
+$("shuffleBtn").onclick=()=>{ order=shuf(order); pos=0; flipped=false; renderFlash(); };
+$("dirSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+  dir=b.dataset.dir; $("dirSeg").querySelectorAll("button").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active"); flipped=false; renderFlash();
+});
+
+/* ---- quiz ---- */
+let qOk=0,qN=0,qStreak=0,qDone=false;
+function newQuestion(){
+  qDone=false; $("qNext").classList.add("hide"); $("qReveal").textContent="";
+  const d=DATA[Math.floor(Math.random()*DATA.length)];
+  const askCode=Math.random()<0.5;
+  $("qLabel").textContent=askCode?"この気候の記号は？":"この記号の気候名は？";
+  $("qTerm").className="qterm"+(askCode?"":" mono");
+  $("qTerm").textContent=askCode?d.ja:d.code;
+  $("qTerm").style.color=askCode?"":G[d.g].color;
+  $("qFeat").textContent="ヒント： "+d.feat;
+  const others=shuf(DATA.filter(x=>x!==d)).slice(0,3);
+  const opts=shuf([d,...others]);
+  const box=$("qOpts"); box.innerHTML="";
+  opts.forEach((o,i)=>{
+    const b=document.createElement("button");
+    b.className="opt"+(askCode?" mono":"");
+    b.innerHTML=`<span class="num">${i+1}</span><span class="lab">${askCode?o.code:o.ja}</span>`;
+    b.onclick=()=>answer(b,o,d,askCode);
+    box.appendChild(b);
+  });
+}
+function answer(btn,chosen,correct,askCode){
+  if(qDone) return; qDone=true; qN++;
+  const ok=chosen===correct;
+  if(ok){qOk++; qStreak++;} else {qStreak=0; markWrong(correct.code);}
+  $("qOpts").querySelectorAll(".opt").forEach(b=>{
+    b.disabled=true;
+    const label=b.querySelector(".lab").textContent;
+    if(label===(askCode?correct.code:correct.ja)) b.classList.add("ok");
+    else if(b===btn) b.classList.add("ng");
+  });
+  $("qOk").textContent=qOk; $("qN").textContent=qN; $("qStreak").textContent=qStreak;
+  $("qReveal").innerHTML=(ok?"⭕ 正解！ ":"❌ 不正解 ")+`<b>${correct.code}</b> ＝ <b>${correct.ja}</b>（${correct.en}）`;
+  $("qNext").classList.remove("hide");
+}
+$("qNext").onclick=newQuestion;
+
+/* ---- write (筆記) ---- */
+const ALIAS={"Am":["弱い乾季のある熱帯雨林気候"]};
+function norm(s){return (s||"").trim().replace(/[Ａ-Ｚａ-ｚ０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/[\s・･,，、。\.\-]/g,"").toLowerCase();}
+function nameSet(d){const base=[d.ja,...(ALIAS[d.code]||[])],s=new Set();base.forEach(x=>{const n=norm(x);s.add(n);s.add(n.replace(/気候$/,""));});return s;}
+let wDir="code",wOk=0,wN=0,wSt=0,wDone=false,wCur=null;
+function newWrite(){
+  wDone=false; $("wNext").classList.add("hide"); $("wReveal").textContent="";
+  const d=DATA[Math.floor(Math.random()*DATA.length)]; wCur=d; const code=wDir==="code";
+  $("wLabel").textContent=code?"次の気候の記号を書きなさい":"次の記号の気候名を書きなさい";
+  $("wTerm").className="qterm"+(code?"":" mono"); $("wTerm").textContent=code?d.ja:d.code; $("wTerm").style.color=code?"":G[d.g].color;
+  $("wFeat").textContent="ヒント： "+d.feat;
+  const inp=$("wInput"); inp.value=""; inp.disabled=false; inp.style.borderColor=""; inp.className="winput"+(code?" mono":""); inp.placeholder=code?"記号（例：Af）":"気候名（例：熱帯雨林気候）";
+  setTimeout(()=>inp.focus(),60);
+}
+function checkWrite(){
+  if(wDone) return; const d=wCur,code=wDir==="code",val=$("wInput").value; if(!val.trim()) return;
+  wDone=true; wN++; let good;
+  if(code){const acc=d.code.split("・").map(norm).concat(norm(d.code)); good=acc.includes(norm(val));}
+  else{const s=nameSet(d),u=norm(val); good=s.has(u)||s.has(u.replace(/気候$/,""));}
+  if(good){wOk++;wSt++;}else {wSt=0; markWrong(d.code);}
+  $("wInput").disabled=true; $("wInput").style.borderColor=good?"var(--ok)":"var(--ng)";
+  $("wOk").textContent=wOk; $("wN").textContent=wN; $("wSt").textContent=wSt;
+  $("wReveal").innerHTML=(good?"⭕ 正解！ ":"❌ 不正解　正解は ")+`<b>${d.code}</b> ＝ <b>${d.ja}</b>（${d.en}）`;
+  $("wNext").classList.remove("hide");
+}
+$("wCheck").onclick=checkWrite; $("wNext").onclick=newWrite;
+$("wseg").querySelectorAll("button").forEach(b=>b.onclick=()=>{ wDir=b.dataset.w; $("wseg").querySelectorAll("button").forEach(x=>x.classList.remove("active")); b.classList.add("active"); newWrite(); });
+
+/* ---- review (復習：間違えた問題だけ／4択・筆記) ---- */
+let rDone=false, rCur=null, revN=0, rFmt="choice", rAsk=false;
+function showReview(){
+  const has=wrong.size>0;
+  $("revEmpty").classList.toggle("hide",has);
+  $("revPlay").classList.toggle("hide",!has);
+  $("revRemain").textContent=wrong.size;
+  if(has) newReview();
+}
+function newReview(){
+  rDone=false; $("rNext").classList.add("hide"); $("rReveal").textContent="";
+  if(wrong.size===0){ showReview(); return; }
+  const codes=[...wrong]; const d=DATA.find(x=>x.code===codes[Math.floor(Math.random()*codes.length)]); rCur=d;
+  const askCode=Math.random()<0.5; rAsk=askCode;
+  $("rTerm").className="qterm"+(askCode?"":" mono"); $("rTerm").textContent=askCode?d.ja:d.code; $("rTerm").style.color=askCode?"":G[d.g].color;
+  $("rFeat").textContent="ヒント： "+d.feat;
+  if(rFmt==="write"){
+    $("rLabel").textContent=askCode?"記号を書きなさい":"気候名を書きなさい";
+    $("rOpts").classList.add("hide"); $("rWrap").classList.remove("hide");
+    const inp=$("rInput"); inp.value=""; inp.disabled=false; inp.style.borderColor=""; inp.className="winput"+(askCode?" mono":""); inp.placeholder=askCode?"記号（例：Af）":"気候名（例：熱帯雨林気候）";
+    setTimeout(()=>inp.focus(),60);
+  } else {
+    $("rLabel").textContent=askCode?"この気候の記号は？":"この記号の気候名は？";
+    $("rWrap").classList.add("hide"); $("rOpts").classList.remove("hide");
+    const opts=shuf([d,...shuf(DATA.filter(x=>x!==d)).slice(0,3)]); const box=$("rOpts"); box.innerHTML="";
+    opts.forEach((o,i)=>{ const b=document.createElement("button"); b.className="opt"+(askCode?" mono":""); b.innerHTML=`<span class="num">${i+1}</span><span class="lab">${askCode?o.code:o.ja}</span>`; b.onclick=()=>answerReview(b,o); box.appendChild(b); });
+  }
+}
+function finishReview(good){
+  if(rDone) return; rDone=true; revN++;
+  const c=rCur;
+  if(good){ wrong.delete(c.code); saveWrong(); updateRevBadge(); }
+  $("revRemain").textContent=wrong.size; $("revN").textContent=revN;
+  $("rReveal").innerHTML=(good?"⭕ 正解！リストから外しました ":"❌ もう一度出ます ")+`<b>${c.code}</b> ＝ <b>${c.ja}</b>（${c.en}）`+(good&&wrong.size===0?"<br>🎉 全部マスター！":"");
+  $("rNext").classList.remove("hide");
+}
+function answerReview(btn,chosen){
+  if(rDone) return; const c=rCur, askCode=rAsk;
+  $("rOpts").querySelectorAll(".opt").forEach(b=>{ b.disabled=true; const label=b.querySelector(".lab").textContent; if(label===(askCode?c.code:c.ja)) b.classList.add("ok"); else if(b===btn) b.classList.add("ng"); });
+  finishReview(chosen===c);
+}
+function checkReviewWrite(){
+  if(rDone) return; const d=rCur, askCode=rAsk, val=$("rInput").value; if(!val.trim()) return;
+  let good;
+  if(askCode){ const acc=d.code.split("・").map(norm).concat(norm(d.code)); good=acc.includes(norm(val)); }
+  else{ const s=nameSet(d),u=norm(val); good=s.has(u)||s.has(u.replace(/気候$/,"")); }
+  $("rInput").disabled=true; $("rInput").style.borderColor=good?"var(--ok)":"var(--ng)";
+  finishReview(good);
+}
+$("rCheck").onclick=checkReviewWrite;
+$("rfseg").querySelectorAll("button").forEach(b=>b.onclick=()=>{ rFmt=b.dataset.f; $("rfseg").querySelectorAll("button").forEach(x=>x.classList.remove("active")); b.classList.add("active"); newReview(); });
+$("rNext").onclick=()=>{ wrong.size===0 ? showReview() : newReview(); };
+$("revReset").onclick=()=>{ if(confirm("間違いリストを消去しますか？")){ wrong.clear(); saveWrong(); updateRevBadge(); showReview(); } };
+
+/* ---- tabs ---- */
+function setMode(m){
+  $("tabFlash").classList.toggle("active",m==="flash");
+  $("tabQuiz").classList.toggle("active",m==="quiz");
+  $("tabWrite").classList.toggle("active",m==="write");
+  $("tabReview").classList.toggle("active",m==="review");
+  $("flashView").classList.toggle("hide",m!=="flash");
+  $("quizView").classList.toggle("hide",m!=="quiz");
+  $("writeView").classList.toggle("hide",m!=="write");
+  $("reviewView").classList.toggle("hide",m!=="review");
+  if(m==="quiz" && qN===0) newQuestion();
+  if(m==="write" && wN===0) newWrite();
+  if(m==="review") showReview();
+}
+$("tabFlash").onclick=()=>setMode("flash");
+$("tabQuiz").onclick=()=>setMode("quiz");
+$("tabWrite").onclick=()=>setMode("write");
+$("tabReview").onclick=()=>setMode("review");
+
+/* ---- reference table ---- */
+$("refBody").innerHTML=DATA.map(d=>
+  `<tr><td class="c" style="color:${G[d.g].color}">${d.code}</td><td><span class="dot" style="background:${G[d.g].color}"></span>${d.ja}</td><td style="color:var(--muted);font-style:italic">${d.en}</td><td>${d.feat}</td></tr>`
+).join("");
+
+/* ---- keyboard ---- */
+document.addEventListener("keydown",e=>{
+  if(!$("flashView").classList.contains("hide")){
+    if(e.key==="ArrowRight") step(1);
+    else if(e.key==="ArrowLeft") step(-1);
+    else if(e.key===" "){ e.preventDefault(); flip(); }
+    else if(e.key==="Enter"){ e.preventDefault(); flipped ? step(1) : flip(); }
+  } else if(!$("quizView").classList.contains("hide")){
+    if(qDone){ if(e.key==="Enter"){ e.preventDefault(); newQuestion(); } }
+    else if(/^[1-4]$/.test(e.key)){ const b=$("qOpts").querySelectorAll(".opt")[+e.key-1]; if(b) b.click(); }
+  } else if(!$("writeView").classList.contains("hide")){
+    if(e.key==="Enter"){ e.preventDefault(); wDone ? newWrite() : checkWrite(); }
+  } else if(!$("reviewView").classList.contains("hide")){
+    if(rDone){ if(e.key==="Enter"){ e.preventDefault(); $("rNext").click(); } }
+    else if(rFmt==="write"){ if(e.key==="Enter"){ e.preventDefault(); checkReviewWrite(); } }
+    else if(/^[1-4]$/.test(e.key)){ const b=$("rOpts").querySelectorAll(".opt")[+e.key-1]; if(b) b.click(); }
+  }
+});
+
+updateRevBadge();
+renderFlash();
+</script>
+</body>
+</html>
