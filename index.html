@@ -151,7 +151,7 @@
       <div class="qterm" id="wTerm"></div>
       <div class="qfeat" id="wFeat"></div>
       <div style="text-align:center; margin-top:20px">
-        <input id="wInput" class="winput" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ここに入力">
+        <input id="wInput" class="winput" enterkeyhint="next" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ここに入力">
       </div>
       <div class="center"><button class="btn" id="wCheck">答え合わせ</button></div>
       <div class="reveal" id="wReveal"></div>
@@ -185,7 +185,7 @@
         <div class="opts" id="rOpts"></div>
         <div id="rWrap" class="hide">
           <div style="text-align:center; margin-top:20px">
-            <input id="rInput" class="winput" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ここに入力">
+            <input id="rInput" class="winput" enterkeyhint="next" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ここに入力">
           </div>
           <div class="center"><button class="btn" id="rCheck">答え合わせ</button></div>
         </div>
@@ -319,7 +319,7 @@ function newWrite(){
   $("wTerm").className="qterm"+(code?"":" mono"); $("wTerm").textContent=code?d.ja:d.code; $("wTerm").style.color=code?"":G[d.g].color;
   $("wFeat").textContent="ヒント： "+d.feat;
   const inp=$("wInput"); inp.value=""; inp.disabled=false; inp.style.borderColor=""; inp.className="winput"+(code?" mono":""); inp.placeholder=code?"記号（例：Af）":"気候名（例：熱帯雨林気候）";
-  setTimeout(()=>inp.focus(),60);
+  inp.focus();
 }
 function checkWrite(){
   if(wDone) return; const d=wCur,code=wDir==="code",val=$("wInput").value; if(!val.trim()) return;
@@ -327,7 +327,7 @@ function checkWrite(){
   if(code){const acc=d.code.split("・").map(norm).concat(norm(d.code)); good=acc.includes(norm(val));}
   else{const s=nameSet(d),u=norm(val); good=s.has(u)||s.has(u.replace(/気候$/,""));}
   if(good){wOk++;wSt++;}else {wSt=0; markWrong(d.code);}
-  $("wInput").disabled=true; $("wInput").style.borderColor=good?"var(--ok)":"var(--ng)";
+  $("wInput").style.borderColor=good?"var(--ok)":"var(--ng)";
   $("wOk").textContent=wOk; $("wN").textContent=wN; $("wSt").textContent=wSt;
   $("wReveal").innerHTML=(good?"⭕ 正解！ ":"❌ 不正解　正解は ")+`<b>${d.code}</b> ＝ <b>${d.ja}</b>（${d.en}）`;
   $("wNext").classList.remove("hide");
@@ -355,7 +355,7 @@ function newReview(){
     $("rLabel").textContent=askCode?"記号を書きなさい":"気候名を書きなさい";
     $("rOpts").classList.add("hide"); $("rWrap").classList.remove("hide");
     const inp=$("rInput"); inp.value=""; inp.disabled=false; inp.style.borderColor=""; inp.className="winput"+(askCode?" mono":""); inp.placeholder=askCode?"記号（例：Af）":"気候名（例：熱帯雨林気候）";
-    setTimeout(()=>inp.focus(),60);
+    inp.focus();
   } else {
     $("rLabel").textContent=askCode?"この気候の記号は？":"この記号の気候名は？";
     $("rWrap").classList.add("hide"); $("rOpts").classList.remove("hide");
@@ -381,7 +381,7 @@ function checkReviewWrite(){
   let good;
   if(askCode){ const acc=d.code.split("・").map(norm).concat(norm(d.code)); good=acc.includes(norm(val)); }
   else{ const s=nameSet(d),u=norm(val); good=s.has(u)||s.has(u.replace(/気候$/,"")); }
-  $("rInput").disabled=true; $("rInput").style.borderColor=good?"var(--ok)":"var(--ng)";
+  $("rInput").style.borderColor=good?"var(--ok)":"var(--ng)";
   finishReview(good);
 }
 $("rCheck").onclick=checkReviewWrite;
