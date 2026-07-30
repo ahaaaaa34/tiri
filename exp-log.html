@@ -158,10 +158,18 @@
   .dhead .sc i{font-style:normal; font-size:19px; color:var(--t3); margin-left:2px}
   .dhead p{margin:6px 0 0; font-size:12px; color:var(--t3); letter-spacing:.12em}
   .wlist{display:flex; flex-direction:column; gap:7px; margin-bottom:24px}
-  .witem{background:var(--card); border:1px solid var(--bd); border-left:2px solid var(--err); border-radius:11px; padding:11px 13px; box-shadow:var(--sh)}
+  .witem{
+    display:block; width:100%; text-align:left; background:var(--card); border:1px solid var(--bd);
+    border-left:2px solid var(--err); border-radius:11px; padding:11px 13px; box-shadow:var(--sh);
+    transition:background .12s;
+  }
+  .witem:active{background:var(--bg2)}
   .witem .q{font-size:14px; line-height:1.7}
-  .witem .a{font-size:11.5px; color:var(--t2); margin-top:4px}
+  .witem .q .wg{font-size:11px; color:var(--t3); margin-left:3px}
+  .witem .a{font-size:11.5px; color:var(--t2); margin-top:4px; display:flex; align-items:baseline; gap:6px}
   .witem .a b{color:var(--t1); font-weight:600}
+  .witem .a .more{margin-left:auto; color:var(--t3); text-decoration:underline; text-underline-offset:3px; flex:none}
+  .witem .wexp{font-size:12px; color:var(--t2); line-height:1.8; margin-top:9px; padding-top:9px; border-top:1px solid var(--bd2)}
   .dbtns{display:flex; flex-direction:column; gap:8px}
 
   /* ---------- シート ---------- */
@@ -205,13 +213,13 @@
     word-break:break-all; flex:none; font-family:"Times New Roman",serif;
   }
   .field.err{border-color:var(--err)}
+  .field.jp{font-family:inherit; font-size:16px}
   .field .ph{color:var(--t3); font-size:14px; font-family:inherit}
   .caret{display:inline-block; width:1.5px; height:1.05em; background:var(--t1); vertical-align:-.18em; margin:0 .5px; animation:bl 1.05s steps(1) infinite}
   @keyframes bl{50%{opacity:0}}
   .hintline{font-size:11px; color:var(--t3); padding:2px 16px 8px; flex:none; letter-spacing:.02em}
 
-  .kb{padding:2px 6px 8px; flex:none}
-  .krow{display:grid; grid-template-columns:repeat(6,1fr); gap:5px; margin-bottom:5px}
+  .kb{padding:2px 6px 8px; flex:none; display:grid; grid-template-columns:repeat(6,1fr); gap:5px}
   .k{
     height:44px; border:1px solid var(--bd); background:var(--card); border-radius:9px;
     font-size:17px; display:flex; align-items:center; justify-content:center; box-shadow:var(--sh);
@@ -224,6 +232,21 @@
   .k.go{grid-column:span 2; background:var(--t1); border-color:var(--t1); color:var(--card); font-size:14.5px; font-weight:600; font-family:inherit; letter-spacing:.08em}
   .k.go:active{background:#000}
   .k .sm{font-size:12px}
+
+  /* 記号で書けない答え（増加/減少・対称の軸など）は選択式にする */
+  .chbox{padding:2px 12px 10px; display:flex; flex-direction:column; gap:7px; overflow-y:auto; min-height:0}
+  .ch{
+    min-height:50px; padding:12px 16px; text-align:left; border:1px solid var(--bd);
+    background:var(--card); border-radius:11px; font-size:15px; box-shadow:var(--sh);
+    display:flex; align-items:center; gap:11px; transition:background .12s, border-color .12s;
+  }
+  .ch::before{
+    content:''; width:17px; height:17px; border-radius:50%; border:1.5px solid var(--bd2);
+    flex:none; transition:border-color .12s, box-shadow .12s;
+  }
+  .ch:active{background:var(--bg2)}
+  .ch.on{border-color:var(--t1)}
+  .ch.on::before{border-color:var(--t1); border-width:5px}
 
   /* ---------- 判定 ---------- */
   .res{padding:14px 16px 18px; overflow-y:auto}
@@ -247,6 +270,36 @@
   .rbtns .pbtn{flex:1}
 
   .cmsg{padding:2px 18px 18px; font-size:14px; line-height:1.8; color:var(--t2)}
+
+  /* ---------- 横向き・画面が低いとき ----------
+     6段のままだと決定キーが画面の外に出てしまうので、
+     横幅を使って12列3段に組み替え、余白も詰める。 */
+  @media (max-height:520px){
+    .mhead{padding:22px 0 16px}
+    .bar{padding:4px 8px}
+    .ib{width:34px; height:34px}
+    .qbox{margin-top:8px; padding:9px 13px; max-height:34vh}
+    .qbox .qt{font-size:16px}
+    .tools{padding:7px 12px 6px}
+    .tb{height:32px}
+    .foot{padding:8px 12px calc(8px + var(--safe-b))}
+    .pbtn{height:44px}
+    .sh{padding:2px 16px 6px}
+    .ansq{padding-bottom:5px}
+    .field{min-height:44px; padding:10px 14px; font-size:18px}
+    .hintline{padding-bottom:5px}
+    .k{height:38px; font-size:16px}
+    .ch{min-height:40px; padding:8px 14px; font-size:14px}
+    .ch::before{width:15px; height:15px}
+    .chbox{gap:5px; padding-bottom:8px}
+    .res{padding:10px 16px 14px}
+    .rq{padding-bottom:8px; margin-bottom:9px}
+  }
+  @media (max-height:520px) and (min-width:560px){
+    .kb{grid-template-columns:repeat(12,1fr)}
+    .chbox{display:grid; grid-template-columns:repeat(2,1fr)}
+    .chbox .pbtn{grid-column:span 2; margin-top:0 !important}
+  }
 </style>
 </head>
 <body>
@@ -361,6 +414,7 @@
     <div class="field" id="field"></div>
     <div class="hintline" id="hintLine"></div>
     <div class="kb" id="kb"></div>
+    <div class="chbox hide" id="choices"></div>
   </div>
   <div class="res hide" id="ansRes"></div>
 </div>
@@ -484,21 +538,23 @@ const TOPICS = [
     {q:'3^{x+1} = 81', a:['3'], h:'例: 3', e:'81=3^4 → x+1=4 → x=3'},
     {q:'2^{2x} - 6·2^x + 8 = 0', a:['1,2'], h:'2つ。カンマ区切りで', e:'t=2^x>0 とすると t^2-6t+8=0 → t=2,4 → x=1,2'},
     {q:'25^x - 6·5^x + 5 = 0', a:['0,1'], h:'2つ。カンマ区切りで', e:'t=5^x とすると t^2-6t+5=0 → t=1,5 → x=0,1'},
-    {q:'9^x - 10·3^x + 9 = 0', a:['0,2'], h:'2つ。カンマ区切りで', e:'t=3^x とすると t^2-10t+9=0 → t=1,9 → x=0,2'}
+    {q:'9^x - 10·3^x + 9 = 0', a:['0,2'], h:'2つ。カンマ区切りで', e:'t=3^x とすると t^2-10t+9=0 → t=1,9 → x=0,2'},
+    {q:'2^x = 3 を満たす x を対数で表せ', a:['log_2 3','log_2(3)'], h:'log_2(3) の形で', e:'定義より x=log_2 3。きれいな値にならないときは対数のまま答える。'},
+    {q:'3^x = 5 を満たす x を対数で表せ', a:['log_3 5','log_3(5)'], h:'log_3(5) の形で', e:'定義より x=log_3 5'}
   ]
 },
 {
   id:'eineq', name:'指数不等式', desc:'底が1より大きいか小さいかに注意',
   qs:[
-    {q:'2^x > 8', a:['x>3','3<x'], h:'例: x>3', e:'底2>1 なので不等号の向きはそのまま。x>3'},
-    {q:'2^x < 1/4', a:['x<-2','-2>x'], h:'例: x<-2', e:'1/4=2^{-2}、底2>1 より x<-2'},
-    {q:'(1/3)^x > 9', a:['x<-2','-2>x'], h:'例: x<-2', e:'底が1より小さいので向きが逆転。9=(1/3)^{-2} → x<-2'},
-    {q:'2^{x+1} ≦ 16', a:['x≦3','3≧x'], h:'例: x≦3', e:'16=2^4 → x+1≦4 → x≦3'},
-    {q:'3^{2x} < 27', a:['x<3/2','3/2>x'], h:'例: x<3/2', e:'2x<3 → x<3/2'},
-    {q:'(1/2)^x ≧ 1/8', a:['x≦3','3≧x'], h:'例: x≦3', e:'1/8=(1/2)^3、底が1より小さいので向き逆転。x≦3'},
-    {q:'(1/2)^{x-1} ≦ 4', a:['x≧-1','-1≦x'], h:'例: x≧-1', e:'4=(1/2)^{-2}、向き逆転で x-1≧-2 → x≧-1'},
-    {q:'9^x ≧ 3^{x+2}', a:['x≧2','2≦x'], h:'例: x≧2', e:'3^{2x}≧3^{x+2} → 2x≧x+2 → x≧2'},
-    {q:'4^x - 3·2^x - 4 > 0', a:['x>2','2<x'], h:'例: x>2', e:'t=2^x>0 で t^2-3t-4>0 → (t-4)(t+1)>0 → t>4 → x>2'}
+    {q:'2^x > 8', a:['x>3'], h:'例: x>3', e:'底2>1 なので不等号の向きはそのまま。x>3'},
+    {q:'2^x < 1/4', a:['x<-2'], h:'例: x<-2', e:'1/4=2^{-2}、底2>1 より x<-2'},
+    {q:'(1/3)^x > 9', a:['x<-2'], h:'例: x<-2', e:'底が1より小さいので向きが逆転。9=(1/3)^{-2} → x<-2'},
+    {q:'2^{x+1} ≦ 16', a:['x≦3'], h:'例: x≦3', e:'16=2^4 → x+1≦4 → x≦3'},
+    {q:'3^{2x} < 27', a:['x<3/2'], h:'例: x<3/2', e:'2x<3 → x<3/2'},
+    {q:'(1/2)^x ≧ 1/8', a:['x≦3'], h:'例: x≦3', e:'1/8=(1/2)^3、底が1より小さいので向き逆転。x≦3'},
+    {q:'(1/2)^{x-1} ≦ 4', a:['x≧-1'], h:'例: x≧-1', e:'4=(1/2)^{-2}、向き逆転で x-1≧-2 → x≧-1'},
+    {q:'9^x ≧ 3^{x+2}', a:['x≧2'], h:'例: x≧2', e:'3^{2x}≧3^{x+2} → 2x≧x+2 → x≧2'},
+    {q:'4^x - 3·2^x - 4 > 0', a:['x>2'], h:'例: x>2', e:'t=2^x>0 で t^2-3t-4>0 → (t-4)(t+1)>0 → t>4 → x>2'}
   ]
 },
 {
@@ -549,7 +605,8 @@ const TOPICS = [
     {q:'(log_2 9)(log_3 8)', a:['6'], h:'例: 6', e:'(2log_2 3)(3log_3 2)=6×(log_2 3 × log_3 2)=6×1=6'},
     {q:'log_9 8 × log_2 3', a:['3/2'], h:'分数で。例: 3/2', e:'log_9 8 = 3log2/(2log3)、これに log3/log2 をかけて 3/2'},
     {q:'log_9 4 を a で表せ', g:'log_3 2 = a', a:['a'], h:'例: a', e:'log_9 4 = log_3 4 / log_3 9 = 2log_3 2 / 2 = a'},
-    {q:'log_5 2 を a で表せ', g:'log_2 5 = a', a:['1/a'], h:'例: 1/a', e:'log_5 2 = 1 / log_2 5 = 1/a'}
+    {q:'log_5 2 を a で表せ', g:'log_2 5 = a', a:['1/a'], h:'例: 1/a', e:'log_5 2 = 1 / log_2 5 = 1/a'},
+    {q:'log_9 4 を、底が3の対数で表せ', a:['log_3 2','log_3(2)'], h:'log_3(2) の形で', e:'log_9 4 = log_3 4 / log_3 9 = 2log_3 2 / 2 = log_3 2'}
   ]
 },
 {
@@ -570,8 +627,8 @@ const TOPICS = [
   id:'lineq', name:'対数不等式', desc:'真数条件＋底の大小',
   qs:[
     {q:'log_2 x < 3', a:['0<x<8'], h:'例: 0<x<8', e:'真数条件 x>0。底2>1 なので x<2^3=8。よって 0<x<8'},
-    {q:'log_{10} x ≧ 1', a:['x≧10','10≦x'], h:'例: x≧10', e:'x≧10^1=10（真数条件も満たす）'},
-    {q:'log_2 (x+1) > 2', a:['x>3','3<x'], h:'例: x>3', e:'x+1>4 → x>3（真数条件 x>-1 も満たす）'},
+    {q:'log_{10} x ≧ 1', a:['x≧10'], h:'例: x≧10', e:'x≧10^1=10（真数条件も満たす）'},
+    {q:'log_2 (x+1) > 2', a:['x>3'], h:'例: x>3', e:'x+1>4 → x>3（真数条件 x>-1 も満たす）'},
     {q:'log_{1/2} x > 1', a:['0<x<1/2'], h:'例: 0<x<1/2', e:'底が1より小さいので向き逆転。x<(1/2)^1=1/2。真数条件と合わせ 0<x<1/2'},
     {q:'log_{1/3} x ≧ -2', a:['0<x≦9'], h:'例: 0<x≦9', e:'向き逆転で x≦(1/3)^{-2}=9。真数条件と合わせ 0<x≦9'},
     {q:'log_3 (x-1) ≦ 2', a:['1<x≦10'], h:'例: 1<x≦10', e:'真数条件 x>1。x-1≦9 → x≦10。よって 1<x≦10'},
@@ -583,16 +640,33 @@ const TOPICS = [
 {
   id:'func', name:'定義域と値域', desc:'グラフの位置をつかむ',
   qs:[
-    {q:'y = 2^x の値域', a:['y>0','0<y'], h:'例: y>0', e:'指数関数の値は必ず正。y>0'},
-    {q:'y = 2^x + 1 の値域', a:['y>1','1<y'], h:'例: y>1', e:'2^x>0 なので全体を1だけ上に平行移動して y>1'},
-    {q:'y = 3^x - 2 の値域', a:['y>-2','-2<y'], h:'例: y>-2', e:'3^x>0 を2だけ下げて y>-2'},
-    {q:'y = 2^{-x} + 3 の値域', a:['y>3','3<y'], h:'例: y>3', e:'2^{-x}>0 なので y>3。減少関数だが値域は変わらない。'},
-    {q:'y = log_2 x の定義域', a:['x>0','0<x'], h:'例: x>0', e:'真数は正。x>0'},
-    {q:'y = log_3 (x-2) の定義域', a:['x>2','2<x'], h:'例: x>2', e:'x-2>0 より x>2'},
-    {q:'y = log_2 (6-x) の定義域', a:['x<6','6>x'], h:'例: x<6', e:'6-x>0 より x<6'},
-    {q:'y = log_3 (2x-6) の定義域', a:['x>3','3<x'], h:'例: x>3', e:'2x-6>0 より x>3'},
+    {q:'y = 2^x の値域', a:['y>0'], h:'例: y>0', e:'指数関数の値は必ず正。y>0'},
+    {q:'y = 2^x + 1 の値域', a:['y>1'], h:'例: y>1', e:'2^x>0 なので全体を1だけ上に平行移動して y>1'},
+    {q:'y = 3^x - 2 の値域', a:['y>-2'], h:'例: y>-2', e:'3^x>0 を2だけ下げて y>-2'},
+    {q:'y = 2^{-x} + 3 の値域', a:['y>3'], h:'例: y>3', e:'2^{-x}>0 なので y>3。減少関数だが値域は変わらない。'},
+    {q:'y = log_2 x の定義域', a:['x>0'], h:'例: x>0', e:'真数は正。x>0'},
+    {q:'y = log_3 (x-2) の定義域', a:['x>2'], h:'例: x>2', e:'x-2>0 より x>2'},
+    {q:'y = log_2 (6-x) の定義域', a:['x<6'], h:'例: x<6', e:'6-x>0 より x<6'},
+    {q:'y = log_3 (2x-6) の定義域', a:['x>3'], h:'例: x>3', e:'2x-6>0 より x>3'},
     {q:'y = 3^x のグラフは点 (0, k) を通る。k の値', a:['1'], h:'例: 1', e:'3^0=1。指数関数は必ず (0,1) を通る。'},
     {q:'y = log_5 x のグラフは点 (k, 0) を通る。k の値', a:['1'], h:'例: 1', e:'log_5 1=0。対数関数は必ず (1,0) を通る。'}
+  ]
+},
+{
+  id:'graph', name:'グラフの性質', desc:'増減・漸近線・対称性',
+  qs:[
+    {q:'y = 3^x は増加関数か、減少関数か', c:['増加関数','減少関数'], a:['増加関数'], e:'底 3>1 なので増加関数。x が増えると y も増える。'},
+    {q:'y = (1/2)^x は増加関数か、減少関数か', c:['増加関数','減少関数'], a:['減少関数'], e:'底 1/2 は 0と1の間なので減少関数。'},
+    {q:'y = log_2 x は増加関数か、減少関数か', c:['増加関数','減少関数'], a:['増加関数'], e:'底 2>1 なので増加関数。'},
+    {q:'y = log_{1/3} x は増加関数か、減少関数か', c:['増加関数','減少関数'], a:['減少関数'], e:'底 1/3 は 0と1の間なので減少関数。'},
+    {q:'y = 2^x のグラフの漸近線', c:['x 軸','y 軸','漸近線はない'], a:['x 軸'], e:'x → -∞ で y は 0 に近づく。漸近線は x 軸（直線 y=0）。'},
+    {q:'y = log_2 x のグラフの漸近線', c:['x 軸','y 軸','漸近線はない'], a:['y 軸'], e:'x → +0 で y は -∞ に落ちる。漸近線は y 軸（直線 x=0）。'},
+    {q:'y = 2^x と y = log_2 x のグラフは何に関して対称か', c:['直線 y = x','x 軸','y 軸','原点'], a:['直線 y = x'], e:'この2つは互いに逆関数。逆関数どうしのグラフは直線 y=x に関して対称。'},
+    {q:'y = 2^x と y = (1/2)^x のグラフは何に関して対称か', c:['直線 y = x','x 軸','y 軸','原点'], a:['y 軸'], e:'(1/2)^x = 2^{-x}。x を -x に置きかえた形なので y 軸対称。'},
+    {q:'y = 2^{x-3} のグラフは y = 2^x をどう平行移動したものか', c:['x 軸方向に +3','x 軸方向に -3','y 軸方向に +3','y 軸方向に -3'], a:['x 軸方向に +3'], e:'x を x-3 に置きかえた形なので、x 軸方向に +3 だけ移動。'},
+    {q:'y = log_2 (x-4) のグラフは y = log_2 x をどう平行移動したものか', c:['x 軸方向に +4','x 軸方向に -4','y 軸方向に +4','y 軸方向に -4'], a:['x 軸方向に +4'], e:'x を x-4 に置きかえた形なので、x 軸方向に +4 だけ移動。'},
+    {q:'y = log_2 x + 1 のグラフは y = log_2 x をどう平行移動したものか', c:['x 軸方向に +1','x 軸方向に -1','y 軸方向に +1','y 軸方向に -1'], a:['y 軸方向に +1'], e:'y の側に +1 されているので、y 軸方向に +1 だけ移動。'},
+    {q:'y = 2^x のグラフが必ず通る点', c:['(0, 1)','(1, 0)','(0, 0)','(1, 1)'], a:['(0, 1)'], e:'2^0=1 なので (0,1) を通る。指数関数はすべて (0,1) を通る。'}
   ]
 },
 {
@@ -686,6 +760,7 @@ function nz(s){
   t = t.replace(/[\s　]/g,'');
   t = t.toLowerCase();
   t = t.replace(/sqrt/g,'√').replace(/cbrt/g,'∛');
+  t = t.replace(/log_/g,'log');   // log_2(3) / log2(3) / log_2 3 を同じ形に寄せる
   t = t.replace(/＜/g,'<').replace(/＞/g,'>').replace(/＝/g,'=').replace(/／/g,'/');
   t = t.replace(/>=|≥/g,'≧').replace(/<=|≤/g,'≦');
   t = t.replace(/[*・×⋅･]/g,'');
@@ -696,6 +771,15 @@ function nz(s){
   return t;
 }
 function noParen(s){ return s.replace(/[()]/g,''); }
+
+/* 不等式は向きを裏返しても同じ意味。
+   "0<x<8" ⇔ "8>x>0"、"x≧10" ⇔ "10≦x" を機械的に作って照合する。 */
+const FLIP = {'<':'>','>':'<','≦':'≧','≧':'≦'};
+function flipIneq(s){
+  if(!/[<>≦≧]/.test(s)) return s;
+  const parts = s.split(/([<>≦≧])/);          // 項と不等号を交互に取り出す
+  return parts.reverse().map(p=>FLIP[p]||p).join('');
+}
 function numOf(s){
   const m = /^(-?\d+(?:\.\d+)?)(?:\/(-?\d+(?:\.\d+)?))?$/.exec(s);
   if(!m) return null;
@@ -706,10 +790,13 @@ function numOf(s){
 function judge(input, list){
   const a = nz(input);
   if(a==='') return false;
+  const av = [a, flipIneq(a)];
   for(let i=0;i<list.length;i++){
     const b = nz(list[i]);
-    if(a===b) return true;
-    if(noParen(a)===noParen(b)) return true;
+    for(let j=0;j<av.length;j++){
+      if(av[j]===b) return true;
+      if(noParen(av[j])===noParen(b)) return true;
+    }
     const na=numOf(a), nb=numOf(b);
     if(na!==null && nb!==null && Math.abs(na-nb)<1e-9) return true;
   }
@@ -890,6 +977,8 @@ function startSession(topicId){
 }
 /* 問題の並びを受け取ってセッションを始める（復習セッションもここを通る） */
 function runQueue(list, topicId){
+  closeSheets();
+  S.locked = false;
   S.topic = topicId;
   S.queue = list;
   S.idx = 0;
@@ -991,10 +1080,18 @@ function finish(){
     wrap.classList.remove('hide');
     S.wrongList.forEach(id=>{
       const q = BYID[id];
-      const d = document.createElement('div');
+      const d = document.createElement('button');
       d.className = 'witem';
-      d.innerHTML = '<div class="q mq">'+fmt(q.q)+'</div>'+
-                    '<div class="a">正解 <b class="mq">'+fmt(q.a[0])+'</b> ／ 累計 '+wcount(id)+'回</div>';
+      d.innerHTML = '<div class="q mq">'+fmt(q.q)+(q.g?'<span class="wg">（'+fmt(q.g)+'）</span>':'')+'</div>'+
+                    '<div class="a">正解 <b class="mq">'+fmt(q.a[0])+'</b> ／ 累計 '+wcount(id)+'回'+
+                    '<span class="more">解説</span></div>'+
+                    '<div class="wexp hide">'+fmt(q.e)+'</div>';
+      /* タップで解説を開閉する（結果画面でそのまま復習できるように） */
+      d.addEventListener('click', ()=>{
+        const ex = d.querySelector('.wexp');
+        const open = ex.classList.toggle('hide');
+        d.querySelector('.more').textContent = open ? '解説' : '閉じる';
+      });
       list.appendChild(d);
     });
   }else{
@@ -1205,15 +1302,15 @@ const KEYS = [
   [{t:'4'},{t:'5'},{t:'6'},{t:'/'},{t:'^'},{f:'l',svg:'<path d="M14 6l-6 6 6 6"/>'}],
   [{t:'1'},{t:'2'},{t:'3'},{t:'√'},{t:','},{f:'r',svg:'<path d="M10 6l6 6-6 6"/>'}],
   [{t:'0'},{t:'.'},{t:'-'},{t:'+'},{t:'×'},{t:'='}],
-  [{t:'x'},{t:'y'},{t:'a'},{t:'b'},{t:'n'},{t:'log',cls:'sm'}],
+  [{t:'x'},{t:'y'},{t:'a'},{t:'b'},{t:'n'},{t:'log_',cls:'sm'}],
   [{t:'<'},{t:'>'},{t:'≦'},{t:'≧'},{f:'go'}]
 ];
 function buildKB(){
+  /* 1枚のグリッドに全キーを並べる。縦向きは6列6段、横向きは12列3段に
+     CSS だけで組み替わる（横向きだと6段では決定キーが画面外に出るため）。 */
   const kb = $('kb');
   kb.innerHTML = '';
   KEYS.forEach(row=>{
-    const r = document.createElement('div');
-    r.className = 'krow';
     row.forEach(k=>{
       const b = document.createElement('button');
       if(k.f==='go'){
@@ -1227,11 +1324,10 @@ function buildKB(){
       }else{
         b.className = 'k' + (k.cls?' '+k.cls:'');
         b.textContent = k.t;
-        b.dataset.t = k.t;
+        b.dataset.t = k.ins || k.t;
       }
-      r.appendChild(b);
+      kb.appendChild(b);
     });
-    kb.appendChild(r);
   });
   kb.addEventListener('pointerdown', e=>{
     const b = e.target.closest('.k');
@@ -1261,10 +1357,17 @@ function doFn(f){
   else if(f==='go'){ submit(); return; }
   paintField();
 }
+let pickMode = false;   // 選択式かどうか
 function paintField(){
   const f = $('field');
   if(IV===''){
-    f.innerHTML = '<span class="caret"></span><span class="ph">ここに解答を入力</span>';
+    f.innerHTML = pickMode
+      ? '<span class="ph">下から選んでください</span>'
+      : '<span class="caret"></span><span class="ph">ここに解答を入力</span>';
+  }else if(pickMode){
+    f.innerHTML = esc(IV);
+    syncAnsBtn();
+    return;
   }else{
     f.innerHTML = esc(IV.slice(0,IC)) + '<span class="caret"></span>' + esc(IV.slice(IC));
   }
@@ -1334,13 +1437,45 @@ $('back').addEventListener('click', ()=>{
   closeSheets();
 });
 
+/* 選択式の問題では、キーボードの代わりに選択肢を出す */
+function buildChoices(q){
+  const box = $('choices');
+  box.innerHTML = '';
+  q.c.forEach(label=>{
+    const b = document.createElement('button');
+    b.className = 'ch' + (label===IV ? ' on' : '');
+    b.textContent = label;
+    b.addEventListener('click', ()=>{
+      IV = label; IC = IV.length;
+      Array.prototype.forEach.call(box.children, x=>x.classList.remove('on'));
+      b.classList.add('on');
+      $('field').classList.remove('err');
+      paintField();
+      buzz(4);
+    });
+    box.appendChild(b);
+  });
+  const go = document.createElement('button');
+  go.className = 'pbtn';
+  go.style.marginTop = '6px';
+  go.textContent = '決定';
+  go.addEventListener('click', submit);
+  box.appendChild(go);
+}
+
 function openAnswer(){
   const q = curQ();
   if(!q) return;
   $('ansInput').classList.remove('hide');
   $('ansRes').classList.add('hide');
   $('ansQ').innerHTML = fmt(q.q) + (q.g ? '<br><span style="color:var(--t3)">ただし '+fmt(q.g)+'</span>' : '');
-  $('hintLine').textContent = q.h ? q.h : '';
+  pickMode = !!q.c;
+  $('hintLine').textContent = pickMode ? '' : (q.h || '');   /* 選択式に書式のヒントは要らない */
+  $('kb').classList.toggle('hide', pickMode);
+  $('choices').classList.toggle('hide', !pickMode);
+  $('field').classList.toggle('jp', pickMode);
+  if(pickMode) buildChoices(q);
+  paintField();
   openSheet($('ansSheet'));
 }
 
