@@ -65,6 +65,8 @@
   .toggle[disabled]{opacity:.35}
 
   .tlist{display:flex; flex-direction:column; gap:7px; margin-bottom:22px}
+  .gsec{margin:14px 0 -1px; padding-left:2px; font-size:10.5px; color:var(--t3); letter-spacing:.16em; font-weight:600}
+  .gsec:first-child{margin-top:6px}
   .titem{
     display:flex; align-items:center; gap:12px; width:100%; text-align:left;
     background:var(--card); border:1px solid var(--bd); border-radius:13px;
@@ -108,14 +110,25 @@
   .prog i{display:block; height:100%; background:var(--t1); width:0; transition:width .28s ease}
 
   .qbox{
-    flex:none; margin:11px 12px 0; background:var(--card); border:1px solid var(--bd);
+    flex:none; display:block; width:auto; text-align:left;
+    margin:11px 12px 0; background:var(--card); border:1px solid var(--bd);
     border-radius:13px; padding:12px 14px; box-shadow:var(--sh);
-    max-height:26vh; overflow-y:auto;
+    max-height:26vh; overflow-y:auto; transition:padding .16s;
   }
   .qbox .lb{font-size:10px; color:var(--t3); letter-spacing:.16em; margin-bottom:5px; display:flex; gap:8px; align-items:center}
   .qbox .lb .wc{color:var(--err); letter-spacing:.02em}
-  .qbox .qt{font-size:17px; line-height:1.75; word-break:break-word}
-  .qbox .gv{font-size:11.5px; color:var(--t2); margin-top:7px; padding-top:7px; border-top:1px solid var(--bd2)}
+  .qbox .lb .fold{margin-left:auto; letter-spacing:.04em; text-decoration:underline; text-underline-offset:2px}
+  .qbox .qt{display:block; font-size:17px; line-height:1.75; word-break:break-word}
+  .qbox .gv{display:block; font-size:11.5px; color:var(--t2); margin-top:7px; padding-top:7px; border-top:1px solid var(--bd2)}
+  .qbox .gv.hide{display:none !important}
+  /* たたんだ状態: 1行だけ見せて計算スペースを広げる */
+  .qbox.fold{padding:7px 14px 8px; overflow:hidden}
+  .qbox.fold .lb{margin-bottom:2px}
+  .qbox.fold .qt{
+    font-size:14px; line-height:1.5; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis;
+  }
+  .qbox.fold .gv{display:none}
 
   .tools{display:flex; align-items:center; gap:4px; padding:9px 12px 7px; flex:none}
   .tb{
@@ -164,12 +177,13 @@
     transition:background .12s;
   }
   .witem:active{background:var(--bg2)}
-  .witem .q{font-size:14px; line-height:1.7}
+  .witem .q{display:block; font-size:14px; line-height:1.7}
   .witem .q .wg{font-size:11px; color:var(--t3); margin-left:3px}
   .witem .a{font-size:11.5px; color:var(--t2); margin-top:4px; display:flex; align-items:baseline; gap:6px}
   .witem .a b{color:var(--t1); font-weight:600}
   .witem .a .more{margin-left:auto; color:var(--t3); text-decoration:underline; text-underline-offset:3px; flex:none}
-  .witem .wexp{font-size:12px; color:var(--t2); line-height:1.8; margin-top:9px; padding-top:9px; border-top:1px solid var(--bd2)}
+  .witem .wexp{display:block; font-size:12px; color:var(--t2); line-height:1.8; margin-top:9px; padding-top:9px; border-top:1px solid var(--bd2)}
+  .witem .wexp.hide{display:none !important}
   .dbtns{display:flex; flex-direction:column; gap:8px}
 
   /* ---------- シート ---------- */
@@ -346,11 +360,12 @@
     </div>
     <div class="prog"><i id="progBar"></i></div>
 
-    <div class="qbox">
-      <div class="lb"><span id="qLabel">問題</span><span class="wc" id="qWrong"></span></div>
-      <div class="qt mq" id="qText"></div>
-      <div class="gv hide" id="qGiven"></div>
-    </div>
+    <!-- button の中身は phrasing content でないといけないので span を block 表示にする -->
+    <button class="qbox" id="qBox" aria-expanded="true">
+      <span class="lb"><span id="qLabel">問題</span><span class="wc" id="qWrong"></span><span class="fold" id="qFold">たたむ</span></span>
+      <span class="qt mq" id="qText"></span>
+      <span class="gv hide" id="qGiven"></span>
+    </button>
 
     <div class="tools">
       <button class="tb on" id="tPen" aria-label="ペン">
@@ -692,7 +707,7 @@ const TOPICS = [
     {q:'① 3^{1/2} 　② 2^{2/3} 　小さい順に並べよ', a:['2<1'], h:'番号のみ。例: 2<1', e:'6乗すると 3^3=27、2^4=16。よって ②<①'},
     {q:'① √[3]{10} 　② √[4]{30} 　小さい順に並べよ', a:['1<2'], h:'番号のみ。例: 1<2', e:'12乗すると 10^4=10000、30^3=27000。よって ①<②'},
     {q:'① log_2 3 　② 1.5 　小さい順に並べよ', a:['2<1'], h:'番号のみ。例: 2<1', e:'1.5=log_2 2^{1.5}=log_2 √8。√8<3 なので ②<①'},
-    {q:'① log_2 5 　② log_3 10 　小さい順に並べよ', a:['2<1'], h:'番号のみ。例: 2<1', e:'①は4と8の間の5で 2<①<3、②は9と27の間の10で 2<②<3。底の変換で比べると ②≒2.10<①≒2.32'},
+    {q:'① log_2 3 　② log_4 10 　小さい順に並べよ', a:['1<2'], h:'番号のみ。例: 1<2', e:'②=log_2 10 / 2 = log_2 √{10}。①=log_2 3=log_2 √{9} なので、√9<√10 より ①<②'},
     {q:'① log_{0.5} 3 　② log_{0.5} 5 　小さい順に並べよ', a:['2<1'], h:'番号のみ。例: 2<1', e:'底が1より小さいので真数が大きいほど値は小さい。よって ②<①'},
     {q:'① 2^{100} 　② 10^{30} 　小さい順に並べよ', g:'log_{10} 2 = 0.3010', a:['2<1'], h:'番号のみ。例: 2<1', e:'log①=100×0.3010=30.10、log②=30。よって ②<①'},
     {q:'① 0.5^{-2} 　② 0.2^{-1} 　小さい順に並べよ', a:['1<2'], h:'番号のみ。例: 1<2', e:'①=2^2=4、②=5。よって ①<②'}
@@ -716,11 +731,20 @@ const TOPICS = [
 }
 ];
 
+/* 問題文から固定のIDを作る。
+   添字を使うと問題を1問足したり並べ替えるだけで以降のIDがずれて、
+   保存済みの間違い記録が別の問題に付いてしまうため。 */
+function qhash(s){
+  let h = 5381;
+  for(let i=0;i<s.length;i++) h = ((h*33) ^ s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+
 /* すべての問題にIDを付けてフラット化 */
 const ALL = [];
 TOPICS.forEach(t=>{
-  t.qs.forEach((q,i)=>{
-    q.id = t.id+'-'+i;
+  t.qs.forEach(q=>{
+    q.id = t.id+'-'+qhash(q.q);
     q.topic = t.id;
     q.tname = t.name;
     ALL.push(q);
@@ -815,6 +839,12 @@ function loadST(){
     ST = r ? JSON.parse(r) : {};
   }catch(e){ ST = {}; }
   if(!ST || typeof ST !== 'object') ST = {};
+  /* 差し替えられた問題の記録が残り続けないよう、現在ない問題は捨てる */
+  let dropped = false;
+  for(const k in ST){
+    if(!BYID[k] || !ST[k] || typeof ST[k] !== 'object'){ delete ST[k]; dropped = true; }
+  }
+  if(dropped) saveST();
 }
 function saveST(){
   try{ localStorage.setItem(SKEY, JSON.stringify(ST)); }catch(e){}
@@ -878,6 +908,14 @@ const MODE_NOTE = {
   wrong:'間違えたまま「まだ正解していない」問題だけを出題します。正解すると次からは出ません。',
   freq:'これまでに間違えた回数が多い問題から順に出題します。正解しても回数は減りません。'
 };
+
+/* 範囲を4つに区分けして並べる（14範囲を素通しにすると探しにくいため） */
+const GROUPS = [
+  {name:'指数',           ids:['law','root','eeq','eineq']},
+  {name:'対数',           ids:['ldef','lprop','lbase','leq','lineq']},
+  {name:'関数としての性質', ids:['func','graph']},
+  {name:'応用・総合',      ids:['clog','comp','minmax']}
+];
 
 /* 一度でも正解した問題の割合（範囲ごとの手応えの目安） */
 function doneRate(list){
@@ -949,10 +987,20 @@ function renderMenu(){
     S.mode==='normal' ? '全'+allN+'問を通して演習'+(allRate>0?'　正解済み '+Math.round(allRate*100)+'%':'') : '対象すべて',
     allN, 0, 0, true));
 
-  TOPICS.forEach(t=>{
-    const p = poolOf(t.id, S.mode);
-    const wsum = p.reduce((s,q)=>s+wcount(q.id),0);
-    box.appendChild(mk(t.id, t.name, t.desc, p.length, wsum, doneRate(t.qs), false));
+  GROUPS.forEach(g=>{
+    const ts = g.ids.map(id=>TOPICS.find(t=>t.id===id)).filter(Boolean);
+    const pools = ts.map(t=>poolOf(t.id, S.mode));
+    /* 復習モードで対象0の区分は見出しごと出さない */
+    if(pools.every(p=>p.length===0)) return;
+    const h = document.createElement('p');
+    h.className = 'gsec';
+    h.textContent = g.name;
+    box.appendChild(h);
+    ts.forEach((t,i)=>{
+      const p = pools[i];
+      const wsum = p.reduce((s,q)=>s+wcount(q.id),0);
+      box.appendChild(mk(t.id, t.name, t.desc, p.length, wsum, doneRate(t.qs), false));
+    });
   });
 }
 
@@ -1044,12 +1092,30 @@ function renderQ(){
   }
   const w = wcount(q.id);
   $('qWrong').textContent = w>0 ? '間違い '+w+'回' : '';
+  /* 自分でたたんだ／開いたときはその状態を引き継ぐ。
+     まだ触っていないなら、画面が低いとき（横向きなど）だけ自動でたたむ
+     （与えられた値がある問題は隠れてしまうので開いたまま）。 */
+  setFold(foldPref !== null ? foldPref : (innerHeight <= 520 && !q.g));
   usePad(S.idx+'/'+q.id);
   resetInput();
   S.locked = false;
   syncPrev();
   saveSession();
 }
+/* 問題文のたたみ／ひらき。null は「まだ自分で選んでいない」 */
+let foldPref = null;
+function setFold(on){
+  const box = $('qBox');
+  box.classList.toggle('fold', on);
+  box.setAttribute('aria-expanded', on?'false':'true');
+  $('qFold').textContent = on ? 'ひらく' : 'たたむ';
+  if(!$('play').classList.contains('hide')) requestAnimationFrame(setupPad);
+}
+$('qBox').addEventListener('click', ()=>{
+  foldPref = !$('qBox').classList.contains('fold');
+  setFold(foldPref);
+});
+
 /* 「前の問題」は1問目では押せない */
 function syncPrev(){
   const b = $('mPrev');
@@ -1082,10 +1148,10 @@ function finish(){
       const q = BYID[id];
       const d = document.createElement('button');
       d.className = 'witem';
-      d.innerHTML = '<div class="q mq">'+fmt(q.q)+(q.g?'<span class="wg">（'+fmt(q.g)+'）</span>':'')+'</div>'+
-                    '<div class="a">正解 <b class="mq">'+fmt(q.a[0])+'</b> ／ 累計 '+wcount(id)+'回'+
-                    '<span class="more">解説</span></div>'+
-                    '<div class="wexp hide">'+fmt(q.e)+'</div>';
+      d.innerHTML = '<span class="q mq">'+fmt(q.q)+(q.g?'<span class="wg">（'+fmt(q.g)+'）</span>':'')+'</span>'+
+                    '<span class="a">正解 <b class="mq">'+fmt(q.a[0])+'</b> ／ 累計 '+wcount(id)+'回'+
+                    '<span class="more">解説</span></span>'+
+                    '<span class="wexp hide">'+fmt(q.e)+'</span>';
       /* タップで解説を開閉する（結果画面でそのまま復習できるように） */
       d.addEventListener('click', ()=>{
         const ex = d.querySelector('.wexp');
@@ -1145,6 +1211,7 @@ let penSeen = false;     // スタイラスを検出したら以後タッチは�
 let dpr = 1;
 let padKey = null;
 const padStore = {};     // 問題ごとに計算内容を保持（前の問題に戻っても残る）
+const padOrder = [];     // 古いものから捨てるための順番
 
 function setupPad(){
   const r = pad.getBoundingClientRect();
@@ -1260,16 +1327,28 @@ function undo(){ if(strokes.length){ redoStack.push(strokes.pop()); bake(); buzz
 function redo(){ if(redoStack.length){ const s=redoStack.pop(); strokes.push(s); inkStroke(bctx,s); paint(); buzz(6); } }
 function clearPad(){ strokes.length = 0; redoStack.length = 0; cur = null; bake(); }
 
-/* 問題ごとの計算内容を出し入れする */
+/* 問題ごとの計算内容を出し入れする。
+   1セッション156問ぶんを抱え続けないよう、古いものから捨てる。 */
+const PAD_KEEP = 24;
 function usePad(key){
   padKey = key;
-  if(!padStore[key]) padStore[key] = {s:[], r:[]};
+  if(!padStore[key]){
+    padStore[key] = {s:[], r:[]};
+    padOrder.push(key);
+    while(padOrder.length > PAD_KEEP){
+      const old = padOrder.shift();
+      if(old !== key) delete padStore[old];
+    }
+  }
   strokes   = padStore[key].s;
   redoStack = padStore[key].r;
   cur = null;
   bake();
 }
-function resetPadStore(){ for(const k in padStore) delete padStore[k]; }
+function resetPadStore(){
+  for(const k in padStore) delete padStore[k];
+  padOrder.length = 0;
+}
 
 function setTool(t){
   tool = t;
@@ -1408,6 +1487,7 @@ function dragToClose(sheet){
        キーボードや一覧の操作、判定パネルのスクロールと取り合わないようにする。 */
     if(!e.target.closest('.grip, .sh, .ansq')) return;
     if(e.target.closest('.lnk')) return;
+    if(S.locked) return;      /* 判定を表示中は閉じさせない（進む手段がなくなる） */
     on = true; sy = e.clientY; dy = 0;
     sheet.style.transition = 'none';
     sheet.setPointerCapture(e.pointerId);
@@ -1646,14 +1726,20 @@ window.addEventListener('keydown', e=>{
     if(e.key==='Enter'){ const b=$('resBtns'); if(b&&b.lastChild){ e.preventDefault(); b.lastChild.click(); } }
     return;
   }
-  if(e.key==='Enter'){ e.preventDefault(); submit(); }
-  else if(e.key==='Backspace'){ e.preventDefault(); doFn('bs'); }
+  if(e.key==='Enter'){ e.preventDefault(); submit(); return; }
+  if(pickMode) return;        /* 選択式では文字入力を受け付けない */
+  if(e.key==='Backspace'){ e.preventDefault(); doFn('bs'); }
   else if(e.key==='ArrowLeft'){ e.preventDefault(); doFn('l'); }
   else if(e.key==='ArrowRight'){ e.preventDefault(); doFn('r'); }
   else if(e.key.length===1 && /[0-9a-zA-Z.,+\-*/^()<>=]/.test(e.key)){ e.preventDefault(); insert(e.key); }
 });
 
 /* 起動 */
+/* 2本指タップの案内は、指が2本使える端末にだけ出す */
+if(!(navigator.maxTouchPoints > 1)){
+  const tip = $('padHint').querySelector('small');
+  if(tip) tip.remove();
+}
 renderMenu();
 show('menu');
 </script>
