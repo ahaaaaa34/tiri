@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#FAFAF8">
+<title>指数・対数 ｜ 数学II</title>
+<style>
+  :root{
+    --bg:#FAFAF8;
+    --bg2:#F3F3F0;
+    --card:#FFFFFF;
+    --t1:#111111;
+    --t2:#555555;
+    --t3:#999999;
+    --bd:#E0E0DC;
+    --bd2:#EEEEEA;
+    --err:#8B0000;
+    --sh:0 1px 2px rgba(17,17,17,.04);
+    --safe-b:env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{height:100%; overflow:hidden}
+  body{
+    margin:0; background:var(--bg); color:var(--t1);
+    font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",Meiryo,system-ui,-apple-system,sans-serif;
+    font-feature-settings:"palt" 1;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.55; font-size:15px;
+    overscroll-behavior:none;
+  }
+  button{font-family:inherit; color:inherit; cursor:pointer}
+  .app{height:100dvh; display:flex; flex-direction:column; overflow:hidden}
+  .hide{display:none !important}
+
+  /* ---------- 数式表示 ---------- */
+  .mq{font-family:"Times New Roman",'Hiragino Mincho ProN',serif; letter-spacing:.01em}
+  sup,sub{font-size:.68em; line-height:0}
+  sup{vertical-align:.5em} sub{vertical-align:-.28em}
+  .rt{white-space:nowrap}
+  .rt .ri{font-size:.6em; vertical-align:.62em; margin-right:-.28em}
+  .rt .rb{border-top:1px solid currentColor; padding:0 .14em 0 .06em; margin-left:.02em}
+
+  /* ---------- メニュー ---------- */
+  #menu{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 18px calc(40px + var(--safe-b))}
+  .mhead{padding:34px 0 22px; text-align:center}
+  .mhead h1{margin:0; font-size:25px; font-weight:600; letter-spacing:.06em}
+  .mhead .cap{margin:6px 0 0; font-size:12px; color:var(--t3); letter-spacing:.18em}
+  .sec{margin:0 0 9px; font-size:11px; color:var(--t3); letter-spacing:.14em; font-weight:600}
+
+  .seg{display:flex; gap:2px; background:var(--bg2); border-radius:11px; padding:3px; margin-bottom:8px}
+  .seg button{flex:1; border:0; background:transparent; color:var(--t2); font-size:12.5px; padding:9px 4px; border-radius:8px; letter-spacing:.02em}
+  .seg button.on{background:var(--card); color:var(--t1); font-weight:600; box-shadow:var(--sh)}
+  .modenote{font-size:11.5px; color:var(--t3); margin:0 0 18px; padding:0 2px; line-height:1.6}
+
+  .tlist{display:flex; flex-direction:column; gap:7px; margin-bottom:22px}
+  .titem{
+    display:flex; align-items:center; gap:12px; width:100%; text-align:left;
+    background:var(--card); border:1px solid var(--bd); border-radius:13px;
+    padding:14px 15px; box-shadow:var(--sh); transition:transform .06s, background .12s;
+  }
+  .titem:active{transform:scale(.985); background:var(--bg2)}
+  .titem .nm{flex:1; min-width:0}
+  .titem .nm b{display:block; font-size:15px; font-weight:600; letter-spacing:.01em}
+  .titem .nm span{display:block; font-size:11.5px; color:var(--t3); margin-top:2px}
+  .titem .rt2{display:flex; align-items:center; gap:9px; flex:none}
+  .titem .num{font-size:12px; color:var(--t2); font-variant-numeric:tabular-nums}
+  .titem .arw{color:var(--t3); font-size:17px; line-height:1}
+  .titem.all{background:var(--t1); border-color:var(--t1); color:var(--card)}
+  .titem.all .nm span,.titem.all .num,.titem.all .arw{color:rgba(255,255,255,.62)}
+  .titem.all:active{background:#000}
+  .titem[disabled]{opacity:.4; box-shadow:none}
+  .badge{
+    font-size:11px; font-variant-numeric:tabular-nums; color:var(--err);
+    border:1px solid rgba(139,0,0,.24); border-radius:20px; padding:1px 7px; background:rgba(139,0,0,.04);
+  }
+  .empty{border:1px dashed var(--bd); border-radius:13px; padding:26px 16px; text-align:center; color:var(--t3); font-size:12.5px; line-height:1.8}
+  .mfoot{display:flex; justify-content:center; padding-top:6px}
+  .lnk{background:none; border:0; color:var(--t3); font-size:11.5px; letter-spacing:.06em; text-decoration:underline; text-underline-offset:3px; padding:8px}
+
+  /* ---------- 演習画面 ---------- */
+  #play{flex:1; display:flex; flex-direction:column; min-height:0}
+  .bar{display:flex; align-items:center; gap:6px; padding:8px 8px 7px; flex:none}
+  .ib{
+    width:38px; height:38px; flex:none; border:0; background:transparent; border-radius:10px;
+    display:flex; align-items:center; justify-content:center; transition:background .12s;
+  }
+  .ib:active{background:var(--bg2)}
+  .ib svg{width:19px; height:19px; stroke:var(--t1); stroke-width:1.6; fill:none; stroke-linecap:round; stroke-linejoin:round}
+  .ttl{flex:1; text-align:center; min-width:0}
+  .ttl b{display:block; font-size:13px; font-weight:600; letter-spacing:.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .ttl span{display:block; font-size:10.5px; color:var(--t3); font-variant-numeric:tabular-nums; letter-spacing:.06em; margin-top:1px}
+  .prog{height:2px; background:var(--bd2); flex:none}
+  .prog i{display:block; height:100%; background:var(--t1); width:0; transition:width .28s ease}
+
+  .qbox{
+    flex:none; margin:11px 12px 0; background:var(--card); border:1px solid var(--bd);
+    border-radius:13px; padding:12px 14px; box-shadow:var(--sh);
+    max-height:26vh; overflow-y:auto;
+  }
+  .qbox .lb{font-size:10px; color:var(--t3); letter-spacing:.16em; margin-bottom:5px; display:flex; gap:8px; align-items:center}
+  .qbox .lb .wc{color:var(--err); letter-spacing:.02em}
+  .qbox .qt{font-size:17px; line-height:1.75; word-break:break-word}
+  .qbox .gv{font-size:11.5px; color:var(--t2); margin-top:7px; padding-top:7px; border-top:1px solid var(--bd2)}
+
+  .tools{display:flex; align-items:center; gap:4px; padding:9px 12px 7px; flex:none}
+  .tb{
+    height:36px; min-width:44px; padding:0 11px; border:1px solid var(--bd); background:var(--card);
+    border-radius:9px; display:flex; align-items:center; justify-content:center; gap:5px; box-shadow:var(--sh);
+    transition:background .12s, border-color .12s;
+  }
+  .tb svg{width:17px; height:17px; stroke:var(--t1); stroke-width:1.6; fill:none; stroke-linecap:round; stroke-linejoin:round}
+  .tb.on{background:var(--t1); border-color:var(--t1)}
+  .tb.on svg{stroke:var(--card)}
+  .tb:disabled{opacity:.32}
+  .tb:active{background:var(--bg2)}
+  .tb.on:active{background:#000}
+  .tsp{flex:1}
+
+  .padwrap{flex:1; min-height:0; margin:0 12px; position:relative}
+  #pad{
+    position:absolute; inset:0; width:100%; height:100%;
+    background:var(--card); border:1px solid var(--bd); border-radius:13px;
+    box-shadow:var(--sh); touch-action:none; display:block;
+  }
+  .padhint{
+    position:absolute; left:0; right:0; top:50%; transform:translateY(-50%);
+    text-align:center; color:var(--t3); font-size:12px; letter-spacing:.1em; pointer-events:none;
+    transition:opacity .2s;
+  }
+  .foot{flex:none; padding:11px 12px calc(11px + var(--safe-b))}
+  .pbtn{
+    width:100%; height:50px; border:0; border-radius:13px; background:var(--t1); color:var(--card);
+    font-size:15px; font-weight:600; letter-spacing:.08em; transition:transform .06s, opacity .12s;
+  }
+  .pbtn:active{transform:scale(.985); opacity:.86}
+  .pbtn.ghost{background:var(--card); color:var(--t1); border:1px solid var(--bd); box-shadow:var(--sh)}
+
+  /* ---------- 結果画面 ---------- */
+  #done{flex:1; overflow-y:auto; padding:0 18px calc(28px + var(--safe-b))}
+  .dhead{text-align:center; padding:40px 0 26px}
+  .dhead .sc{font-size:44px; font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+  .dhead .sc i{font-style:normal; font-size:19px; color:var(--t3); margin-left:2px}
+  .dhead p{margin:6px 0 0; font-size:12px; color:var(--t3); letter-spacing:.12em}
+  .wlist{display:flex; flex-direction:column; gap:7px; margin-bottom:24px}
+  .witem{background:var(--card); border:1px solid var(--bd); border-left:2px solid var(--err); border-radius:11px; padding:11px 13px; box-shadow:var(--sh)}
+  .witem .q{font-size:14px; line-height:1.7}
+  .witem .a{font-size:11.5px; color:var(--t2); margin-top:4px}
+  .witem .a b{color:var(--t1); font-weight:600}
+  .dbtns{display:flex; flex-direction:column; gap:8px}
+
+  /* ---------- シート ---------- */
+  .back{position:fixed; inset:0; background:rgba(17,17,17,.28); opacity:0; pointer-events:none; transition:opacity .22s; z-index:40}
+  .back.on{opacity:1; pointer-events:auto}
+  .sheet{
+    position:fixed; left:0; right:0; bottom:0; z-index:50;
+    background:var(--bg); border-top:1px solid var(--bd);
+    border-radius:18px 18px 0 0; box-shadow:0 -6px 24px rgba(17,17,17,.08);
+    transform:translateY(102%); transition:transform .26s cubic-bezier(.22,.68,.3,1);
+    padding-bottom:var(--safe-b); max-height:92dvh; display:flex; flex-direction:column;
+  }
+  .sheet.on{transform:translateY(0)}
+  .grip{width:34px; height:4px; background:var(--bd); border-radius:4px; margin:9px auto 4px; flex:none}
+  .sh{padding:6px 16px 10px; display:flex; align-items:center; gap:10px; flex:none}
+  .sh b{flex:1; font-size:12.5px; letter-spacing:.1em; color:var(--t2); font-weight:600}
+  .sh .lnk{padding:4px 2px}
+  .slist{padding:0 12px 14px; display:flex; flex-direction:column; gap:2px; overflow-y:auto}
+  .sitem{
+    display:flex; align-items:center; gap:12px; width:100%; text-align:left; border:0;
+    background:transparent; border-radius:11px; padding:14px 12px; font-size:14.5px; transition:background .12s;
+  }
+  .sitem:active{background:var(--bg2)}
+  .sitem svg{width:18px; height:18px; flex:none; stroke:var(--t2); stroke-width:1.6; fill:none; stroke-linecap:round; stroke-linejoin:round}
+  .sitem.dg{color:var(--err)} .sitem.dg svg{stroke:var(--err)}
+  .sitem .sd{display:block; font-size:11px; color:var(--t3); margin-top:1px}
+  .sitem .sw{flex:1; min-width:0}
+  .shr{height:1px; background:var(--bd2); margin:6px 12px}
+
+  /* ---------- 解答入力 ---------- */
+  .ansq{padding:0 14px 8px; font-size:13px; color:var(--t2); line-height:1.7; flex:none}
+  .field{
+    margin:0 12px 4px; background:var(--card); border:1px solid var(--bd); border-radius:11px;
+    min-height:52px; padding:13px 14px; font-size:19px; line-height:1.4; box-shadow:var(--sh);
+    word-break:break-all; flex:none; font-family:"Times New Roman",serif;
+  }
+  .field.err{border-color:var(--err)}
+  .field .ph{color:var(--t3); font-size:14px; font-family:inherit}
+  .caret{display:inline-block; width:1.5px; height:1.05em; background:var(--t1); vertical-align:-.18em; margin:0 .5px; animation:bl 1.05s steps(1) infinite}
+  @keyframes bl{50%{opacity:0}}
+  .hintline{font-size:11px; color:var(--t3); padding:2px 16px 8px; flex:none; letter-spacing:.02em}
+
+  .kb{padding:2px 6px 8px; flex:none}
+  .krow{display:grid; grid-template-columns:repeat(6,1fr); gap:5px; margin-bottom:5px}
+  .k{
+    height:44px; border:1px solid var(--bd); background:var(--card); border-radius:9px;
+    font-size:17px; display:flex; align-items:center; justify-content:center; box-shadow:var(--sh);
+    font-family:"Times New Roman",serif; transition:background .08s, transform .05s; user-select:none;
+  }
+  .k:active{background:var(--bg2); transform:scale(.95)}
+  .k.fn{background:var(--bg2); font-size:14px; font-family:inherit; color:var(--t2); box-shadow:none}
+  .k.fn:active{background:var(--bd2)}
+  .k.fn svg{width:17px; height:17px; stroke:var(--t2); stroke-width:1.7; fill:none; stroke-linecap:round; stroke-linejoin:round}
+  .k.go{grid-column:span 2; background:var(--t1); border-color:var(--t1); color:var(--card); font-size:14.5px; font-weight:600; font-family:inherit; letter-spacing:.08em}
+  .k.go:active{background:#000}
+  .k .sm{font-size:12px}
+
+  /* ---------- 判定 ---------- */
+  .res{padding:14px 16px 18px; overflow-y:auto}
+  .rmark{display:flex; align-items:center; gap:9px; font-size:19px; font-weight:600; letter-spacing:.06em}
+  .rmark svg{width:22px; height:22px; stroke-width:1.8; fill:none; stroke-linecap:round; stroke-linejoin:round}
+  .rmark.ok{color:var(--t1)} .rmark.ok svg{stroke:var(--t1)}
+  .rmark.ng{color:var(--err)} .rmark.ng svg{stroke:var(--err)}
+  .ryour{font-size:12px; color:var(--t3); margin-top:8px}
+  .ryour b{color:var(--err); font-weight:400; font-family:"Times New Roman",serif; font-size:14px}
+  .rans{
+    margin-top:12px; background:var(--card); border:1px solid var(--bd); border-radius:11px;
+    padding:12px 14px; box-shadow:var(--sh);
+  }
+  .rans .lb{font-size:10px; color:var(--t3); letter-spacing:.16em; margin-bottom:4px}
+  .rans .va{font-size:19px; font-family:"Times New Roman",serif}
+  .rexp{margin-top:10px; font-size:12.5px; color:var(--t2); line-height:1.85; padding:0 2px}
+  .rbtns{display:flex; gap:8px; margin-top:16px}
+  .rbtns .pbtn{flex:1}
+
+  .cmsg{padding:2px 18px 18px; font-size:14px; line-height:1.8; color:var(--t2)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ========== メニュー ========== -->
+  <div id="menu">
+    <div class="mhead">
+      <h1>指数・対数</h1>
+      <p class="cap">数学 II</p>
+    </div>
+
+    <p class="sec">出題モード</p>
+    <div class="seg" id="modeSeg">
+      <button data-m="normal" class="on">通常</button>
+      <button data-m="wrong">間違えた問題</button>
+      <button data-m="freq">間違い回数順</button>
+    </div>
+    <p class="modenote" id="modeNote"></p>
+
+    <p class="sec">範囲</p>
+    <div class="tlist" id="tlist"></div>
+
+    <div class="mfoot"><button class="lnk" id="resetAll">学習記録をすべて消去</button></div>
+  </div>
+
+  <!-- ========== 演習 ========== -->
+  <div id="play" class="hide">
+    <div class="bar">
+      <button class="ib" id="backBtn" aria-label="戻る">
+        <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <div class="ttl"><b id="pTitle"></b><span id="pCount"></span></div>
+      <button class="ib" id="menuBtn" aria-label="メニュー">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+    <div class="prog"><i id="progBar"></i></div>
+
+    <div class="qbox">
+      <div class="lb"><span id="qLabel">問題</span><span class="wc" id="qWrong"></span></div>
+      <div class="qt mq" id="qText"></div>
+      <div class="gv hide" id="qGiven"></div>
+    </div>
+
+    <div class="tools">
+      <button class="tb on" id="tPen" aria-label="ペン">
+        <svg viewBox="0 0 24 24"><path d="M4 20l4-1 10-10a2.1 2.1 0 10-3-3L5 16l-1 4z"/><path d="M13.5 6.5l4 4"/></svg>
+      </button>
+      <button class="tb" id="tEra" aria-label="消しゴム">
+        <svg viewBox="0 0 24 24"><path d="M8.5 19.5H20"/><path d="M15.5 4.5l4 4a1.5 1.5 0 010 2.2l-8 8H7l-3-3a1.5 1.5 0 010-2.2l9.3-9a1.5 1.5 0 012.2 0z"/></svg>
+      </button>
+      <div class="tsp"></div>
+      <button class="tb" id="tUndo" aria-label="元に戻す">
+        <svg viewBox="0 0 24 24"><path d="M9 14l-4-4 4-4"/><path d="M5 10h9a5 5 0 010 10h-3"/></svg>
+      </button>
+      <button class="tb" id="tRedo" aria-label="やり直す">
+        <svg viewBox="0 0 24 24"><path d="M15 14l4-4-4-4"/><path d="M19 10h-9a5 5 0 000 10h3"/></svg>
+      </button>
+      <button class="tb" id="tClr" aria-label="全消去">
+        <svg viewBox="0 0 24 24"><path d="M5 7h14"/><path d="M9 7V5h6v2"/><path d="M6.5 7l1 12h9l1-12"/></svg>
+      </button>
+    </div>
+
+    <div class="padwrap">
+      <canvas id="pad"></canvas>
+      <div class="padhint" id="padHint">計算スペース</div>
+    </div>
+
+    <div class="foot">
+      <button class="pbtn" id="ansBtn">解答する</button>
+    </div>
+  </div>
+
+  <!-- ========== 結果 ========== -->
+  <div id="done" class="hide">
+    <div class="dhead">
+      <div class="sc" id="dScore"></div>
+      <p id="dSub"></p>
+    </div>
+    <div id="dWrongWrap" class="hide">
+      <p class="sec">間違えた問題</p>
+      <div class="wlist" id="dWrong"></div>
+    </div>
+    <div class="dbtns" id="dBtns"></div>
+  </div>
+</div>
+
+<!-- ========== オーバーレイ ========== -->
+<div class="back" id="back"></div>
+
+<!-- 解答シート -->
+<div class="sheet" id="ansSheet">
+  <div class="grip"></div>
+  <div id="ansInput">
+    <div class="sh"><b>解答を入力</b><button class="lnk" id="clrIn">全消去</button></div>
+    <div class="ansq mq" id="ansQ"></div>
+    <div class="field" id="field"></div>
+    <div class="hintline" id="hintLine"></div>
+    <div class="kb" id="kb"></div>
+  </div>
+  <div class="res hide" id="ansRes"></div>
+</div>
+
+<!-- メニューシート -->
+<div class="sheet" id="menuSheet">
+  <div class="grip"></div>
+  <div class="sh"><b>メニュー</b></div>
+  <div class="slist">
+    <button class="sitem" data-act="retry">
+      <svg viewBox="0 0 24 24"><path d="M4 4v6h6"/><path d="M20 20v-6h-6"/><path d="M19 9a7.5 7.5 0 00-13-3L4 8"/><path d="M5 15a7.5 7.5 0 0013 3l2-2"/></svg>
+      <span class="sw">この問題をやり直す<span class="sd">計算スペースと入力を消去</span></span>
+    </button>
+    <button class="sitem" data-act="clear">
+      <svg viewBox="0 0 24 24"><path d="M5 7h14"/><path d="M9 7V5h6v2"/><path d="M6.5 7l1 12h9l1-12"/></svg>
+      <span class="sw">計算スペースを消す</span>
+    </button>
+    <button class="sitem" data-act="skip">
+      <svg viewBox="0 0 24 24"><path d="M6 5l9 7-9 7z"/><path d="M18 5v14"/></svg>
+      <span class="sw">スキップ<span class="sd">記録に残さず次の問題へ</span></span>
+    </button>
+    <button class="sitem dg" data-act="reveal">
+      <svg viewBox="0 0 24 24"><path d="M2 12s3.8-6.5 10-6.5S22 12 22 12s-3.8 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>
+      <span class="sw">答えを見る<span class="sd">不正解として記録されます</span></span>
+    </button>
+    <div class="shr"></div>
+    <button class="sitem" data-act="restart">
+      <svg viewBox="0 0 24 24"><path d="M4 4v6h6"/><path d="M19 9a7.5 7.5 0 00-13-3L4 8"/><path d="M20 20v-6h-6"/><path d="M5 15a7.5 7.5 0 0013 3l2-2"/></svg>
+      <span class="sw">最初からやり直す</span>
+    </button>
+    <button class="sitem" data-act="home">
+      <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg>
+      <span class="sw">メニューに戻る</span>
+    </button>
+  </div>
+</div>
+
+<!-- 確認シート -->
+<div class="sheet" id="confSheet">
+  <div class="grip"></div>
+  <div class="sh"><b id="confTtl">確認</b></div>
+  <p class="cmsg" id="confMsg"></p>
+  <div class="slist">
+    <button class="sitem dg" id="confYes"><span class="sw" id="confYesTx">はい</span></button>
+    <button class="sitem" id="confNo"><span class="sw">キャンセル</span></button>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* =======================================================================
+   問題データ
+   q   : 問題文（^{} _{} √{} √[n]{} のマークアップが使える）
+   g   : 前提として与えられる値（任意）
+   a   : 正解として受理する表記の配列
+   h   : 入力欄に出すヒント
+   e   : 解説
+   ======================================================================= */
+const TOPICS = [
+{
+  id:'law', name:'指数法則', desc:'整数の指数・基本計算',
+  qs:[
+    {q:'2^3 × 2^4', a:['2^7','128'], h:'例: 2^7 または 128', e:'底が同じ積は指数を足す。2^{3+4}=2^7=128'},
+    {q:'(3^2)^3', a:['3^6','729'], h:'例: 3^6 または 729', e:'(a^m)^n = a^{mn} より 3^{2×3}=3^6=729'},
+    {q:'5^7 ÷ 5^4', a:['5^3','125'], h:'例: 5^3 または 125', e:'底が同じ商は指数を引く。5^{7-4}=5^3=125'},
+    {q:'2^5 × 2^{-3}', a:['2^2','4'], h:'例: 4', e:'2^{5+(-3)}=2^2=4'},
+    {q:'3^{-2}', a:['1/9'], h:'分数で。例: 1/9', e:'a^{-n}=1/a^n より 1/3^2=1/9'},
+    {q:'(1/2)^{-3}', a:['8'], h:'例: 8', e:'(1/2)^{-3}=2^3=8。逆数にして符号を正に。'},
+    {q:'10^{-3}', a:['1/1000','0.001'], h:'分数か小数で', e:'10^{-3}=1/10^3=1/1000=0.001'},
+    {q:'7^0 + 7^{-1}', a:['8/7'], h:'分数で。例: 8/7', e:'7^0=1、7^{-1}=1/7 なので 1+1/7=8/7'},
+    {q:'(-2)^4 × (-2)^{-2}', a:['4'], h:'例: 4', e:'(-2)^{4-2}=(-2)^2=4'},
+    {q:'(2^3)^2 ÷ 2^4', a:['4','2^2'], h:'例: 4', e:'2^6÷2^4=2^2=4'},
+    {q:'(a^2 b^3)^2', a:['a^4b^6'], h:'例: a^3b^2 の形で', e:'各因数を2乗して a^{4}b^{6}'},
+    {q:'a^5 ÷ a^{-2}', a:['a^7'], h:'例: a^7', e:'a^{5-(-2)}=a^7'}
+  ]
+},
+{
+  id:'root', name:'累乗根と有理数の指数', desc:'n乗根・分数の指数',
+  qs:[
+    {q:'√[3]{8}', a:['2'], h:'例: 2', e:'2^3=8 なので 3乗根は 2'},
+    {q:'√[3]{-27}', a:['-3'], h:'例: -3', e:'(-3)^3=-27。奇数乗根は負の数もとれる。'},
+    {q:'8^{1/3}', a:['2'], h:'例: 2', e:'a^{1/n}=√[n]{a} より 8^{1/3}=√[3]{8}=2'},
+    {q:'8^{2/3}', a:['4'], h:'例: 4', e:'8^{2/3}=(8^{1/3})^2=2^2=4'},
+    {q:'9^{3/2}', a:['27'], h:'例: 27', e:'(9^{1/2})^3=3^3=27'},
+    {q:'32^{2/5}', a:['4'], h:'例: 4', e:'32=2^5 なので (2^5)^{2/5}=2^2=4'},
+    {q:'16^{-3/4}', a:['1/8'], h:'分数で。例: 1/8', e:'16=2^4 → (2^4)^{-3/4}=2^{-3}=1/8'},
+    {q:'27^{-2/3}', a:['1/9'], h:'分数で。例: 1/9', e:'27=3^3 → 3^{-2}=1/9'},
+    {q:'√[3]{2} × √[3]{4}', a:['2'], h:'例: 2', e:'√[3]{2×4}=√[3]{8}=2'},
+    {q:'(√{3})^6', a:['27'], h:'例: 27', e:'(3^{1/2})^6=3^3=27'},
+    {q:'√[4]{9}', a:['√3','3^(1/2)','√{3}'], h:'例: √3', e:'9^{1/4}=(3^2)^{1/4}=3^{1/2}=√3'},
+    {q:'√{2} × √[3]{2} を 2^k の形で', a:['2^(5/6)','2^5/6'], h:'例: 2^(5/6)', e:'2^{1/2}×2^{1/3}=2^{1/2+1/3}=2^{5/6}'},
+    {q:'(2^{1/2} × 2^{1/4})^4', a:['8','2^3'], h:'例: 8', e:'(2^{3/4})^4=2^3=8'},
+    {q:'√[3]{√{64}}', a:['2'], h:'例: 2', e:'√64=8、√[3]{8}=2。64^{1/6}=2 でもよい。'}
+  ]
+},
+{
+  id:'eeq', name:'指数方程式', desc:'両辺を同じ底にそろえる',
+  qs:[
+    {q:'2^x = 8', a:['3'], h:'x の値。例: 3', e:'8=2^3 なので x=3'},
+    {q:'3^x = 1/9', a:['-2'], h:'例: -2', e:'1/9=3^{-2} なので x=-2'},
+    {q:'2^{x+1} = 32', a:['4'], h:'例: 4', e:'32=2^5 → x+1=5 → x=4'},
+    {q:'4^x = 8', a:['3/2'], h:'分数で。例: 3/2', e:'2^{2x}=2^3 → 2x=3 → x=3/2'},
+    {q:'9^x = 27', a:['3/2'], h:'分数で。例: 3/2', e:'3^{2x}=3^3 → 2x=3 → x=3/2'},
+    {q:'(1/2)^x = 8', a:['-3'], h:'例: -3', e:'2^{-x}=2^3 → -x=3 → x=-3'},
+    {q:'8^x = 4', a:['2/3'], h:'分数で。例: 2/3', e:'2^{3x}=2^2 → 3x=2 → x=2/3'},
+    {q:'2^x · 2^{x+2} = 64', a:['2'], h:'例: 2', e:'2^{2x+2}=2^6 → 2x+2=6 → x=2'},
+    {q:'3^{x+1} = 81', a:['3'], h:'例: 3', e:'81=3^4 → x+1=4 → x=3'},
+    {q:'2^{2x} - 6·2^x + 8 = 0', a:['1,2'], h:'2つ。カンマ区切りで', e:'t=2^x>0 とすると t^2-6t+8=0 → t=2,4 → x=1,2'},
+    {q:'25^x - 6·5^x + 5 = 0', a:['0,1'], h:'2つ。カンマ区切りで', e:'t=5^x とすると t^2-6t+5=0 → t=1,5 → x=0,1'},
+    {q:'9^x - 10·3^x + 9 = 0', a:['0,2'], h:'2つ。カンマ区切りで', e:'t=3^x とすると t^2-10t+9=0 → t=1,9 → x=0,2'}
+  ]
+},
+{
+  id:'eineq', name:'指数不等式', desc:'底が1より大きいか小さいかに注意',
+  qs:[
+    {q:'2^x > 8', a:['x>3','3<x'], h:'例: x>3', e:'底2>1 なので不等号の向きはそのまま。x>3'},
+    {q:'2^x < 1/4', a:['x<-2','-2>x'], h:'例: x<-2', e:'1/4=2^{-2}、底2>1 より x<-2'},
+    {q:'(1/3)^x > 9', a:['x<-2','-2>x'], h:'例: x<-2', e:'底が1より小さいので向きが逆転。9=(1/3)^{-2} → x<-2'},
+    {q:'2^{x+1} ≦ 16', a:['x≦3','3≧x'], h:'例: x≦3', e:'16=2^4 → x+1≦4 → x≦3'},
+    {q:'3^{2x} < 27', a:['x<3/2','3/2>x'], h:'例: x<3/2', e:'2x<3 → x<3/2'},
+    {q:'(1/2)^x ≧ 1/8', a:['x≦3','3≧x'], h:'例: x≦3', e:'1/8=(1/2)^3、底が1より小さいので向き逆転。x≦3'},
+    {q:'(1/2)^{x-1} ≦ 4', a:['x≧-1','-1≦x'], h:'例: x≧-1', e:'4=(1/2)^{-2}、向き逆転で x-1≧-2 → x≧-1'},
+    {q:'9^x ≧ 3^{x+2}', a:['x≧2','2≦x'], h:'例: x≧2', e:'3^{2x}≧3^{x+2} → 2x≧x+2 → x≧2'},
+    {q:'4^x - 3·2^x - 4 > 0', a:['x>2','2<x'], h:'例: x>2', e:'t=2^x>0 で t^2-3t-4>0 → (t-4)(t+1)>0 → t>4 → x>2'}
+  ]
+},
+{
+  id:'ldef', name:'対数の定義と値', desc:'log の値を求める',
+  qs:[
+    {q:'log_2 8', a:['3'], h:'例: 3', e:'2^3=8 なので 3'},
+    {q:'log_3 (1/9)', a:['-2'], h:'例: -2', e:'3^{-2}=1/9 なので -2'},
+    {q:'log_{10} 1000', a:['3'], h:'例: 3', e:'10^3=1000 なので 3'},
+    {q:'log_2 1', a:['0'], h:'例: 0', e:'どんな底でも log_a 1 = 0'},
+    {q:'log_5 5', a:['1'], h:'例: 1', e:'log_a a = 1'},
+    {q:'log_2 (1/16)', a:['-4'], h:'例: -4', e:'1/16=2^{-4} なので -4'},
+    {q:'log_4 8', a:['3/2'], h:'分数で。例: 3/2', e:'4^x=8 → 2^{2x}=2^3 → x=3/2'},
+    {q:'log_9 27', a:['3/2'], h:'分数で。例: 3/2', e:'9^x=27 → 3^{2x}=3^3 → x=3/2'},
+    {q:'log_{1/2} 8', a:['-3'], h:'例: -3', e:'(1/2)^x=8 → 2^{-x}=2^3 → x=-3'},
+    {q:'log_2 √{2}', a:['1/2'], h:'分数で。例: 1/2', e:'√2=2^{1/2} なので 1/2'},
+    {q:'log_3 √[3]{3}', a:['1/3'], h:'分数で。例: 1/3', e:'√[3]{3}=3^{1/3} なので 1/3'},
+    {q:'log_{10} 0.01', a:['-2'], h:'例: -2', e:'0.01=10^{-2} なので -2'},
+    {q:'log_{√2} 8', a:['6'], h:'例: 6', e:'(√2)^x=8 → 2^{x/2}=2^3 → x=6'},
+    {q:'2^{log_2 5}', a:['5'], h:'例: 5', e:'a^{log_a M}=M なので 5'}
+  ]
+},
+{
+  id:'lprop', name:'対数の性質', desc:'積・商・累乗の変形',
+  qs:[
+    {q:'log_{10} 2 + log_{10} 5', a:['1'], h:'例: 1', e:'log_{10}(2×5)=log_{10}10=1'},
+    {q:'log_2 12 - log_2 3', a:['2'], h:'例: 2', e:'log_2(12÷3)=log_2 4=2'},
+    {q:'log_3 5 + log_3 (9/5)', a:['2'], h:'例: 2', e:'log_3(5×9/5)=log_3 9=2'},
+    {q:'2log_{10} 5 + log_{10} 4', a:['2'], h:'例: 2', e:'log_{10}25+log_{10}4=log_{10}100=2'},
+    {q:'log_2 6 + log_2 (2/3)', a:['2'], h:'例: 2', e:'log_2(6×2/3)=log_2 4=2'},
+    {q:'log_{10} √{10}', a:['1/2'], h:'分数で。例: 1/2', e:'√10=10^{1/2} なので 1/2'},
+    {q:'3log_2 2 - log_2 4', a:['1'], h:'例: 1', e:'3×1-2=1'},
+    {q:'log_{10} 8 を a で表せ', g:'log_{10} 2 = a', a:['3a'], h:'例: 3a', e:'8=2^3 なので log_{10}8=3log_{10}2=3a'},
+    {q:'log_{10} 5 を a で表せ', g:'log_{10} 2 = a', a:['1-a','-a+1'], h:'例: 1-a', e:'5=10/2 なので log_{10}10-log_{10}2=1-a'},
+    {q:'log_{10} 12 を a, b で表せ', g:'log_{10} 2 = a,  log_{10} 3 = b', a:['2a+b','b+2a'], h:'例: 2a+b', e:'12=2^2×3 なので 2log2+log3=2a+b'},
+    {q:'log_{10} 1.5 を a, b で表せ', g:'log_{10} 2 = a,  log_{10} 3 = b', a:['b-a','-a+b'], h:'例: b-a', e:'1.5=3/2 なので log3-log2=b-a'},
+    {q:'log_2 18 を a で表せ', g:'log_2 3 = a', a:['1+2a','2a+1'], h:'例: 1+2a', e:'18=2×3^2 なので 1+2log_2 3=1+2a'}
+  ]
+},
+{
+  id:'lbase', name:'底の変換', desc:'底をそろえて計算する',
+  qs:[
+    {q:'log_8 32', a:['5/3'], h:'分数で。例: 5/3', e:'底を2に変換。log_2 32 / log_2 8 = 5/3'},
+    {q:'log_{16} 8', a:['3/4'], h:'分数で。例: 3/4', e:'log_2 8 / log_2 16 = 3/4'},
+    {q:'log_{1/3} 9', a:['-2'], h:'例: -2', e:'log_3 9 / log_3 (1/3) = 2/(-1) = -2'},
+    {q:'log_2 3 × log_3 4', a:['2'], h:'例: 2', e:'log_2 4 = 2（連鎖して底が消える）'},
+    {q:'log_2 3 × log_3 5 × log_5 8', a:['3'], h:'例: 3', e:'log_2 8 = 3'},
+    {q:'log_4 2 + log_9 3', a:['1'], h:'例: 1', e:'1/2 + 1/2 = 1'},
+    {q:'(log_2 9)(log_3 8)', a:['6'], h:'例: 6', e:'(2log_2 3)(3log_3 2)=6×(log_2 3 × log_3 2)=6×1=6'},
+    {q:'log_9 8 × log_2 3', a:['3/2'], h:'分数で。例: 3/2', e:'log_9 8 = 3log2/(2log3)、これに log3/log2 をかけて 3/2'},
+    {q:'log_9 4 を a で表せ', g:'log_3 2 = a', a:['a'], h:'例: a', e:'log_9 4 = log_3 4 / log_3 9 = 2log_3 2 / 2 = a'},
+    {q:'log_5 2 を a で表せ', g:'log_2 5 = a', a:['1/a'], h:'例: 1/a', e:'log_5 2 = 1 / log_2 5 = 1/a'}
+  ]
+},
+{
+  id:'leq', name:'対数方程式', desc:'真数条件に注意',
+  qs:[
+    {q:'log_2 x = 5', a:['32'], h:'例: 32', e:'x=2^5=32'},
+    {q:'log_3 (x-1) = 2', a:['10'], h:'例: 10', e:'x-1=3^2=9 → x=10（真数条件 x>1 を満たす）'},
+    {q:'log_{10} x = -2', a:['1/100','0.01'], h:'分数か小数で', e:'x=10^{-2}=1/100'},
+    {q:'log_2 (x+1) = 3', a:['7'], h:'例: 7', e:'x+1=8 → x=7'},
+    {q:'log_2 x + log_2 (x-2) = 3', a:['4'], h:'例: 4', e:'x(x-2)=8 → x^2-2x-8=0 → x=4,-2。真数条件 x>2 より x=4'},
+    {q:'log_3 x + log_3 (x+6) = 3', a:['3'], h:'例: 3', e:'x(x+6)=27 → x^2+6x-27=0 → x=3,-9。真数条件 x>0 より x=3'},
+    {q:'2log_3 x = log_3 (x+6)', a:['3'], h:'例: 3', e:'x^2=x+6 → x^2-x-6=0 → x=3,-2。真数条件 x>0 より x=3'},
+    {q:'(log_2 x)^2 - log_2 x - 2 = 0', a:['4,1/2'], h:'2つ。カンマ区切りで', e:'t=log_2 x とすると t^2-t-2=0 → t=2,-1 → x=4, 1/2'},
+    {q:'log_{10} x^2 = 2', a:['10,-10'], h:'2つ。カンマ区切りで', e:'x^2=100 → x=±10。真数は x^2 なので x≠0 のみが条件、両方とも解。'}
+  ]
+},
+{
+  id:'lineq', name:'対数不等式', desc:'真数条件＋底の大小',
+  qs:[
+    {q:'log_2 x < 3', a:['0<x<8'], h:'例: 0<x<8', e:'真数条件 x>0。底2>1 なので x<2^3=8。よって 0<x<8'},
+    {q:'log_{10} x ≧ 1', a:['x≧10','10≦x'], h:'例: x≧10', e:'x≧10^1=10（真数条件も満たす）'},
+    {q:'log_2 (x+1) > 2', a:['x>3','3<x'], h:'例: x>3', e:'x+1>4 → x>3（真数条件 x>-1 も満たす）'},
+    {q:'log_{1/2} x > 1', a:['0<x<1/2'], h:'例: 0<x<1/2', e:'底が1より小さいので向き逆転。x<(1/2)^1=1/2。真数条件と合わせ 0<x<1/2'},
+    {q:'log_{1/3} x ≧ -2', a:['0<x≦9'], h:'例: 0<x≦9', e:'向き逆転で x≦(1/3)^{-2}=9。真数条件と合わせ 0<x≦9'},
+    {q:'log_3 (x-1) ≦ 2', a:['1<x≦10'], h:'例: 1<x≦10', e:'真数条件 x>1。x-1≦9 → x≦10。よって 1<x≦10'},
+    {q:'log_2 x + log_2 (x-1) < 1', a:['1<x<2'], h:'例: 1<x<2', e:'真数条件 x>1。x(x-1)<2 → x^2-x-2<0 → -1<x<2。合わせて 1<x<2'}
+  ]
+},
+{
+  id:'clog', name:'常用対数', desc:'桁数・小数の位',
+  qs:[
+    {q:'2^{10} は何桁の数か', g:'log_{10} 2 = 0.3010', a:['4','4桁'], h:'桁数を数字で', e:'10×0.3010=3.010。3<3.010<4 なので4桁'},
+    {q:'3^{20} は何桁の数か', g:'log_{10} 3 = 0.4771', a:['10','10桁'], h:'桁数を数字で', e:'20×0.4771=9.542 → 9<9.542<10 なので10桁'},
+    {q:'2^{50} は何桁の数か', g:'log_{10} 2 = 0.3010', a:['16','16桁'], h:'桁数を数字で', e:'50×0.3010=15.05 → 16桁'},
+    {q:'5^{20} は何桁の数か', g:'log_{10} 2 = 0.3010', a:['14','14桁'], h:'桁数を数字で', e:'log5=1-0.3010=0.6990。20×0.6990=13.98 → 14桁'},
+    {q:'6^{10} は何桁の数か', g:'log_{10} 2 = 0.3010,  log_{10} 3 = 0.4771', a:['8','8桁'], h:'桁数を数字で', e:'log6=0.7781。10×0.7781=7.781 → 8桁'},
+    {q:'12^{15} は何桁の数か', g:'log_{10} 2 = 0.3010,  log_{10} 3 = 0.4771', a:['17','17桁'], h:'桁数を数字で', e:'log12=2×0.3010+0.4771=1.0791。×15=16.1865 → 17桁'},
+    {q:'(1/2)^{10} は小数第何位に初めて0でない数字が現れるか', g:'log_{10} 2 = 0.3010', a:['4','4位','小数第4位'], h:'数字だけでOK。例: 4', e:'log=-3.010。-4<-3.010<-3 なので小数第4位'},
+    {q:'2^n > 1000 を満たす最小の自然数 n', g:'log_{10} 2 = 0.3010', a:['10'], h:'例: 10', e:'0.3010n>3 → n>9.96… → n=10'},
+    {q:'3^n > 10^6 を満たす最小の自然数 n', g:'log_{10} 3 = 0.4771', a:['13'], h:'例: 13', e:'0.4771n>6 → n>12.57… → n=13'}
+  ]
+}
+];
+
+/* すべての問題にIDを付けてフラット化 */
+const ALL = [];
+TOPICS.forEach(t=>{
+  t.qs.forEach((q,i)=>{
+    q.id = t.id+'-'+i;
+    q.topic = t.id;
+    q.tname = t.name;
+    ALL.push(q);
+  });
+});
+const BYID = {};
+ALL.forEach(q=>BYID[q.id]=q);
+
+/* =======================================================================
+   数式マークアップ → HTML
+   ======================================================================= */
+function fmt(s){
+  /* 先に &, <, > をエスケープしてから数式マークアップを展開する。
+     こうしないと "0<x<8" の "<x" がタグとして解釈されて文字が消える。 */
+  return esc(String(s))
+    .replace(/√\[(.+?)\]\{(.+?)\}/g,'<span class="rt"><span class="ri">$1</span>&radic;<span class="rb">$2</span></span>')
+    .replace(/√\{(.+?)\}/g,'<span class="rt">&radic;<span class="rb">$1</span></span>')
+    .replace(/\^\{(.+?)\}/g,'<sup>$1</sup>')
+    .replace(/_\{(.+?)\}/g,'<sub>$1</sub>')
+    .replace(/\^(-?[0-9a-zA-Z])/g,'<sup>$1</sup>')
+    .replace(/_(-?[0-9a-zA-Z])/g,'<sub>$1</sub>');
+}
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* =======================================================================
+   解答の正規化と判定
+   ======================================================================= */
+function nz(s){
+  let t = String(s==null?'':s);
+  t = t.replace(/[Ａ-Ｚａ-ｚ０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
+  t = t.replace(/（/g,'(').replace(/）/g,')');
+  t = t.replace(/[，、]/g,',').replace(/．/g,'.');
+  t = t.replace(/[−–—‐ー]/g,'-');
+  t = t.replace(/[\s　]/g,'');
+  t = t.toLowerCase();
+  t = t.replace(/sqrt/g,'√').replace(/cbrt/g,'∛');
+  t = t.replace(/>=|≥/g,'≧').replace(/<=|≤/g,'≦');
+  t = t.replace(/[*・×⋅･]/g,'');
+  t = t.replace(/÷/g,'/');
+  t = t.replace(/桁$/,'').replace(/位$/,'').replace(/^小数第/,'');
+  if(/^[xyn]=/.test(t) && !/[<>≦≧]/.test(t)) t = t.slice(2);
+  if(t.indexOf(',')>=0) t = t.split(',').filter(v=>v!=='').sort().join(',');
+  return t;
+}
+function noParen(s){ return s.replace(/[()]/g,''); }
+function numOf(s){
+  const m = /^(-?\d+(?:\.\d+)?)(?:\/(-?\d+(?:\.\d+)?))?$/.exec(s);
+  if(!m) return null;
+  const d = m[2]!==undefined ? parseFloat(m[2]) : 1;
+  if(d===0) return null;
+  return parseFloat(m[1])/d;
+}
+function judge(input, list){
+  const a = nz(input);
+  if(a==='') return false;
+  for(let i=0;i<list.length;i++){
+    const b = nz(list[i]);
+    if(a===b) return true;
+    if(noParen(a)===noParen(b)) return true;
+    const na=numOf(a), nb=numOf(b);
+    if(na!==null && nb!==null && Math.abs(na-nb)<1e-9) return true;
+  }
+  return false;
+}
+
+/* =======================================================================
+   学習記録（localStorage）
+   ST[qid] = { w: 累計の間違い回数, p: 復習対象フラグ, c: 正解回数 }
+   ======================================================================= */
+const SKEY = 'explog_stats_v1';
+let ST = {};
+function loadST(){
+  try{
+    const r = localStorage.getItem(SKEY);
+    ST = r ? JSON.parse(r) : {};
+  }catch(e){ ST = {}; }
+  if(!ST || typeof ST !== 'object') ST = {};
+}
+function saveST(){
+  try{ localStorage.setItem(SKEY, JSON.stringify(ST)); }catch(e){}
+}
+function rec(id){
+  if(!ST[id]) ST[id] = {w:0,p:0,c:0};
+  return ST[id];
+}
+function markWrong(id){ const r=rec(id); r.w++; r.p=1; saveST(); }
+function markRight(id){ const r=rec(id); r.c++; r.p=0; saveST(); }
+function wcount(id){ return ST[id] ? (ST[id].w||0) : 0; }
+function isPending(id){ return ST[id] ? ST[id].p===1 : false; }
+
+loadST();
+
+/* =======================================================================
+   状態
+   ======================================================================= */
+const S = {
+  mode:'normal',
+  shuffle:false,
+  topic:null,
+  queue:[],
+  idx:0,
+  okCount:0,
+  wrongList:[],
+  scored:{},      // このセッションで既に記録した問題
+  locked:false    // 判定表示中
+};
+
+const $ = id => document.getElementById(id);
+
+/* =======================================================================
+   出題プール
+   ======================================================================= */
+function poolOf(topicId, mode){
+  let list = topicId==='__all__' ? ALL.slice() : ALL.filter(q=>q.topic===topicId);
+  if(mode==='wrong'){
+    list = list.filter(q=>isPending(q.id));
+    list.sort((a,b)=>wcount(b.id)-wcount(a.id));
+  }else if(mode==='freq'){
+    list = list.filter(q=>wcount(q.id)>0);
+    list.sort((a,b)=>wcount(b.id)-wcount(a.id));
+  }
+  return list;
+}
+function shuffled(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    const t=a[i]; a[i]=a[j]; a[j]=t;
+  }
+  return a;
+}
+
+/* =======================================================================
+   メニュー描画
+   ======================================================================= */
+const MODE_NOTE = {
+  normal:'すべての問題を順番に出題します。',
+  wrong:'間違えたまま「まだ正解していない」問題だけを出題します。正解すると次からは出ません。',
+  freq:'これまでに間違えた回数が多い問題から順に出題します。正解しても回数は減りません。'
+};
+
+function renderMenu(){
+  $('modeNote').textContent = MODE_NOTE[S.mode];
+  Array.prototype.forEach.call($('modeSeg').children, b=>{
+    b.classList.toggle('on', b.dataset.m===S.mode);
+  });
+
+  const box = $('tlist');
+  box.innerHTML = '';
+
+  const allN = poolOf('__all__', S.mode).length;
+  if(allN===0){
+    const d = document.createElement('div');
+    d.className = 'empty';
+    d.innerHTML = S.mode==='wrong'
+      ? '復習が必要な問題はありません。<br>通常モードで問題を解くと、間違えた問題がここに集まります。'
+      : 'まだ間違えた記録がありません。<br>通常モードで問題を解いてみましょう。';
+    box.appendChild(d);
+    return;
+  }
+
+  const mk = (id, name, desc, n, wsum, isAll)=>{
+    const b = document.createElement('button');
+    b.className = 'titem' + (isAll?' all':'');
+    if(n===0){ b.disabled = true; }
+    let badge = '';
+    if(!isAll && S.mode!=='normal' && wsum>0) badge = '<span class="badge">×'+wsum+'</span>';
+    b.innerHTML =
+      '<span class="nm"><b>'+esc(name)+'</b><span>'+esc(desc)+'</span></span>'+
+      '<span class="rt2">'+badge+'<span class="num">'+n+'</span><span class="arw">›</span></span>';
+    b.addEventListener('click', ()=>{ if(n>0) startSession(id); });
+    return b;
+  };
+
+  box.appendChild(mk('__all__','すべての範囲', S.mode==='normal'?'全'+allN+'問を通して演習':'対象すべて', allN, 0, true));
+
+  TOPICS.forEach(t=>{
+    const p = poolOf(t.id, S.mode);
+    const wsum = p.reduce((s,q)=>s+wcount(q.id),0);
+    box.appendChild(mk(t.id, t.name, t.desc, p.length, wsum, false));
+  });
+}
+
+/* =======================================================================
+   画面切り替え
+   ======================================================================= */
+function show(which){
+  $('menu').classList.toggle('hide', which!=='menu');
+  $('play').classList.toggle('hide', which!=='play');
+  $('done').classList.toggle('hide', which!=='done');
+}
+
+/* =======================================================================
+   セッション
+   ======================================================================= */
+function startSession(topicId){
+  S.topic = topicId;
+  let p = poolOf(topicId, S.mode);
+  if(S.mode==='normal' && S.shuffle) p = shuffled(p);
+  S.queue = p;
+  S.idx = 0;
+  S.okCount = 0;
+  S.wrongList = [];
+  S.scored = {};
+  if(S.queue.length===0){ renderMenu(); return; }
+  show('play');
+  requestAnimationFrame(()=>{ setupPad(); renderQ(); });
+}
+
+function curQ(){ return S.queue[S.idx]; }
+
+function renderQ(){
+  const q = curQ();
+  if(!q){ finish(); return; }
+  const tName = S.topic==='__all__' ? q.tname : (TOPICS.find(t=>t.id===S.topic)||{}).name;
+  $('pTitle').textContent = tName || '';
+  $('pCount').textContent = (S.idx+1)+' / '+S.queue.length;
+  $('progBar').style.width = (S.idx/S.queue.length*100)+'%';
+  $('qText').innerHTML = fmt(q.q);
+  if(q.g){
+    $('qGiven').innerHTML = 'ただし ' + fmt(q.g) + ' とする';
+    $('qGiven').classList.remove('hide');
+  }else{
+    $('qGiven').classList.add('hide');
+  }
+  const w = wcount(q.id);
+  $('qWrong').textContent = w>0 ? '間違い '+w+'回' : '';
+  clearPad();
+  resetInput();
+  S.locked = false;
+}
+
+function next(){
+  S.idx++;
+  if(S.idx>=S.queue.length){ finish(); }
+  else{ renderQ(); }
+}
+
+function finish(){
+  $('progBar').style.width = '100%';
+  const n = S.queue.length;
+  $('dScore').innerHTML = S.okCount + '<i>/ '+n+'</i>';
+  $('dSub').textContent = S.okCount===n ? 'ぜんぶ正解' : '正解数';
+
+  const wrap = $('dWrongWrap'), list = $('dWrong');
+  list.innerHTML = '';
+  if(S.wrongList.length){
+    wrap.classList.remove('hide');
+    S.wrongList.forEach(id=>{
+      const q = BYID[id];
+      const d = document.createElement('div');
+      d.className = 'witem';
+      d.innerHTML = '<div class="q mq">'+fmt(q.q)+'</div>'+
+                    '<div class="a">正解 <b class="mq">'+fmt(q.a[0])+'</b> ／ 累計 '+wcount(id)+'回</div>';
+      list.appendChild(d);
+    });
+  }else{
+    wrap.classList.add('hide');
+  }
+
+  const bts = $('dBtns');
+  bts.innerHTML = '';
+  const add = (label, ghost, fn)=>{
+    const b = document.createElement('button');
+    b.className = 'pbtn' + (ghost?' ghost':'');
+    b.textContent = label;
+    b.addEventListener('click', fn);
+    bts.appendChild(b);
+  };
+  if(S.wrongList.length){
+    add('間違えた問題をもう一度', false, ()=>{
+      S.queue = S.wrongList.map(id=>BYID[id]);
+      S.idx = 0; S.okCount = 0; S.wrongList = []; S.scored = {};
+      show('play');
+      requestAnimationFrame(()=>{ setupPad(); renderQ(); });
+    });
+  }
+  add('同じ範囲をもう一度', S.wrongList.length>0, ()=>startSession(S.topic));
+  add('メニューに戻る', true, goHome);
+  show('done');
+}
+
+function goHome(){
+  closeSheets();
+  renderMenu();
+  show('menu');
+}
+
+/* =======================================================================
+   計算スペース（キャンバス）
+   ======================================================================= */
+const pad = $('pad');
+const ctx = pad.getContext('2d');
+let strokes = [];       // {tool,w,pts:[{x,y}]}
+let redoStack = [];
+let drawing = false;
+let cur = null;
+let tool = 'pen';
+let penSeen = false;    // スタイラスを検出したらタッチ入力を無視
+let dpr = 1;
+
+function setupPad(){
+  const r = pad.getBoundingClientRect();
+  if(r.width===0||r.height===0) return;
+  dpr = Math.min(window.devicePixelRatio||1, 2.5);
+  pad.width = Math.round(r.width*dpr);
+  pad.height = Math.round(r.height*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  redraw();
+}
+function redraw(){
+  const r = pad.getBoundingClientRect();
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,r.width,r.height);
+  strokes.forEach(drawStroke);
+  $('padHint').style.opacity = strokes.length ? 0 : 1;
+  $('tUndo').disabled = strokes.length===0;
+  $('tRedo').disabled = redoStack.length===0;
+}
+function drawStroke(s){
+  if(s.pts.length===0) return;
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = s.w;
+  if(s.tool==='era'){
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.strokeStyle = 'rgba(0,0,0,1)';
+  }else{
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = '#111111';
+  }
+  ctx.beginPath();
+  if(s.pts.length===1){
+    ctx.arc(s.pts[0].x, s.pts[0].y, s.w/2, 0, Math.PI*2);
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.fill();
+  }else{
+    ctx.moveTo(s.pts[0].x, s.pts[0].y);
+    for(let i=1;i<s.pts.length-1;i++){
+      const mx = (s.pts[i].x + s.pts[i+1].x)/2;
+      const my = (s.pts[i].y + s.pts[i+1].y)/2;
+      ctx.quadraticCurveTo(s.pts[i].x, s.pts[i].y, mx, my);
+    }
+    const L = s.pts[s.pts.length-1];
+    ctx.lineTo(L.x, L.y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+function ptOf(e){
+  const r = pad.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+pad.addEventListener('pointerdown', e=>{
+  if(e.pointerType==='pen') penSeen = true;
+  if(penSeen && e.pointerType==='touch') return;
+  if(e.pointerType==='mouse' && e.button!==0) return;
+  e.preventDefault();
+  pad.setPointerCapture(e.pointerId);
+  drawing = true;
+  redoStack = [];
+  cur = { tool: tool, w: tool==='era'?22:2.2, pts:[ptOf(e)] };
+  strokes.push(cur);
+  redraw();
+});
+pad.addEventListener('pointermove', e=>{
+  if(!drawing || !cur) return;
+  e.preventDefault();
+  const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+  for(let i=0;i<evs.length;i++){
+    const p = ptOf(evs[i]);
+    const last = cur.pts[cur.pts.length-1];
+    if(Math.abs(p.x-last.x)+Math.abs(p.y-last.y) < 0.7) continue;
+    cur.pts.push(p);
+  }
+  redraw();
+});
+function endDraw(e){
+  if(!drawing) return;
+  drawing = false; cur = null;
+  redraw();
+}
+pad.addEventListener('pointerup', endDraw);
+pad.addEventListener('pointercancel', endDraw);
+pad.addEventListener('pointerleave', endDraw);
+
+function clearPad(){ strokes = []; redoStack = []; redraw(); }
+
+$('tPen').addEventListener('click', ()=>{
+  tool='pen'; $('tPen').classList.add('on'); $('tEra').classList.remove('on');
+});
+$('tEra').addEventListener('click', ()=>{
+  tool='era'; $('tEra').classList.add('on'); $('tPen').classList.remove('on');
+});
+$('tUndo').addEventListener('click', ()=>{
+  if(strokes.length){ redoStack.push(strokes.pop()); redraw(); }
+});
+$('tRedo').addEventListener('click', ()=>{
+  if(redoStack.length){ strokes.push(redoStack.pop()); redraw(); }
+});
+$('tClr').addEventListener('click', clearPad);
+
+let rzT = null;
+window.addEventListener('resize', ()=>{
+  clearTimeout(rzT);
+  rzT = setTimeout(()=>{ if(!$('play').classList.contains('hide')) setupPad(); }, 140);
+});
+
+/* =======================================================================
+   専用キーボード
+   ======================================================================= */
+const KEYS = [
+  [{t:'7'},{t:'8'},{t:'9'},{t:'('},{t:')'},{f:'bs',svg:'<path d="M9 5h11v14H9L3 12z"/><path d="M14.5 9.5l-4 5M10.5 9.5l4 5"/>'}],
+  [{t:'4'},{t:'5'},{t:'6'},{t:'/'},{t:'^'},{f:'l',svg:'<path d="M14 6l-6 6 6 6"/>'}],
+  [{t:'1'},{t:'2'},{t:'3'},{t:'√'},{t:'∛'},{f:'r',svg:'<path d="M10 6l6 6-6 6"/>'}],
+  [{t:'0'},{t:'.'},{t:'-'},{t:'+'},{t:'×'},{t:','}],
+  [{t:'x'},{t:'a'},{t:'b'},{t:'n'},{t:'log',cls:'sm'},{t:'='}],
+  [{t:'<'},{t:'>'},{t:'≦'},{t:'≧'},{f:'go'}]
+];
+function buildKB(){
+  const kb = $('kb');
+  kb.innerHTML = '';
+  KEYS.forEach(row=>{
+    const r = document.createElement('div');
+    r.className = 'krow';
+    row.forEach(k=>{
+      const b = document.createElement('button');
+      if(k.f==='go'){
+        b.className = 'k go'; b.textContent = '決定';
+        b.dataset.f = 'go';
+      }else if(k.f){
+        b.className = 'k fn';
+        b.innerHTML = '<svg viewBox="0 0 24 24">'+k.svg+'</svg>';
+        b.dataset.f = k.f;
+      }else{
+        b.className = 'k' + (k.cls?' '+k.cls:'');
+        b.textContent = k.t;
+        b.dataset.t = k.t;
+      }
+      r.appendChild(b);
+    });
+    kb.appendChild(r);
+  });
+  kb.addEventListener('pointerdown', e=>{
+    const b = e.target.closest('.k');
+    if(!b) return;
+    e.preventDefault();
+    if(b.dataset.f) doFn(b.dataset.f);
+    else insert(b.dataset.t);
+  });
+}
+let IV = '', IC = 0;   // 入力値・カーソル位置
+function resetInput(){
+  IV = ''; IC = 0;
+  $('field').classList.remove('err');
+  paintField();
+}
+function insert(t){
+  IV = IV.slice(0,IC) + t + IV.slice(IC);
+  IC += t.length;
+  $('field').classList.remove('err');
+  paintField();
+}
+function doFn(f){
+  if(f==='bs'){ if(IC>0){ IV = IV.slice(0,IC-1)+IV.slice(IC); IC--; } }
+  else if(f==='l'){ if(IC>0) IC--; }
+  else if(f==='r'){ if(IC<IV.length) IC++; }
+  else if(f==='go'){ submit(); return; }
+  paintField();
+}
+function paintField(){
+  const f = $('field');
+  if(IV===''){
+    f.innerHTML = '<span class="caret"></span><span class="ph">ここに解答を入力</span>';
+  }else{
+    f.innerHTML = esc(IV.slice(0,IC)) + '<span class="caret"></span>' + esc(IV.slice(IC));
+  }
+}
+$('field').addEventListener('click', ()=>{ IC = IV.length; paintField(); });
+$('clrIn').addEventListener('click', ()=>{ IV=''; IC=0; $('field').classList.remove('err'); paintField(); });
+buildKB();
+
+/* =======================================================================
+   シート制御
+   ======================================================================= */
+function openSheet(el){
+  $('back').classList.add('on');
+  el.classList.add('on');
+}
+function closeSheets(){
+  $('back').classList.remove('on');
+  $('ansSheet').classList.remove('on');
+  $('menuSheet').classList.remove('on');
+  $('confSheet').classList.remove('on');
+}
+$('back').addEventListener('click', ()=>{
+  if($('confSheet').classList.contains('on')) { closeSheets(); return; }
+  if(S.locked) return;      // 判定表示中は誤タップで閉じない
+  closeSheets();
+});
+
+function openAnswer(){
+  const q = curQ();
+  if(!q) return;
+  $('ansInput').classList.remove('hide');
+  $('ansRes').classList.add('hide');
+  $('ansQ').innerHTML = fmt(q.q) + (q.g ? '<br><span style="color:var(--t3)">ただし '+fmt(q.g)+'</span>' : '');
+  $('hintLine').textContent = q.h ? q.h : '';
+  openSheet($('ansSheet'));
+}
+
+/* =======================================================================
+   採点
+   ======================================================================= */
+function submit(){
+  const q = curQ();
+  if(!q) return;
+  if(nz(IV)===''){
+    const f = $('field');
+    f.classList.add('err');
+    return;
+  }
+  const ok = judge(IV, q.a);
+  score(q, ok);
+  showResult(q, ok, IV);
+}
+
+function score(q, ok){
+  if(S.scored[q.id]) return;   // 1問につき最初の1回だけ記録
+  S.scored[q.id] = true;
+  if(ok){
+    S.okCount++;
+    markRight(q.id);
+  }else{
+    S.wrongList.push(q.id);
+    markWrong(q.id);
+  }
+}
+
+function showResult(q, ok, given){
+  S.locked = true;
+  $('ansInput').classList.add('hide');
+  const r = $('ansRes');
+  r.classList.remove('hide');
+
+  const mark = ok
+    ? '<div class="rmark ok"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/></svg>正解</div>'
+    : '<div class="rmark ng"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>不正解</div>';
+
+  const your = (!ok && given!=null && given!=='')
+    ? '<div class="ryour">あなたの解答　<b>'+esc(given)+'</b></div>' : '';
+
+  const ansHTML = q.a.map(a=>fmt(a)).slice(0,1).join('');
+  const alt = q.a.length>1
+    ? '<div class="ryour" style="margin-top:6px">他の表記でも可: '+q.a.slice(1).map(a=>esc(a)).join(' / ')+'</div>' : '';
+
+  r.innerHTML =
+    mark + your +
+    '<div class="rans"><div class="lb">答え</div><div class="va mq">'+ansHTML+'</div></div>' +
+    (q.e ? '<div class="rexp">'+fmt(q.e)+'</div>' : '') + alt +
+    '<div class="rbtns" id="resBtns"></div>';
+
+  const bt = $('resBtns');
+  const add = (label, ghost, fn)=>{
+    const b = document.createElement('button');
+    b.className = 'pbtn' + (ghost?' ghost':'');
+    b.textContent = label;
+    b.addEventListener('click', fn);
+    bt.appendChild(b);
+  };
+  if(!ok){
+    add('もう一度解く', true, ()=>{
+      S.locked = false;
+      closeSheets();
+      resetInput();
+    });
+  }
+  const last = S.idx===S.queue.length-1;
+  add(last ? '結果を見る' : '次の問題へ', false, ()=>{
+    S.locked = false;
+    closeSheets();
+    setTimeout(next, 180);
+  });
+}
+
+/* =======================================================================
+   イベント
+   ======================================================================= */
+$('ansBtn').addEventListener('click', openAnswer);
+$('menuBtn').addEventListener('click', ()=>openSheet($('menuSheet')));
+
+$('backBtn').addEventListener('click', ()=>{
+  confirmAsk('学習を終了しますか？', '現在の進み具合は保存されません。間違いの記録は残ります。', '終了してメニューへ', goHome);
+});
+
+$('menuSheet').addEventListener('click', e=>{
+  const b = e.target.closest('.sitem');
+  if(!b) return;
+  const act = b.dataset.act;
+  closeSheets();
+  setTimeout(()=>{
+    if(act==='retry'){ clearPad(); resetInput(); }
+    else if(act==='clear'){ clearPad(); }
+    else if(act==='skip'){ next(); }
+    else if(act==='reveal'){
+      const q = curQ();
+      if(!q) return;
+      score(q, false);
+      openSheet($('ansSheet'));
+      showResult(q, false, IV);
+    }
+    else if(act==='restart'){
+      confirmAsk('最初からやり直しますか？','この範囲を1問目から出題し直します。','やり直す',()=>startSession(S.topic));
+    }
+    else if(act==='home'){
+      confirmAsk('メニューに戻りますか？','現在の進み具合は保存されません。','メニューへ戻る', goHome);
+    }
+  }, 200);
+});
+
+let confFn = null;
+function confirmAsk(title, msg, yes, fn){
+  $('confTtl').textContent = title;
+  $('confMsg').textContent = msg;
+  $('confYesTx').textContent = yes;
+  confFn = fn;
+  openSheet($('confSheet'));
+}
+$('confYes').addEventListener('click', ()=>{
+  const f = confFn; confFn = null;
+  closeSheets();
+  setTimeout(()=>{ if(f) f(); }, 180);
+});
+$('confNo').addEventListener('click', ()=>{ confFn=null; closeSheets(); });
+
+$('modeSeg').addEventListener('click', e=>{
+  const b = e.target.closest('button');
+  if(!b) return;
+  S.mode = b.dataset.m;
+  renderMenu();
+});
+
+$('resetAll').addEventListener('click', ()=>{
+  confirmAsk('学習記録を消去しますか？','間違えた回数と復習リストがすべて消えます。この操作は元に戻せません。','すべて消去',()=>{
+    ST = {}; saveST(); renderMenu();
+  });
+});
+
+/* PCのキーボードでも入力できるように */
+window.addEventListener('keydown', e=>{
+  if(!$('ansSheet').classList.contains('on')) return;
+  if($('ansRes').classList.contains('hide')===false){
+    if(e.key==='Enter'){ const b=$('resBtns'); if(b&&b.lastChild){ e.preventDefault(); b.lastChild.click(); } }
+    return;
+  }
+  if(e.key==='Enter'){ e.preventDefault(); submit(); }
+  else if(e.key==='Backspace'){ e.preventDefault(); doFn('bs'); }
+  else if(e.key==='ArrowLeft'){ e.preventDefault(); doFn('l'); }
+  else if(e.key==='ArrowRight'){ e.preventDefault(); doFn('r'); }
+  else if(e.key.length===1 && /[0-9a-zA-Z.,+\-*/^()<>=]/.test(e.key)){ e.preventDefault(); insert(e.key); }
+});
+
+/* 起動 */
+renderMenu();
+show('menu');
+</script>
+</body>
+</html>
