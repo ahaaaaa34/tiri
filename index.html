@@ -66,6 +66,7 @@
 
   .tlist{display:flex; flex-direction:column; gap:7px; margin-bottom:22px}
   .gsec{margin:14px 0 -1px; padding-left:2px; font-size:10.5px; color:var(--t3); letter-spacing:.16em; font-weight:600}
+  .mrow{display:flex; align-items:center; justify-content:space-between; gap:12px}
   .gsec:first-child{margin-top:6px}
   .titem{
     display:flex; align-items:center; gap:12px; width:100%; text-align:left;
@@ -163,6 +164,80 @@
   }
   .pbtn:active{transform:scale(.985); opacity:.86}
   .pbtn.ghost{background:var(--card); color:var(--t1); border:1px solid var(--bd); box-shadow:var(--sh)}
+
+  /* ---------- 学習状況（ダッシュボード） ----------
+     3つの状態は色だけに頼らせない。凡例を必ず出し、各行に実数を併記する。
+     「未着手」の #EEEEEA は白地とのコントラストが低い（1.13:1）ため、
+     数値ラベルで内容が伝わるようにしている。 */
+  .statlink{
+    display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+    background:var(--card); border:1px solid var(--bd); border-radius:13px;
+    padding:12px 15px; box-shadow:var(--sh); margin-bottom:18px; font-size:14px;
+  }
+  .statlink:active{background:var(--bg2)}
+  .statlink .sl{font-weight:600; flex:none}
+  .statlink .sr{flex:1; text-align:right; font-size:11.5px; color:var(--t3); font-variant-numeric:tabular-nums}
+  .statlink .arw{color:var(--t3); font-size:17px; line-height:1; flex:none}
+
+  #stats{flex:1; display:flex; flex-direction:column; min-height:0}
+  .stbody{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 18px calc(36px + var(--safe-b))}
+
+  .hero{text-align:center; padding:22px 0 6px}
+  .hero .hv{font-size:52px; font-weight:600; line-height:1; letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+  .hero .hv i{font-style:normal; font-size:22px; color:var(--t3); margin-left:1px}
+  .hero .hl{margin:8px 0 0; font-size:12px; color:var(--t2); letter-spacing:.04em}
+
+  .tiles{display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin:18px 0 6px}
+  .tile{background:var(--card); border:1px solid var(--bd); border-radius:12px; padding:11px 10px; box-shadow:var(--sh)}
+  .tile .tl{font-size:10px; color:var(--t3); letter-spacing:.08em; display:block}
+  .tile .tv{font-size:19px; font-weight:600; font-variant-numeric:tabular-nums; margin-top:3px; display:block}
+  .tile .tv small{font-size:11px; color:var(--t3); font-weight:400; margin-left:1px}
+
+  .verdict{display:flex; flex-direction:column; gap:7px; margin:16px 0 6px}
+  .vrow{display:flex; align-items:baseline; gap:10px; background:var(--card); border:1px solid var(--bd);
+        border-radius:11px; padding:10px 13px; box-shadow:var(--sh); font-size:13px}
+  .vrow .vk{font-size:10.5px; color:var(--t3); letter-spacing:.1em; flex:none; width:52px}
+  .vrow .vn{flex:1; font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .vrow .vp{font-variant-numeric:tabular-nums; color:var(--t2); flex:none; font-size:12px}
+  .vrow.bad .vp{color:var(--err)}
+
+  .legend{display:flex; flex-wrap:wrap; gap:4px 14px; margin:10px 2px 12px; font-size:11px; color:var(--t2)}
+  .legend span{display:flex; align-items:center; gap:6px}
+  .legend i{width:10px; height:10px; border-radius:3px; flex:none}
+  .legend .k1{background:var(--t1)} .legend .k2{background:var(--err)} .legend .k3{background:var(--bd2)}
+
+  .srow{
+    display:block; width:100%; text-align:left; background:var(--card); border:1px solid var(--bd);
+    border-radius:12px; padding:11px 13px 12px; box-shadow:var(--sh); margin-bottom:7px;
+  }
+  .srow:active{background:var(--bg2)}
+  .srow .sh1{display:flex; align-items:baseline; gap:8px}
+  .srow .sn{flex:1; font-size:14px; font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .srow .sa{font-size:12.5px; font-variant-numeric:tabular-nums; color:var(--t2); flex:none}
+  .srow .sa.none{color:var(--t3); font-size:11px}
+  /* 積み上げ棒: セグメントの間は 2px の余地（背景＝白）で分ける */
+  .sbar{display:flex; gap:2px; height:9px; margin:8px 0 6px}
+  .sbar i{border-radius:4px; min-width:0}
+  .sbar .b1{background:var(--t1)} .sbar .b2{background:var(--err)} .sbar .b3{background:var(--bd2)}
+  .srow .sf{display:flex; gap:12px; font-size:10.5px; color:var(--t3); font-variant-numeric:tabular-nums}
+  .srow .sf b{font-weight:400; color:var(--t2)}
+  .srow .sf .w{color:var(--err)}
+
+  .wq{display:flex; flex-direction:column; gap:7px}
+  .wqi{
+    display:block; width:100%; text-align:left; background:var(--card); border:1px solid var(--bd);
+    border-left:2px solid var(--err); border-radius:11px; padding:10px 13px; box-shadow:var(--sh);
+  }
+  .wqi:active{background:var(--bg2)}
+  .wqi .h{display:flex; align-items:baseline; gap:9px}
+  .wqi .q{flex:1; font-size:13.5px; line-height:1.6; min-width:0}
+  .wqi .n{flex:none; font-size:11px; color:var(--err); font-variant-numeric:tabular-nums}
+  .wqi .t{font-size:10.5px; color:var(--t3); margin-top:3px; display:block}
+  .wqi .x{display:block; font-size:12px; color:var(--t2); line-height:1.8; margin-top:8px; padding-top:8px; border-top:1px solid var(--bd2)}
+  .wqi .x.hide{display:none !important}
+
+  .stempty{border:1px dashed var(--bd); border-radius:13px; padding:34px 18px; text-align:center;
+           color:var(--t3); font-size:12.5px; line-height:1.9; margin-top:20px}
 
   /* ---------- 結果画面 ---------- */
   #done{flex:1; overflow-y:auto; padding:0 18px calc(28px + var(--safe-b))}
@@ -361,6 +436,12 @@
       <p class="cap">数学 II</p>
     </div>
 
+    <button class="statlink" id="statBtn">
+      <span class="sl">学習状況を見る</span>
+      <span class="sr" id="statPeek"></span>
+      <span class="arw">›</span>
+    </button>
+
     <div id="resume" class="hide"></div>
 
     <p class="sec">出題モード</p>
@@ -432,6 +513,18 @@
     <div class="foot">
       <button class="pbtn" id="ansBtn">解答する</button>
     </div>
+  </div>
+
+  <!-- ========== 学習状況（ダッシュボード） ========== -->
+  <div id="stats" class="hide">
+    <div class="bar">
+      <button class="ib" id="stBack" aria-label="戻る">
+        <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <div class="ttl"><b>学習状況</b><span id="stSub"></span></div>
+      <span class="ib"></span>
+    </div>
+    <div class="stbody" id="stBody"></div>
   </div>
 
   <!-- ========== 結果 ========== -->
@@ -1000,6 +1093,10 @@ function renderMenu(){
     b.classList.toggle('on', b.dataset.m===S.mode);
   });
   renderResume();
+  const st = tally(ALL);
+  $('statPeek').textContent = st.tries
+    ? '正解済み '+st.done+'/'+st.n + (st.todo? '　要復習 '+st.todo : '')
+    : 'まだ記録がありません';
   /* 復習モードは出題順そのものに意味があるのでシャッフルは無効 */
   $('shufBtn').disabled = S.mode!=='normal';
   $('shufBtn').setAttribute('aria-pressed', (S.shuffle && S.mode==='normal')?'true':'false');
@@ -1063,7 +1160,146 @@ function show(which){
   $('menu').classList.toggle('hide', which!=='menu');
   $('play').classList.toggle('hide', which!=='play');
   $('done').classList.toggle('hide', which!=='done');
+  $('stats').classList.toggle('hide', which!=='stats');
 }
+
+/* =======================================================================
+   学習状況（ダッシュボード）
+
+   1問は必ず次の3つのどれか1つに入る（重複なし・合計＝問題数）:
+     要復習   … p===1（間違えたまま、まだ正解していない）
+     正解済み … p===0 かつ c>0
+     未着手   … p===0 かつ c===0
+   正答率は「解答回数のうち正解だった割合」= Σc / (Σc + Σw)。
+   ======================================================================= */
+let statSort = 'weak';        // weak: 苦手な順 / order: 出題順
+
+function tally(list){
+  let done=0, todo=0, fresh=0, c=0, w=0;
+  list.forEach(q=>{
+    const r = ST[q.id];
+    if(r && r.p===1) todo++;
+    else if(r && r.c>0) done++;
+    else fresh++;
+    if(r){ c += r.c||0; w += r.w||0; }
+  });
+  const tries = c + w;
+  return {n:list.length, done, todo, fresh, c, w, tries,
+          acc: tries ? c/tries : null,          // 正答率（未挑戦は null）
+          touched: list.length - fresh};
+}
+
+function pct(x){ return Math.round(x*100); }
+
+function renderStats(){
+  const all = tally(ALL);
+  $('stSub').textContent = all.tries ? '解答 '+all.tries+'回' : '';
+  const body = $('stBody');
+  body.innerHTML = '';
+
+  if(all.tries===0){
+    body.innerHTML = '<div class="stempty">まだ記録がありません。<br>問題を解くと、範囲ごとの得意・苦手がここに出ます。</div>';
+    return;
+  }
+
+  /* ヒーロー数値はこの画面に1つだけ。「全問中どれだけ正解済みか」 */
+  let html =
+    '<div class="hero"><div class="hv">'+pct(all.done/all.n)+'<i>%</i></div>'+
+    '<p class="hl">全'+all.n+'問のうち '+all.done+'問を正解済み</p></div>'+
+    '<div class="tiles">'+
+      '<div class="tile"><span class="tl">解いた問題</span><span class="tv">'+all.touched+'<small>/'+all.n+'</small></span></div>'+
+      '<div class="tile"><span class="tl">正答率</span><span class="tv">'+pct(all.acc)+'<small>%</small></span></div>'+
+      '<div class="tile"><span class="tl">要復習</span><span class="tv">'+all.todo+'<small>問</small></span></div>'+
+    '</div>';
+
+  /* 範囲ごとに集計 */
+  const rows = TOPICS.map(t=>({t, s:tally(t.qs)}));
+  const played = rows.filter(r=>r.s.tries>0);
+
+  /* いちばん得意・いちばん苦手（挑戦した範囲の中で） */
+  if(played.length>=2){
+    const byAcc = played.slice().sort((a,b)=>a.s.acc-b.s.acc || b.s.todo-a.s.todo);
+    const weak = byAcc[0], strong = byAcc[byAcc.length-1];
+    html += '<div class="verdict">'+
+      '<div class="vrow bad"><span class="vk">苦手</span><span class="vn">'+esc(weak.t.name)+'</span>'+
+        '<span class="vp">正答率 '+pct(weak.s.acc)+'%</span></div>'+
+      '<div class="vrow"><span class="vk">得意</span><span class="vn">'+esc(strong.t.name)+'</span>'+
+        '<span class="vp">正答率 '+pct(strong.s.acc)+'%</span></div>'+
+    '</div>';
+  }
+
+  html += '<div class="mrow"><p class="sec" style="margin:16px 0 0">範囲べつ</p>'+
+    '<div class="seg mini" id="sortSeg" style="width:150px">'+
+      '<button data-s="weak"'+(statSort==='weak'?' class="on"':'')+'>苦手な順</button>'+
+      '<button data-s="order"'+(statSort==='order'?' class="on"':'')+'>出題順</button>'+
+    '</div></div>'+
+    '<div class="legend"><span><i class="k1"></i>正解済み</span><span><i class="k2"></i>要復習</span>'+
+    '<span><i class="k3"></i>未着手</span></div>';
+
+  /* 苦手な順 = 正答率の低い順。未挑戦の範囲は最後にまとめる。 */
+  const sorted = statSort==='order' ? rows : rows.slice().sort((a,b)=>{
+    if(a.s.tries===0 && b.s.tries===0) return 0;
+    if(a.s.tries===0) return 1;
+    if(b.s.tries===0) return -1;
+    return a.s.acc-b.s.acc || b.s.todo-a.s.todo;
+  });
+
+  sorted.forEach(({t,s})=>{
+    const seg = (v,cls)=> v>0 ? '<i class="'+cls+'" style="flex:'+v+'"></i>' : '';
+    html += '<button class="srow" data-topic="'+t.id+'">'+
+      '<span class="sh1"><span class="sn">'+esc(t.name)+'</span>'+
+        (s.tries ? '<span class="sa">正答率 '+pct(s.acc)+'%</span>'
+                 : '<span class="sa none">まだ解いていない</span>')+'</span>'+
+      '<span class="sbar">'+seg(s.done,'b1')+seg(s.todo,'b2')+seg(s.fresh,'b3')+'</span>'+
+      '<span class="sf"><b>正解済み '+s.done+'</b>'+
+        (s.todo? '<span class="w">要復習 '+s.todo+'</span>' : '')+
+        (s.fresh? '<span>未着手 '+s.fresh+'</span>' : '')+
+        (s.w? '<span>間違い計 '+s.w+'回</span>' : '')+'</span>'+
+    '</button>';
+  });
+
+  /* よく間違える問題 */
+  const worst = ALL.filter(q=>wcount(q.id)>0)
+                   .sort((a,b)=>wcount(b.id)-wcount(a.id))
+                   .slice(0,6);
+  if(worst.length){
+    html += '<p class="sec" style="margin:22px 0 9px">よく間違える問題</p><div class="wq">';
+    worst.forEach(q=>{
+      html += '<button class="wqi" data-q="'+q.id+'">'+
+        '<span class="h"><span class="q mq">'+fmt(q.q)+'</span><span class="n">×'+wcount(q.id)+'</span></span>'+
+        '<span class="t">'+esc(q.tname)+(isPending(q.id)?' ／ まだ正解していません':'')+'</span>'+
+        '<span class="x hide">正解 '+fmt(q.a[0])+'<br>'+fmt(q.e)+'</span>'+
+      '</button>';
+    });
+    html += '</div>';
+  }
+
+  body.innerHTML = html;
+
+  $('sortSeg').addEventListener('click', e=>{
+    const b = e.target.closest('button');
+    if(!b) return;
+    statSort = b.dataset.s;
+    renderStats();
+  });
+  /* 範囲をタップ → その範囲を演習（要復習があれば復習モードで） */
+  body.querySelectorAll('.srow').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const t = el.dataset.topic;
+      const s = tally(TOPICS.find(x=>x.id===t).qs);
+      S.mode = s.todo>0 ? 'wrong' : 'normal';
+      startSession(t);
+    });
+  });
+  /* 問題をタップ → 解説の開閉 */
+  body.querySelectorAll('.wqi').forEach(el=>{
+    el.addEventListener('click', ()=>el.querySelector('.x').classList.toggle('hide'));
+  });
+}
+
+function openStats(){ renderStats(); show('stats'); }
+$('statBtn').addEventListener('click', openStats);
+$('stBack').addEventListener('click', ()=>{ renderMenu(); show('menu'); });
 
 /* =======================================================================
    セッション
