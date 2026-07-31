@@ -239,6 +239,11 @@
   .prev{margin:5px 12px 0; padding:6px 12px 7px; display:flex; align-items:baseline; gap:9px; flex:none}
   .prev .pl{font-size:10px; color:var(--t3); letter-spacing:.1em; flex:none}
   .prev .pv{font-size:17px; color:var(--t1); word-break:break-all}
+  .prev.todo .pl{color:var(--err)}
+  .prev .ar{display:inline-block; border:1px solid var(--err); border-radius:4px; padding:0 4px; margin-right:2px; font-size:11px}
+  /* 埋めるべき □ は入力欄でもプレビューでも目立たせる */
+  .bx{display:inline-block; min-width:.72em; padding:0 .06em; border:1px dashed var(--err);
+      border-radius:3px; color:var(--err); line-height:1.15; text-align:center}
   /* シートの中身も縦フレックスにして、はみ出す要素だけ縮む／スクロールできるようにする */
   #ansInput{display:flex; flex-direction:column; min-height:0}
   /* 書き方の早見表（キーボードの場所に出す） */
@@ -458,7 +463,7 @@
     <div class="ansq mq" id="ansQ"></div>
     <div class="field" id="field"></div>
     <!-- 打った文字が数式としてどう読まれるかをその場で見せる -->
-    <div class="prev hide" id="prev"><span class="pl">こう読まれます</span><span class="pv mq" id="prevBody"></span></div>
+    <div class="prev hide" id="prev"><span class="pl" id="prevLabel">こう読まれます</span><span class="pv mq" id="prevBody"></span></div>
     <div class="hintline">
       <span id="hintLine"></span>
       <button class="lnk" id="howBtn" aria-expanded="false">書き方 ▾</button>
@@ -470,8 +475,8 @@
       <span><b>2<sup>1/3</sup></b><span>2^(1/3)</span></span>
       <span><b><span class="rt">&radic;<span class="rb">2</span></span></b><span>√2</span></span>
       <span><b>4<span class="rt">&radic;<span class="rb">2</span></span></b><span>4√2</span></span>
-      <span><b>log<sub>2</sub>3</b><span>log_2(3)</span></span>
-      <span><b>log<sub>10</sub>5</b><span>log_10(5)</span></span>
+      <span><b>log<sub>2</sub>3</b><span>log → 2 → → → 3</span></span>
+      <span><b>log<sub>10</sub>5</b><span>log → 1 0 → → → 5</span></span>
       <span><b>3&frasl;2</b><span>3/2</span></span>
       <span><b>x &gt; 3</b><span>x&gt;3</span></span>
       <span class="hb">タップでキーボードに戻る</span>
@@ -601,8 +606,8 @@ const TOPICS = [
     {q:'2^{2x} - 6·2^x + 8 = 0', a:['1,2'], h:'2つ。カンマ区切りで', e:'t=2^x>0 とすると t^2-6t+8=0 → t=2,4 → x=1,2'},
     {q:'25^x - 6·5^x + 5 = 0', a:['0,1'], h:'2つ。カンマ区切りで', e:'t=5^x とすると t^2-6t+5=0 → t=1,5 → x=0,1'},
     {q:'9^x - 10·3^x + 9 = 0', a:['0,2'], h:'2つ。カンマ区切りで', e:'t=3^x とすると t^2-10t+9=0 → t=1,9 → x=0,2'},
-    {q:'2^x = 3 を満たす x を対数で表せ', a:['log_2 3','log_2(3)'], h:'log_2(3) の形で', e:'定義より x=log_2 3。きれいな値にならないときは対数のまま答える。'},
-    {q:'3^x = 5 を満たす x を対数で表せ', a:['log_3 5','log_3(5)'], h:'log_3(5) の形で', e:'定義より x=log_3 5'}
+    {q:'2^x = 3 を満たす x を対数で表せ', a:['log_2 3','log_2(3)'], h:'log キーを押して □ を埋める', e:'定義より x=log_2 3。きれいな値にならないときは対数のまま答える。'},
+    {q:'3^x = 5 を満たす x を対数で表せ', a:['log_3 5','log_3(5)'], h:'log キーを押して □ を埋める', e:'定義より x=log_3 5'}
   ]
 },
 {
@@ -668,7 +673,7 @@ const TOPICS = [
     {q:'log_9 8 × log_2 3', a:['3/2'], h:'分数で。例: 3/2', e:'log_9 8 = 3log2/(2log3)、これに log3/log2 をかけて 3/2'},
     {q:'log_9 4 を a で表せ', g:'log_3 2 = a', a:['a'], h:'例: a', e:'log_9 4 = log_3 4 / log_3 9 = 2log_3 2 / 2 = a'},
     {q:'log_5 2 を a で表せ', g:'log_2 5 = a', a:['1/a'], h:'例: 1/a', e:'log_5 2 = 1 / log_2 5 = 1/a'},
-    {q:'log_9 4 を、底が3の対数で表せ', a:['log_3 2','log_3(2)'], h:'log_3(2) の形で', e:'log_9 4 = log_3 4 / log_3 9 = 2log_3 2 / 2 = log_3 2'}
+    {q:'log_9 4 を、底が3の対数で表せ', a:['log_3 2','log_3(2)'], h:'log キーを押して □ を埋める', e:'log_9 4 = log_3 4 / log_3 9 = 2log_3 2 / 2 = log_3 2'}
   ]
 },
 {
@@ -1428,7 +1433,7 @@ const KEYS = [
   [{t:'4'},{t:'5'},{t:'6'},{t:'/'},{t:'^'},{f:'l',svg:'<path d="M14 6l-6 6 6 6"/>'}],
   [{t:'7'},{t:'8'},{t:'9'},{t:'√'},{t:','},{f:'r',svg:'<path d="M10 6l6 6-6 6"/>'}],
   [{t:'0'},{t:'.'},{t:'-'},{t:'+'},{t:'×'},{t:'='}],
-  [{t:'x'},{t:'y'},{t:'a'},{t:'b'},{t:'n'},{t:'log_',cls:'sm'}],
+  [{t:'x'},{t:'y'},{t:'a'},{t:'b'},{t:'n'},{t:'log',cls:'sm'}],
   [{t:'<'},{t:'>'},{t:'≦'},{t:'≧'},{f:'go'}]
 ];
 function buildKB(){
@@ -1469,17 +1474,37 @@ function resetInput(){
   $('field').classList.remove('err');
   paintField();
 }
+/* log は「底」と「真数」の2か所を埋める形なので、
+   log_2(3) という綴りを覚えてもらう代わりに □ を置いて埋めてもらう。 */
+const BOX = '□';
+const LOG_TPL = 'log_'+BOX+'('+BOX+')';
+
 function insert(t){
-  IV = IV.slice(0,IC) + t + IV.slice(IC);
-  IC += t.length;
+  if(t==='log'){                       // log キーはひな形ごと入れて、最初の □ に移る
+    IV = IV.slice(0,IC) + LOG_TPL + IV.slice(IC);
+    IC = IV.indexOf(BOX, IC);
+  }else if(IV[IC]===BOX){              // □ の上で打った文字は □ と置きかわる
+    IV = IV.slice(0,IC) + t + IV.slice(IC+1);
+    IC += t.length;
+  }else{
+    IV = IV.slice(0,IC) + t + IV.slice(IC);
+    IC += t.length;
+  }
   $('field').classList.remove('err');
   paintField();
   buzz(4);
 }
+function nextBox(){                    // カーソルより後ろの □ の位置（なければ -1）
+  return IV.indexOf(BOX, IC+1)>=0 ? IV.indexOf(BOX, IC+1) : IV.indexOf(BOX);
+}
 function doFn(f){
   if(f==='bs'){ if(IC>0){ IV = IV.slice(0,IC-1)+IV.slice(IC); IC--; } }
   else if(f==='l'){ if(IC>0) IC--; }
-  else if(f==='r'){ if(IC<IV.length) IC++; }
+  else if(f==='r'){
+    const nb = nextBox();
+    if(nb>=0 && nb!==IC) IC = nb;      // □ が残っていれば一気にそこへ飛ぶ
+    else if(IC<IV.length) IC++;
+  }
   else if(f==='go'){ submit(); return; }
   paintField();
 }
@@ -1495,10 +1520,14 @@ function paintField(){
     syncAnsBtn();
     return;
   }else{
-    f.innerHTML = esc(IV.slice(0,IC)) + '<span class="caret"></span>' + esc(IV.slice(IC));
+    f.innerHTML = boxify(esc(IV.slice(0,IC))) + '<span class="caret"></span>' + boxify(esc(IV.slice(IC)));
   }
   syncAnsBtn();
   paintPreview();
+}
+/* □ を「埋めるところ」として見せる */
+function boxify(html){
+  return html.split(BOX).join('<span class="bx">'+BOX+'</span>');
 }
 
 /* 打った文字列を数式の形に直して見せる。
@@ -1509,16 +1538,24 @@ function preview(s){
   t = t.replace(/√\(([^()]*)\)/g, '√{$1}');       // √(10)
   t = t.replace(/√(\d+(?:\/\d+)?|[a-z])/g, '√{$1}');  // √2 にも横線を引く
   /* log_2(3) の括弧は入力の都合なので、表示では外して log₂3 にする */
-  t = t.replace(/log_(\d+(?:\/\d+)?|[a-z])\(([^()]*)\)/g, 'log_{$1}$2');
-  t = t.replace(/log_(\d+(?:\/\d+)?|[a-z])/g, 'log_{$1}');
-  return fmt(t);
+  t = t.replace(/log_([\d□]+(?:\/\d+)?|[a-z])\(([^()]*)\)/g, 'log_{$1}$2');
+  t = t.replace(/log_([\d□]+(?:\/\d+)?|[a-z])/g, 'log_{$1}');
+  return boxify(fmt(t));
 }
 function paintPreview(){
   const box = $('prev');
   /* 数字だけ・記号なしの解答は見せても意味がないので出さない */
   const worth = IV!=='' && !pickMode && /[\^√]|log_/.test(IV);
   box.classList.toggle('hide', !worth);
-  if(worth) $('prevBody').innerHTML = preview(IV);
+  if(worth){
+    $('prevBody').innerHTML = preview(IV);
+    /* □ が残っている間は、次に何をすればいいかを出す */
+    const left = IV.indexOf(BOX)>=0;
+    $('prevLabel').innerHTML = left
+      ? (IV[IC]===BOX ? '□ に入力' : '<span class="ar">→</span> で次の □ へ')
+      : 'こう読まれます';
+    box.classList.toggle('todo', left);
+  }
 }
 /* 書きかけの解答は閉じても消えない。それが分かるようにボタンに出す */
 function syncAnsBtn(){
@@ -1634,9 +1671,8 @@ function openAnswer(){
 function submit(){
   const q = curQ();
   if(!q) return;
-  if(nz(IV)===''){
-    const f = $('field');
-    f.classList.add('err');
+  if(nz(IV)==='' || IV.indexOf(BOX)>=0){   /* □ が残っている＝まだ書きかけ */
+    $('field').classList.add('err');
     return;
   }
   const ok = judge(IV, q.a);
