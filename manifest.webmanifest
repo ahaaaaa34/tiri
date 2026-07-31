@@ -1,0 +1,23 @@
+{
+  "name": "指数・対数 ｜ 数学II",
+  "short_name": "指数・対数",
+  "description": "指数関数・対数関数の演習アプリ。手書きの計算スペースと専用キーボードで、スマホだけで解いて記録できます。",
+  "lang": "ja",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "id": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FAFAF8",
+  "theme_color": "#FAFAF8",
+  "categories": ["education"],
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "学習状況", "short_name": "学習状況", "url": "./?view=stats" }
+  ]
+}

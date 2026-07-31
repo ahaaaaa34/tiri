@@ -7,7 +7,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#FAFAF8">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23FAFAF8'/%3E%3Ctext x='32' y='45' font-family='Times New Roman,serif' font-size='34' text-anchor='middle' fill='%23111'%3Elog%3C/text%3E%3C/svg%3E">
+<meta name="description" content="指数関数・対数関数の演習アプリ。手書きの計算スペースと専用キーボードで、スマホだけで解いて記録できます。">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" href="./icon-192.png" type="image/png">
 <title>指数・対数 ｜ 数学II</title>
 <style>
   :root{
@@ -2143,6 +2146,16 @@ if(!(navigator.maxTouchPoints > 1)){
 }
 renderMenu();
 show('menu');
+
+/* ホーム画面のショートカットから学習状況を直接開けるように */
+if(location.search.indexOf('view=stats')>=0) openStats();
+
+/* オフラインでも開けるようにする（file:// では登録できないので黙って見送る） */
+if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>
