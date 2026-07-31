@@ -370,6 +370,7 @@
   .rmark svg{width:22px; height:22px; stroke-width:1.8; fill:none; stroke-linecap:round; stroke-linejoin:round}
   .rmark.ok{color:var(--t1)} .rmark.ok svg{stroke:var(--t1)}
   .rmark.ng{color:var(--err)} .rmark.ng svg{stroke:var(--err)}
+  .rmark.sk{color:var(--t2)} .rmark.sk svg{stroke:var(--t2); fill:var(--t2)}
   .ryour{font-size:12px; color:var(--t3); margin-top:8px}
   .ryour b{color:var(--err); font-weight:400; font-family:"Times New Roman",serif; font-size:14px}
   .rans{
@@ -620,7 +621,7 @@
     </button>
     <button class="sitem" data-act="home">
       <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg>
-      <span class="sw">メニューに戻る</span>
+      <span class="sw">メニューに戻る<span class="sd">続きから再開できます</span></span>
     </button>
   </div>
 </div>
@@ -1330,14 +1331,34 @@ function curQ(){ return S.queue[S.idx]; }
 
 /* ---- 中断しても続きから再開できるようにセッションを保存する ---- */
 const RKEY = 'explog_session_v1';
-function saveSession(){
+/* 途中で抜けても失わないよう、1問進むたびに保存する。
+   書きかけの解答と、いま書いている計算も一緒に持たせる。 */
+const PAD_SAVE_MAX = 300000;   // 手書きの保存はこの文字数まで（進み具合は必ず残す）
+function packStrokes(){
   try{
-    localStorage.setItem(RKEY, JSON.stringify({
-      topic:S.topic, mode:S.mode, idx:S.idx, ok:S.okCount,
-      ids:S.queue.map(q=>q.id), wrong:S.wrongList, scored:Object.keys(S.scored),
-      t:Date.now()
-    }));
-  }catch(e){}
+    const r = Math.round;
+    const a = strokes.map(s=>({t:s.tool==='era'?1:0, w:s.w,
+      p:s.pts.map(pt=>[r(pt.x*10)/10, r(pt.y*10)/10])}));
+    return JSON.stringify(a).length > PAD_SAVE_MAX ? [] : a;
+  }catch(e){ return []; }
+}
+function unpackStrokes(a){
+  if(!Array.isArray(a)) return [];
+  return a.map(s=>({tool:s.t?'era':'pen', w:s.w,
+    pts:(s.p||[]).map(q=>({x:q[0], y:q[1]}))}));
+}
+function saveSession(){
+  const base = {
+    topic:S.topic, mode:S.mode, idx:S.idx, ok:S.okCount,
+    ids:S.queue.map(q=>q.id), wrong:S.wrongList, scored:Object.keys(S.scored),
+    draft:IV, t:Date.now()
+  };
+  try{
+    localStorage.setItem(RKEY, JSON.stringify(Object.assign({pad:packStrokes()}, base)));
+  }catch(e){
+    /* 手書きが大きすぎて入らないときは、それだけ諦めて進み具合は必ず残す */
+    try{ localStorage.setItem(RKEY, JSON.stringify(base)); }catch(e2){}
+  }
 }
 function clearSession(){ try{ localStorage.removeItem(RKEY); }catch(e){} }
 function readSession(){
@@ -1345,7 +1366,12 @@ function readSession(){
     const r = JSON.parse(localStorage.getItem(RKEY)||'null');
     if(!r || !r.ids || !r.ids.length) return null;
     if(Date.now()-r.t > 1000*60*60*24*14) return null;      // 2週間で失効
-    if(r.idx<=0 || r.idx>=r.ids.length) return null;         // 未着手・完了済みは復帰しない
+    if(r.idx<0 || r.idx>=r.ids.length) return null;          // 完了済みは復帰しない
+    /* 何か手をつけていれば復帰させる。1問目でも、書いた計算や
+       書きかけの解答があるなら失わせない。 */
+    const started = r.idx>0 || (r.scored&&r.scored.length) ||
+                    (r.draft&&r.draft.length) || (r.pad&&r.pad.length);
+    if(!started) return null;
     if(r.ids.some(id=>!BYID[id])) return null;
     return r;
   }catch(e){ return null; }
@@ -1361,7 +1387,14 @@ function resumeSession(r){
   (r.scored||[]).forEach(id=>{ S.scored[id]=true; });
   resetPadStore();
   show('play');
-  requestAnimationFrame(()=>{ setupPad(); renderQ(); });
+  requestAnimationFrame(()=>{
+    setupPad();
+    renderQ();
+    /* 中断したときの解答と計算を戻す */
+    const back = unpackStrokes(r.pad);
+    if(back.length){ strokes.push.apply(strokes, back); bake(); }
+    if(r.draft){ IV = r.draft; IC = IV.length; paintField(); }
+  });
 }
 
 function renderQ(){
@@ -1471,11 +1504,21 @@ function finish(){
 }
 
 function goHome(){
-  clearSession();          // 自分でやめた場合は「続きから」を残さない
+  /* 抜けるときも必ず保存する。あとで「続きから」で同じ場所に戻れる。 */
+  if(!$('play').classList.contains('hide') && S.queue.length) saveSession();
   closeSheets();
   renderMenu();
   show('menu');
 }
+
+/* アプリを閉じた・切り替えたときも取りこぼさない */
+function saveIfPlaying(){
+  if(!$('play').classList.contains('hide') && S.queue.length) saveSession();
+}
+window.addEventListener('pagehide', saveIfPlaying);
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='hidden') saveIfPlaying();
+});
 
 /* =======================================================================
    計算スペース（キャンバス）
@@ -1939,12 +1982,16 @@ function showResult(q, ok, given){
   const r = $('ansRes');
   r.classList.remove('hide');
 
-  const mark = ok
+  /* ok は true=正解 / false=不正解 / null=スキップ（記録しないが答えは見せる） */
+  const mark = ok===null
+    ? '<div class="rmark sk"><svg viewBox="0 0 24 24"><path d="M6 5l9 7-9 7z"/><path d="M18 5v14"/></svg>スキップ</div>'
+    : ok
     ? '<div class="rmark ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg>正解</div>'
     : '<div class="rmark ng"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>不正解</div>';
 
-  const your = (!ok && given!=null && given!=='')
-    ? '<div class="ryour">あなたの解答　<b>'+esc(given)+'</b></div>' : '';
+  const your = (ok===false && given!=null && given!=='')
+    ? '<div class="ryour">あなたの解答　<b>'+esc(given)+'</b></div>'
+    : (ok===null ? '<div class="ryour">記録には残していません</div>' : '');
 
   const alts = shownAlts(q.a);
   const alt = alts.length
@@ -1966,7 +2013,7 @@ function showResult(q, ok, given){
     b.addEventListener('click', fn);
     bt.appendChild(b);
   };
-  if(!ok){
+  if(ok===false){
     add('もう一度解く', true, ()=>{
       S.locked = false;
       closeSheets();
@@ -1979,7 +2026,7 @@ function showResult(q, ok, given){
     closeSheets();
     setTimeout(next, 180);
   });
-  buzz(ok?8:[14,60,14]);
+  if(ok!==null) buzz(ok?8:[14,60,14]);
 }
 
 /* =======================================================================
@@ -2007,9 +2054,8 @@ $('penSeg').addEventListener('click', e=>{
   setTool('pen');
 });
 
-$('backBtn').addEventListener('click', ()=>{
-  confirmAsk('学習を終了しますか？', '進み具合は保存されません。間違いの記録は残ります。', '終了してメニューへ', goHome);
-});
+/* 抜けても何も失わないので、確認を挟まずそのまま戻る */
+$('backBtn').addEventListener('click', goHome);
 
 $('menuSheet').addEventListener('click', e=>{
   const b = e.target.closest('.sitem');
@@ -2020,7 +2066,13 @@ $('menuSheet').addEventListener('click', e=>{
     if(act==='prev'){ prev(); }
     else if(act==='retry'){ clearPad(); resetInput(); }
     else if(act==='clear'){ clearPad(); }
-    else if(act==='skip'){ next(); }
+    else if(act==='skip'){
+      /* スキップでも答えと解説は見せる。記録だけ残さない。 */
+      const q = curQ();
+      if(!q){ next(); return; }
+      openSheet($('ansSheet'));
+      showResult(q, null, IV);
+    }
     else if(act==='reveal'){
       const q = curQ();
       if(!q) return;
@@ -2031,9 +2083,7 @@ $('menuSheet').addEventListener('click', e=>{
     else if(act==='restart'){
       confirmAsk('最初からやり直しますか？','この範囲を1問目から出題し直します。','やり直す',()=>startSession(S.topic));
     }
-    else if(act==='home'){
-      confirmAsk('メニューに戻りますか？','現在の進み具合は保存されません。','メニューへ戻る', goHome);
-    }
+    else if(act==='home'){ goHome(); }
   }, 200);
 });
 
