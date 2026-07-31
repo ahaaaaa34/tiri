@@ -231,7 +231,26 @@
   .field .ph{color:var(--t3); font-size:14px; font-family:inherit}
   .caret{display:inline-block; width:1.5px; height:1.05em; background:var(--t1); vertical-align:-.18em; margin:0 .5px; animation:bl 1.05s steps(1) infinite}
   @keyframes bl{50%{opacity:0}}
-  .hintline{font-size:11px; color:var(--t3); padding:2px 16px 8px; flex:none; letter-spacing:.02em}
+  .hintline{font-size:11px; color:var(--t3); padding:2px 16px 8px; flex:none; letter-spacing:.02em;
+            display:flex; align-items:baseline; gap:10px}
+  .hintline #hintLine{flex:1; min-width:0}
+  .hintline .lnk{padding:2px 0; flex:none; font-size:11px}
+  /* 入力の読み取り結果 */
+  .prev{margin:5px 12px 0; padding:6px 12px 7px; display:flex; align-items:baseline; gap:9px; flex:none}
+  .prev .pl{font-size:10px; color:var(--t3); letter-spacing:.1em; flex:none}
+  .prev .pv{font-size:17px; color:var(--t1); word-break:break-all}
+  /* シートの中身も縦フレックスにして、はみ出す要素だけ縮む／スクロールできるようにする */
+  #ansInput{display:flex; flex-direction:column; min-height:0}
+  /* 書き方の早見表（キーボードの場所に出す） */
+  .how{margin:2px 12px 10px; padding:12px 14px; background:var(--bg2); border:0; border-radius:12px;
+       flex:none; text-align:left; display:grid; grid-template-columns:repeat(2,1fr); gap:9px 14px;
+       overflow-y:auto; min-height:0}
+  .how > span{display:flex; align-items:baseline; gap:9px; font-size:12px; min-width:0}
+  .how b{font-family:"Times New Roman",serif; font-size:15px; font-weight:400; flex:none; min-width:48px}
+  .how > span > span{color:var(--t3); font-size:11px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+            overflow:hidden; text-overflow:ellipsis}
+  .how .hb{grid-column:1/-1; justify-content:center; color:var(--t3); font-size:10.5px;
+           letter-spacing:.08em; padding-top:3px; border-top:1px solid var(--bd); margin-top:1px}
 
   .kb{padding:2px 6px 8px; flex:none; display:grid; grid-template-columns:repeat(6,1fr); gap:5px}
   .k{
@@ -303,11 +322,22 @@
     .field{min-height:44px; padding:10px 14px; font-size:18px}
     .hintline{padding-bottom:5px}
     .k{height:38px; font-size:16px}
+    .prev{margin-top:2px; padding:3px 12px 4px}
+    .prev .pv{font-size:15px}
+    .how{margin:0 12px 8px; padding:9px 12px; gap:6px 12px}
+    .how b{font-size:14px; min-width:44px}
     .ch{min-height:40px; padding:8px 14px; font-size:14px}
     .ch::before{width:15px; height:15px}
     .chbox{gap:5px; padding-bottom:8px}
     .res{padding:10px 16px 14px}
     .rq{padding-bottom:8px; margin-bottom:9px}
+  }
+  /* 極端に低い画面（小型端末の横向き）は、あると入り切らないものを削る */
+  @media (max-height:365px){
+    .prev{display:none !important}
+    .how{max-height:132px; gap:5px 12px; padding:8px 12px}
+    .how .hb{display:none}
+    .ansq{font-size:12px}
   }
   @media (max-height:520px) and (min-width:560px){
     .kb{grid-template-columns:repeat(12,1fr)}
@@ -427,8 +457,25 @@
     </div>
     <div class="ansq mq" id="ansQ"></div>
     <div class="field" id="field"></div>
-    <div class="hintline" id="hintLine"></div>
+    <!-- 打った文字が数式としてどう読まれるかをその場で見せる -->
+    <div class="prev hide" id="prev"><span class="pl">こう読まれます</span><span class="pv mq" id="prevBody"></span></div>
+    <div class="hintline">
+      <span id="hintLine"></span>
+      <button class="lnk" id="howBtn" aria-expanded="false">書き方 ▾</button>
+    </div>
     <div class="kb" id="kb"></div>
+    <!-- 早見表はキーボードと入れ替えて出す（積み上げると決定キーが画面外に出るため） -->
+    <button class="how hide" id="how">
+      <span><b>2<sup>3</sup></b><span>2^3</span></span>
+      <span><b>2<sup>1/3</sup></b><span>2^(1/3)</span></span>
+      <span><b><span class="rt">&radic;<span class="rb">2</span></span></b><span>√2</span></span>
+      <span><b>4<span class="rt">&radic;<span class="rb">2</span></span></b><span>4√2</span></span>
+      <span><b>log<sub>2</sub>3</b><span>log_2(3)</span></span>
+      <span><b>log<sub>10</sub>5</b><span>log_10(5)</span></span>
+      <span><b>3&frasl;2</b><span>3/2</span></span>
+      <span><b>x &gt; 3</b><span>x&gt;3</span></span>
+      <span class="hb">タップでキーボードに戻る</span>
+    </button>
     <div class="chbox hide" id="choices"></div>
   </div>
   <div class="res hide" id="ansRes"></div>
@@ -1377,9 +1424,9 @@ function buzz(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){}
    ======================================================================= */
 /* 実際に解答へ出てくる文字だけを並べる。打っても正解になり得ない記号は置かない。 */
 const KEYS = [
-  [{t:'7'},{t:'8'},{t:'9'},{t:'('},{t:')'},{f:'bs',svg:'<path d="M9 5h11v14H9L3 12z"/><path d="M14.5 9.5l-4 5M10.5 9.5l4 5"/>'}],
+  [{t:'1'},{t:'2'},{t:'3'},{t:'('},{t:')'},{f:'bs',svg:'<path d="M9 5h11v14H9L3 12z"/><path d="M14.5 9.5l-4 5M10.5 9.5l4 5"/>'}],
   [{t:'4'},{t:'5'},{t:'6'},{t:'/'},{t:'^'},{f:'l',svg:'<path d="M14 6l-6 6 6 6"/>'}],
-  [{t:'1'},{t:'2'},{t:'3'},{t:'√'},{t:','},{f:'r',svg:'<path d="M10 6l6 6-6 6"/>'}],
+  [{t:'7'},{t:'8'},{t:'9'},{t:'√'},{t:','},{f:'r',svg:'<path d="M10 6l6 6-6 6"/>'}],
   [{t:'0'},{t:'.'},{t:'-'},{t:'+'},{t:'×'},{t:'='}],
   [{t:'x'},{t:'y'},{t:'a'},{t:'b'},{t:'n'},{t:'log_',cls:'sm'}],
   [{t:'<'},{t:'>'},{t:'≦'},{t:'≧'},{f:'go'}]
@@ -1451,6 +1498,27 @@ function paintField(){
     f.innerHTML = esc(IV.slice(0,IC)) + '<span class="caret"></span>' + esc(IV.slice(IC));
   }
   syncAnsBtn();
+  paintPreview();
+}
+
+/* 打った文字列を数式の形に直して見せる。
+   ^ や √ や log_ が思ったとおりに効いているか、打ちながら確認できるように。 */
+function preview(s){
+  let t = String(s);
+  t = t.replace(/\^\(([^()]*)\)/g, '^{$1}');      // 2^(1/3) → 上付き 1/3
+  t = t.replace(/√\(([^()]*)\)/g, '√{$1}');       // √(10)
+  t = t.replace(/√(\d+(?:\/\d+)?|[a-z])/g, '√{$1}');  // √2 にも横線を引く
+  /* log_2(3) の括弧は入力の都合なので、表示では外して log₂3 にする */
+  t = t.replace(/log_(\d+(?:\/\d+)?|[a-z])\(([^()]*)\)/g, 'log_{$1}$2');
+  t = t.replace(/log_(\d+(?:\/\d+)?|[a-z])/g, 'log_{$1}');
+  return fmt(t);
+}
+function paintPreview(){
+  const box = $('prev');
+  /* 数字だけ・記号なしの解答は見せても意味がないので出さない */
+  const worth = IV!=='' && !pickMode && /[\^√]|log_/.test(IV);
+  box.classList.toggle('hide', !worth);
+  if(worth) $('prevBody').innerHTML = preview(IV);
 }
 /* 書きかけの解答は閉じても消えない。それが分かるようにボタンに出す */
 function syncAnsBtn(){
@@ -1551,7 +1619,8 @@ function openAnswer(){
   $('ansQ').innerHTML = fmt(q.q) + (q.g ? '<br><span style="color:var(--t3)">ただし '+fmt(q.g)+'</span>' : '');
   pickMode = !!q.c;
   $('hintLine').textContent = pickMode ? '' : (q.h || '');   /* 選択式に書式のヒントは要らない */
-  $('kb').classList.toggle('hide', pickMode);
+  $('howBtn').classList.toggle('hide', pickMode);            /* 書き方の早見表も記述式だけ */
+  showHow(false);                 /* キーボードの表示/非表示もここで決まる */
   $('choices').classList.toggle('hide', !pickMode);
   $('field').classList.toggle('jp', pickMode);
   if(pickMode) buildChoices(q);
@@ -1647,6 +1716,16 @@ function showResult(q, ok, given){
 $('ansBtn').addEventListener('click', openAnswer);
 $('menuBtn').addEventListener('click', ()=>{ syncPrev(); openSheet($('menuSheet')); });
 $('peekBtn').addEventListener('click', closeSheets);   // 入力は残したままシートだけ下ろす
+
+/* 早見表とキーボードは入れ替えで出す */
+function showHow(on){
+  $('how').classList.toggle('hide', !on);
+  $('kb').classList.toggle('hide', on || pickMode);
+  $('howBtn').textContent = on ? '書き方 ▴' : '書き方 ▾';
+  $('howBtn').setAttribute('aria-expanded', on?'true':'false');
+}
+$('howBtn').addEventListener('click', ()=>showHow($('how').classList.contains('hide')));
+$('how').addEventListener('click', ()=>showHow(false));
 
 $('penSeg').addEventListener('click', e=>{
   const b = e.target.closest('button');
