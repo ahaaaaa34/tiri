@@ -903,6 +903,284 @@ const BYID = {};
 ALL.forEach(q=>BYID[q.id]=q);
 
 /* =======================================================================
+   問題の自動生成
+
+   同じ種（seed）からは必ず同じ問題ができるようにしてある。
+   そのため ID を "topic#seed" と決めるだけでよく、生成した問題を
+   保存しなくても、間違いの記録・復習モード・中断からの再開が
+   固定問題とまったく同じように働く。
+   答えは文章から作るのではなく、必ずパラメータから計算して出す。
+   ======================================================================= */
+
+/* 種から決まる乱数（mulberry32）。同じ種なら同じ並びを返す。 */
+function rng(seed){
+  let t = seed >>> 0;
+  return function(){
+    t = (t + 0x6D2B79F5) >>> 0;
+    let x = Math.imul(t ^ (t >>> 15), 1 | t);
+    x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const ri  = (r,a,b)=> a + Math.floor(r()*(b-a+1));      // a以上b以下の整数
+const rp  = (r,arr)=> arr[Math.floor(r()*arr.length)];  // 配列から1つ
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ const t=a%b; a=b; b=t; } return a||1; }
+function ipow(a,n){ let v=1; for(let i=0;i<n;i++) v*=a; return v; }
+/* 既約分数の文字列（分母1なら整数） */
+function fr(n,d){
+  if(d<0){ n=-n; d=-d; }
+  const g=gcd(n,d); n/=g; d/=g;
+  return d===1 ? String(n) : n+'/'+d;
+}
+/* a^n を「見せ方」つきで。指数1なら底だけ、0なら1 */
+function pw(a,n){ return n===0 ? '1' : n===1 ? String(a) : a+'^'+(n<0?'{'+n+'}':n); }
+
+/* ---- 各範囲の生成器。返り値は固定問題と同じ形 ----
+   chk はテスト用に元のパラメータを残したもの（表示には使わない）。 */
+const GEN = {
+
+law: [
+  r=>{ const a=rp(r,[2,3,5,7,10]), m=ri(r,2,5), n=ri(r,2,5);
+    return {q:pw(a,m)+' × '+pw(a,n), a:[pw(a,m+n), String(ipow(a,m+n))].filter((v,i,s)=>s.indexOf(v)===i),
+      h:'例: '+pw(a,m+n)+' または '+ipow(a,m+n),
+      e:'底が同じ積は指数を足す。'+a+'^{'+m+'+'+n+'}='+pw(a,m+n)+'='+ipow(a,m+n),
+      chk:{k:'mul',a:a,m:m,n:n}}; },
+  r=>{ const a=rp(r,[2,3,5]), m=ri(r,2,4), n=ri(r,2,3);
+    return {q:'('+pw(a,m)+')^'+n, a:[pw(a,m*n), String(ipow(a,m*n))],
+      h:'例: '+pw(a,m*n), e:'(a^m)^n = a^{mn} より '+a+'^{'+m+'×'+n+'}='+pw(a,m*n)+'='+ipow(a,m*n),
+      chk:{k:'pow',a:a,m:m,n:n}}; },
+  r=>{ const a=rp(r,[2,3,5,7]), n=ri(r,2,4), m=n+ri(r,1,4);
+    return {q:pw(a,m)+' ÷ '+pw(a,n), a:[pw(a,m-n), String(ipow(a,m-n))],
+      h:'例: '+pw(a,m-n), e:'底が同じ商は指数を引く。'+a+'^{'+m+'-'+n+'}='+pw(a,m-n)+'='+ipow(a,m-n),
+      chk:{k:'div',a:a,m:m,n:n}}; },
+  r=>{ const a=rp(r,[2,3,4,5,10]), n=ri(r,2,4);
+    return {q:a+'^{-'+n+'}', a:[fr(1,ipow(a,n))], h:'分数で。例: 1/'+ipow(a,n),
+      e:'a^{-n}=1/a^n より 1/'+pw(a,n)+'='+fr(1,ipow(a,n)),
+      chk:{k:'neg',a:a,n:n}}; },
+  r=>{ const a=rp(r,[2,3,5]), n=ri(r,2,4);
+    return {q:'(1/'+a+')^{-'+n+'}', a:[String(ipow(a,n)), pw(a,n)], h:'例: '+ipow(a,n),
+      e:'(1/a)^{-n}=a^n なので '+ipow(a,n),
+      chk:{k:'invneg',a:a,n:n}}; }
+],
+
+root: [
+  r=>{ const b=rp(r,[2,3,5]), n=ri(r,2,4);
+    return {q:'√['+n+']{'+ipow(b,n)+'}', a:[String(b)], h:'例: '+b,
+      e:b+'^'+n+'='+ipow(b,n)+' なので '+n+'乗根は '+b, chk:{k:'nrt',b:b,n:n}}; },
+  r=>{ const b=rp(r,[2,3,5]), n=ri(r,2,3), p=ri(r,1,3), A=ipow(b,n);
+    return {q:A+'^{'+p+'/'+n+'}', a:[String(ipow(b,p))], h:'例: '+ipow(b,p),
+      e:A+'='+pw(b,n)+' なので ('+b+'^'+n+')^{'+p+'/'+n+'}='+pw(b,p)+'='+ipow(b,p),
+      chk:{k:'rat',b:b,n:n,p:p}}; },
+  r=>{ const b=rp(r,[2,3]), n=ri(r,2,3), p=ri(r,1,3), A=ipow(b,n);
+    return {q:A+'^{-'+p+'/'+n+'}', a:[fr(1,ipow(b,p))], h:'分数で。例: 1/'+ipow(b,p),
+      e:A+'='+pw(b,n)+' なので '+b+'^{-'+p+'}='+fr(1,ipow(b,p)),
+      chk:{k:'ratneg',b:b,n:n,p:p}}; },
+  r=>{ const b=rp(r,[2,3,5]), n=ri(r,2,3), k=n*ri(r,1,2);
+    return {q:'(√['+n+']{'+b+'})^'+k, a:[String(ipow(b,k/n))], h:'例: '+ipow(b,k/n),
+      e:'('+b+'^{1/'+n+'})^'+k+'='+pw(b,k/n)+'='+ipow(b,k/n), chk:{k:'rtpow',b:b,n:n,kk:k}}; }
+],
+
+eeq: [
+  r=>{ const a=rp(r,[2,3,5]), k=ri(r,2,5);
+    return {q:pw(a,'x')+' = '+ipow(a,k), a:[String(k)], h:'x の値。例: '+k,
+      e:ipow(a,k)+'='+pw(a,k)+' なので x='+k, chk:{k:'simple',a:a,k:k}}; },
+  r=>{ const a=rp(r,[2,3,5]), k=ri(r,2,4);
+    return {q:pw(a,'x')+' = 1/'+ipow(a,k), a:['-'+k], h:'例: -'+k,
+      e:'1/'+ipow(a,k)+'='+a+'^{-'+k+'} なので x=-'+k, chk:{k:'negk',a:a,k:k}}; },
+  r=>{ const a=rp(r,[2,3]), m=ri(r,2,3), k=ri(r,2,5);
+    return {q:'('+pw(a,m)+')^x = '+ipow(a,k), a:[fr(k,m)], h:'分数のことも。例: '+fr(k,m),
+      e:a+'^{'+m+'x}='+pw(a,k)+' より '+m+'x='+k+' → x='+fr(k,m), chk:{k:'basepow',a:a,m:m,kk:k}}; },
+  r=>{ const a=rp(r,[2,3,5]), c=ri(r,1,3), k=ri(r,2,5);
+    return {q:a+'^{x+'+c+'} = '+ipow(a,k), a:[String(k-c)], h:'例: '+(k-c),
+      e:ipow(a,k)+'='+pw(a,k)+' → x+'+c+'='+k+' → x='+(k-c), chk:{k:'shift',a:a,c:c,kk:k}}; },
+  r=>{ const a=rp(r,[2,3,5]), u=ri(r,0,2), v=u+ri(r,1,2), s=ipow(a,u)+ipow(a,v), p=ipow(a,u)*ipow(a,v);
+    return {q:a+'^{2x} - '+s+'·'+pw(a,'x')+' + '+p+' = 0', a:[u+','+v], h:'2つ。カンマ区切りで',
+      e:'t='+pw(a,'x')+'>0 とすると t^2-'+s+'t+'+p+'=0 → t='+ipow(a,u)+','+ipow(a,v)+' → x='+u+','+v,
+      chk:{k:'quad',a:a,u:u,v:v}}; }
+],
+
+eineq: [
+  r=>{ const a=rp(r,[2,3,5]), k=ri(r,2,4), op=rp(r,['>','<','≧','≦']);
+    const flip={'>':'>','<':'<','≧':'≧','≦':'≦'};
+    return {q:pw(a,'x')+' '+op+' '+ipow(a,k), a:['x'+flip[op]+k], h:'例: x'+op+k,
+      e:'底 '+a+'>1 なので不等号の向きはそのまま。x'+op+k, chk:{k:'inc',a:a,k:k,op:op}}; },
+  r=>{ const a=rp(r,[2,3]), k=ri(r,2,4), op=rp(r,['>','<','≧','≦']);
+    const rev={'>':'<','<':'>','≧':'≦','≦':'≧'};
+    return {q:'(1/'+a+')^x '+op+' '+ipow(a,k), a:['x'+rev[op]+'-'+k], h:'例: x'+rev[op]+'-'+k,
+      e:'底 1/'+a+' は 0と1の間なので向きが逆転。'+ipow(a,k)+'=(1/'+a+')^{-'+k+'} → x'+rev[op]+'-'+k,
+      chk:{k:'dec',a:a,k:k,op:op}}; }
+],
+
+ldef: [
+  r=>{ const a=rp(r,[2,3,5,7,10]), k=ri(r,2,5);
+    return {q:'log_'+a+' '+ipow(a,k), a:[String(k)], h:'例: '+k,
+      e:pw(a,k)+'='+ipow(a,k)+' なので '+k, chk:{k:'plain',a:a,k:k}}; },
+  r=>{ const a=rp(r,[2,3,5]), k=ri(r,2,4);
+    return {q:'log_'+a+' (1/'+ipow(a,k)+')', a:['-'+k], h:'例: -'+k,
+      e:a+'^{-'+k+'}=1/'+ipow(a,k)+' なので -'+k, chk:{k:'inv',a:a,k:k}}; },
+  r=>{ const b=rp(r,[2,3,5]), m=ri(r,2,3), k=ri(r,1,5);
+    return {q:'log_'+ipow(b,m)+' '+ipow(b,k), a:[fr(k,m)], h:'分数のことも。例: '+fr(k,m),
+      e:ipow(b,m)+'^x='+ipow(b,k)+' → '+b+'^{'+m+'x}='+pw(b,k)+' → x='+fr(k,m),
+      chk:{k:'basechg',b:b,m:m,kk:k}}; },
+  r=>{ const a=rp(r,[2,3,5]), n=ri(r,2,3);
+    return {q:'log_'+a+' √['+n+']{'+a+'}', a:[fr(1,n)], h:'分数で。例: 1/'+n,
+      e:'√['+n+']{'+a+'}='+a+'^{1/'+n+'} なので 1/'+n, chk:{k:'rootarg',a:a,n:n}}; }
+],
+
+lprop: [
+  r=>{ const a=rp(r,[2,3,5,10]), k=ri(r,2,4), u=ri(r,1,k-1);
+    const m=ipow(a,u), n=ipow(a,k-u);
+    return {q:'log_'+a+' '+m+' + log_'+a+' '+n, a:[String(k)], h:'例: '+k,
+      e:'log_'+a+'('+m+'×'+n+')=log_'+a+' '+ipow(a,k)+'='+k, chk:{k:'add',a:a,u:u,k:k}}; },
+  r=>{ const a=rp(r,[2,3,5]), k=ri(r,1,3), u=k+ri(r,1,3);
+    const m=ipow(a,u), n=ipow(a,u-k);
+    return {q:'log_'+a+' '+m+' - log_'+a+' '+n, a:[String(k)], h:'例: '+k,
+      e:'log_'+a+'('+m+'÷'+n+')=log_'+a+' '+ipow(a,k)+'='+k, chk:{k:'sub',a:a,u:u,k:k}}; },
+  r=>{ const a=rp(r,[2,3,5]), c=ri(r,2,3), u=ri(r,1,2), v=ri(r,1,3);
+    const m=ipow(a,u), n=ipow(a,v), k=c*u+v;
+    return {q:c+'log_'+a+' '+m+' + log_'+a+' '+n, a:[String(k)], h:'例: '+k,
+      e:c+'log_'+a+' '+m+'='+(c*u)+'、log_'+a+' '+n+'='+v+' なので合計 '+k,
+      chk:{k:'coef',a:a,c:c,u:u,v:v}}; },
+  r=>{ const a=rp(r,[2,3,5,10]), k=ri(r,2,4);
+    return {q:'log_'+a+' '+ipow(a,k)+' を a で表せ', g:'log_'+a+' '+a+' = 1',
+      a:[String(k)], h:'例: '+k, e:pw(a,k)+' なので '+k+'log_'+a+' '+a+'='+k,
+      chk:{k:'unit',a:a,k:k}}; }
+],
+
+lbase: [
+  r=>{ const b=rp(r,[2,3,5]), p=ri(r,2,3), q2=ri(r,1,5);
+    return {q:'log_'+ipow(b,p)+' '+ipow(b,q2), a:[fr(q2,p)], h:'分数のことも。例: '+fr(q2,p),
+      e:'底を'+b+'に変換。log_'+b+' '+ipow(b,q2)+' ÷ log_'+b+' '+ipow(b,p)+' = '+q2+'/'+p+' = '+fr(q2,p),
+      chk:{k:'conv',b:b,p:p,q:q2}}; },
+  r=>{ const a=rp(r,[2,3,5]), b=rp(r,[7,11,13]), k=ri(r,2,4);
+    return {q:'log_'+a+' '+b+' × log_'+b+' '+ipow(a,k), a:[String(k)], h:'例: '+k,
+      e:'連鎖して底が消える。log_'+a+' '+ipow(a,k)+' = '+k, chk:{k:'chain',a:a,b:b,k:k}}; },
+  r=>{ const b=rp(r,[2,3,5]), p=ri(r,2,3);
+    return {q:'log_'+ipow(b,p)+' '+b, a:[fr(1,p)], h:'分数で。例: 1/'+p,
+      e:ipow(b,p)+'^x='+b+' → '+b+'^{'+p+'x}='+b+' → x=1/'+p, chk:{k:'recip',b:b,p:p}}; }
+],
+
+leq: [
+  r=>{ const a=rp(r,[2,3,5,10]), k=ri(r,2,5);
+    return {q:'log_'+a+' x = '+k, a:[String(ipow(a,k))], h:'例: '+ipow(a,k),
+      e:'x='+pw(a,k)+'='+ipow(a,k), chk:{k:'basic',a:a,k:k}}; },
+  r=>{ const a=rp(r,[2,3,5]), k=ri(r,2,4), c=ri(r,1,5);
+    return {q:'log_'+a+' (x-'+c+') = '+k, a:[String(ipow(a,k)+c)], h:'例: '+(ipow(a,k)+c),
+      e:'x-'+c+'='+pw(a,k)+'='+ipow(a,k)+' → x='+(ipow(a,k)+c)+'（真数条件 x>'+c+' を満たす）',
+      chk:{k:'shift',a:a,k:k,c:c}}; },
+  r=>{ const a=rp(r,[2,3,5]), k=ri(r,2,4);
+    return {q:'log_'+a+' x = -'+k, a:[fr(1,ipow(a,k))], h:'分数で。例: 1/'+ipow(a,k),
+      e:'x='+a+'^{-'+k+'}='+fr(1,ipow(a,k)), chk:{k:'negk',a:a,k:k}}; }
+],
+
+lineq: [
+  r=>{ const a=rp(r,[2,3,5]), k=ri(r,2,4), lt=r()<0.5;
+    const A=ipow(a,k);
+    return lt
+      ? {q:'log_'+a+' x < '+k, a:['0<x<'+A], h:'例: 0<x<'+A,
+         e:'真数条件 x>0。底 '+a+'>1 なので x<'+pw(a,k)+'='+A+'。よって 0<x<'+A, chk:{k:'lt',a:a,kk:k}}
+      : {q:'log_'+a+' x > '+k, a:['x>'+A], h:'例: x>'+A,
+         e:'x>'+pw(a,k)+'='+A+'（真数条件も満たす）', chk:{k:'gt',a:a,kk:k}}; },
+  r=>{ const a=rp(r,[2,3]), k=ri(r,1,3), A=ipow(a,k);
+    return {q:'log_{1/'+a+'} x > '+k, a:['0<x<'+fr(1,A)], h:'例: 0<x<1/'+A,
+      e:'底が1より小さいので向き逆転。x<(1/'+a+')^'+k+'='+fr(1,A)+'。真数条件と合わせ 0<x<'+fr(1,A),
+      chk:{k:'dec',a:a,kk:k}}; }
+],
+
+func: [
+  r=>{ const a=rp(r,[2,3,5]), c=ri(r,1,5), sg=r()<0.5?1:-1;
+    const t=sg*c;
+    return {q:'y = '+pw(a,'x')+(t>0?' + '+t:' - '+(-t))+' の値域', a:['y>'+t], h:'例: y>'+t,
+      e:pw(a,'x')+'>0 なので、全体を'+(t>0?t+'だけ上に':(-t)+'だけ下に')+'平行移動して y>'+t,
+      chk:{k:'range',a:a,t:t}}; },
+  r=>{ const a=rp(r,[2,3,5]), c=ri(r,1,6);
+    return {q:'y = log_'+a+' (x-'+c+') の定義域', a:['x>'+c], h:'例: x>'+c,
+      e:'x-'+c+'>0 より x>'+c, chk:{k:'dom',a:a,c:c}}; },
+  r=>{ const a=rp(r,[2,3,5]), c=ri(r,2,9);
+    return {q:'y = log_'+a+' ('+c+'-x) の定義域', a:['x<'+c], h:'例: x<'+c,
+      e:c+'-x>0 より x<'+c, chk:{k:'domrev',a:a,c:c}}; }
+],
+
+graph: [
+  r=>{ const a=rp(r,[2,3,5,10]);
+    return {q:'y = '+pw(a,'x')+' は増加関数か、減少関数か', c:['増加関数','減少関数'], a:['増加関数'],
+      e:'底 '+a+'>1 なので増加関数。', chk:{k:'inc',a:a}}; },
+  r=>{ const a=rp(r,[2,3,4,5]);
+    return {q:'y = (1/'+a+')^x は増加関数か、減少関数か', c:['増加関数','減少関数'], a:['減少関数'],
+      e:'底 1/'+a+' は 0と1の間なので減少関数。', chk:{k:'dec',a:a}}; },
+  r=>{ const a=rp(r,[2,3,5,10]);
+    return {q:'y = log_'+a+' x は増加関数か、減少関数か', c:['増加関数','減少関数'], a:['増加関数'],
+      e:'底 '+a+'>1 なので増加関数。', chk:{k:'linc',a:a}}; },
+  r=>{ const a=rp(r,[2,3,5]), c=ri(r,1,6);
+    return {q:'y = '+a+'^{x-'+c+'} のグラフは y = '+pw(a,'x')+' をどう平行移動したものか',
+      c:['x 軸方向に +'+c,'x 軸方向に -'+c,'y 軸方向に +'+c,'y 軸方向に -'+c], a:['x 軸方向に +'+c],
+      e:'x を x-'+c+' に置きかえた形なので、x 軸方向に +'+c+' だけ移動。', chk:{k:'shift',a:a,c:c}}; },
+  r=>{ const a=rp(r,[2,3,5]), c=ri(r,1,6);
+    return {q:'y = log_'+a+' x + '+c+' のグラフは y = log_'+a+' x をどう平行移動したものか',
+      c:['y 軸方向に +'+c,'y 軸方向に -'+c,'x 軸方向に +'+c,'x 軸方向に -'+c], a:['y 軸方向に +'+c],
+      e:'y の側に +'+c+' されているので、y 軸方向に +'+c+' だけ移動。', chk:{k:'vshift',a:a,c:c}}; }
+],
+
+clog: [
+  r=>{ const a=rp(r,[2,3]), n=ri(r,5,30);
+    const L={2:0.3010, 3:0.4771}[a];
+    const digits = Math.floor(n*L) + 1;
+    return {q:pw(a,n)+' は何桁の数か', g:'log_{10} '+a+' = '+L.toFixed(4),
+      a:[String(digits), digits+'桁'], h:'桁数を数字で',
+      e:n+'×'+L.toFixed(4)+'='+(n*L).toFixed(4)+'。'+Math.floor(n*L)+'<'+(n*L).toFixed(4)+'<'+(Math.floor(n*L)+1)+' なので '+digits+'桁',
+      chk:{k:'digits',a:a,n:n,d:digits}}; },
+  r=>{ const n=ri(r,5,25), L=0.3010;
+    /* (1/2)^n は小数第何位に初めて0でない数字が現れるか */
+    const pos = Math.floor(n*L) + 1;
+    return {q:'(1/2)^{'+n+'} は小数第何位に初めて0でない数字が現れるか', g:'log_{10} 2 = 0.3010',
+      a:[String(pos), pos+'位', '小数第'+pos+'位'], h:'数字だけでOK。例: '+pos,
+      e:'log = -'+(n*L).toFixed(4)+'。-'+(Math.floor(n*L)+1)+'<-'+(n*L).toFixed(4)+'<-'+Math.floor(n*L)+' なので小数第'+pos+'位',
+      chk:{k:'decpos',n:n,p:pos}}; }
+],
+
+minmax: [
+  r=>{ const a=rp(r,[2,3]), t=ri(r,1,4), c=ri(r,1,6);
+    /* y = a^{2x} - 2t·a^x + (t²+c) = (a^x - t)² + c  → 最小値 c（a^x=t が取れる） */
+    const s=2*t, k=t*t+c;
+    return {q:'y = '+a+'^{2x} - '+s+'·'+pw(a,'x')+' + '+k+' の最小値', a:[String(c)], h:'例: '+c,
+      e:'t='+pw(a,'x')+'>0 とすると y=t^2-'+s+'t+'+k+'=(t-'+t+')^2+'+c+'。t='+t+' で最小値 '+c,
+      chk:{k:'quad',a:a,t:t,c:c}}; },
+  r=>{ const a=rp(r,[2,3,5]), lo=0, hi=ri(r,1,4);
+    return {q:lo+' ≦ x ≦ '+hi+' における y = '+pw(a,'x')+' の最大値', a:[String(ipow(a,hi))], h:'例: '+ipow(a,hi),
+      e:'増加関数なので x='+hi+' のとき最大。'+pw(a,hi)+'='+ipow(a,hi), chk:{k:'max',a:a,hi:hi}}; },
+  r=>{ const a=rp(r,[2,3,5]), k=ri(r,2,4), A=ipow(a,k);
+    return {q:'1 ≦ x ≦ '+A+' における y = log_'+a+' x の最大値', a:[String(k)], h:'例: '+k,
+      e:'増加関数なので x='+A+' のとき最大。log_'+a+' '+A+'='+k, chk:{k:'lmax',a:a,k:k}}; }
+]
+};
+
+/* 自動生成に対応している範囲 */
+const GEN_TOPICS = Object.keys(GEN);
+
+/* 種から1問を作る。同じ引数なら必ず同じ問題。 */
+function genQ(topicId, seed){
+  const fns = GEN[topicId];
+  if(!fns) return null;
+  const r = rng(seed*2654435761 + 12345);
+  const q = fns[Math.floor(r()*fns.length)](r);
+  const t = TOPICS.find(x=>x.id===topicId);
+  q.id    = topicId+'#'+seed;
+  q.topic = topicId;
+  q.tname = t ? t.name : '';
+  q.gen   = true;
+  return q;
+}
+
+/* ID から問題を引く。固定問題も生成問題も同じように取れる。 */
+function getQ(id){
+  if(BYID[id]) return BYID[id];
+  const m = /^([a-z]+)#(\d+)$/.exec(String(id));
+  return m ? genQ(m[1], parseInt(m[2],10)) : null;
+}
+function topicOf(id){ const m=/^([a-z]+)[-#]/.exec(String(id)); return m?m[1]:null; }
+function isGenId(id){ const m=/^([a-z]+)#(\d+)$/.exec(String(id)); return !!(m && GEN[m[1]]); }
+
+/* =======================================================================
    数式マークアップ → HTML
    ======================================================================= */
 function fmt(s){
