@@ -2362,6 +2362,7 @@ function showSelf(q){
   };
   add('わからなかった', true, false);
   add('わかった', false, true);
+  armBtns(bt);
 }
 
 function openAnswer(){
@@ -2434,6 +2435,16 @@ function score(q, ok){
 }
 
 /* 別解のうち「不等号を裏返しただけ」「単位付き」のものは表示しない（読み手には同じ答えなので） */
+/* 決定キーと結果画面のボタンはほぼ同じ位置に出る。
+   決定を押した指の click がそのまま「次の問題へ」に乗ってしまい、
+   答えを読む前に飛ばされていた。出したては少しの間だけ受け付けない。 */
+const BTN_ARM = 450;
+function armBtns(box){
+  if(!box) return;
+  box.style.pointerEvents = 'none';
+  setTimeout(()=>{ box.style.pointerEvents = ''; }, BTN_ARM);
+}
+
 function shownAlts(list){
   return list.slice(1).filter(a=>!/[<>≦≧]/.test(a) && !/[桁位]$/.test(a) && !/^小数第/.test(a));
 }
@@ -2489,6 +2500,7 @@ function showResult(q, ok, given){
     setTimeout(next, 180);
   });
   if(ok!==null) buzz(ok?8:[14,60,14]);
+  armBtns(bt);
 }
 
 /* =======================================================================
