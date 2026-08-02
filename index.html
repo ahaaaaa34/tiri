@@ -214,6 +214,8 @@
     border-radius:12px; padding:11px 13px 12px; box-shadow:var(--sh); margin-bottom:7px;
   }
   .srow:active{background:var(--bg2)}
+  .srow.src{background:var(--bg2); box-shadow:none; pointer-events:none}
+  .srow.src:active{background:var(--bg2)}
   .srow .sh1{display:flex; align-items:baseline; gap:8px}
   .srow .sn{flex:1; font-size:14px; font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .srow .sa{font-size:12.5px; font-variant-numeric:tabular-nums; color:var(--t2); flex:none}
@@ -1288,7 +1290,7 @@ const $ = id => document.getElementById(id);
    出題プール
    ======================================================================= */
 function poolOf(topicId, mode){
-  let list = topicId==='__all__' ? ALL.slice() : ALL.filter(q=>q.topic===topicId);
+  let list = SCOPES[topicId] ? scopeList(topicId) : ALL.filter(q=>q.topic===topicId);
   if(mode==='wrong'){
     list = list.filter(q=>isPending(q.id));
     list.sort((a,b)=>wcount(b.id)-wcount(a.id));
@@ -1327,6 +1329,17 @@ const GROUPS = [
                               'tb-lmax','tb-clog','tb-exam']}
 ];
 
+/* 範囲IDの代わりに使える「まとめ選択」。
+   教科書から起こした問題と、こちらで用意した問題は別ものなので、
+   片方だけを通しで演習できるようにしておく。 */
+const isTB = q => q.topic.indexOf('tb-')===0;
+const SCOPES = {
+  '__all__' : {name:'すべての範囲',    desc:'教科書とオリジナルを通して', test:()=>true},
+  '__tb__'  : {name:'教科書の問題だけ',  desc:'練習・例題・問・章末の問題', test:isTB},
+  '__mine__': {name:'オリジナル問題だけ', desc:'教科書とは別に用意した問題', test:q=>!isTB(q)}
+};
+function scopeList(id){ return ALL.filter(SCOPES[id].test); }
+
 /* 一度でも正解した問題の割合（範囲ごとの手応えの目安） */
 function doneRate(list){
   if(!list.length) return 0;
@@ -1339,7 +1352,7 @@ function renderResume(){
   const box = $('resume');
   const r = readSession();
   if(!r){ box.classList.add('hide'); box.innerHTML=''; return; }
-  const t = r.topic==='__all__' ? 'すべての範囲' : ((TOPICS.find(x=>x.id===r.topic)||{}).name||'');
+  const t = SCOPES[r.topic] ? SCOPES[r.topic].name : ((TOPICS.find(x=>x.id===r.topic)||{}).name||'');
   box.classList.remove('hide');
   box.innerHTML =
     '<p class="sec">続きから</p>'+
@@ -1396,10 +1409,17 @@ function renderMenu(){
     return b;
   };
 
-  const allRate = doneRate(ALL);
-  box.appendChild(mk('__all__','すべての範囲',
-    S.mode==='normal' ? '全'+allN+'問を通して演習'+(allRate>0?'　正解済み '+Math.round(allRate*100)+'%':'') : '対象すべて',
-    allN, 0, 0, true));
+  /* まとめ選択（すべて／教科書だけ／オリジナルだけ）。0問のものは出さない。 */
+  Object.keys(SCOPES).forEach(sid=>{
+    const sc = SCOPES[sid];
+    const n = poolOf(sid, S.mode).length;
+    if(n===0) return;
+    const rate = doneRate(scopeList(sid));
+    const desc = S.mode==='normal'
+      ? sc.desc+(rate>0 ? '　正解済み '+Math.round(rate*100)+'%' : '')
+      : sc.desc;
+    box.appendChild(mk(sid, sc.name, desc, n, 0, 0, sid==='__all__'));
+  });
 
   GROUPS.forEach(g=>{
     const ts = g.ids.map(id=>TOPICS.find(t=>t.id===id)).filter(Boolean);
@@ -1493,6 +1513,24 @@ function renderStats(){
     '</div>';
   }
 
+  /* 教科書の問題とオリジナル問題は別ものなので、まとめても見えるようにする */
+  const sides = [['教科書の問題', scopeList('__tb__')], ['オリジナル問題', scopeList('__mine__')]];
+  html += '<p class="sec" style="margin:20px 0 9px">出どころべつ</p>';
+  sides.forEach(([nm, list])=>{
+    const s = tally(list);
+    const seg = (v,cls)=> v>0 ? '<i class="'+cls+'" style="flex:'+v+'"></i>' : '';
+    html += '<div class="srow src">'+
+      '<span class="sh1"><span class="sn">'+esc(nm)+'</span>'+
+        (s.tries ? '<span class="sa">正答率 '+pct(s.acc)+'%</span>'
+                 : '<span class="sa none">まだ解いていない</span>')+'</span>'+
+      '<span class="sbar">'+seg(s.done,'b1')+seg(s.todo,'b2')+seg(s.fresh,'b3')+'</span>'+
+      '<span class="sf"><b>正解済み '+s.done+'</b>'+
+        (s.todo? '<span class="w">要復習 '+s.todo+'</span>' : '')+
+        (s.fresh? '<span>未着手 '+s.fresh+'</span>' : '')+
+        '<span>全'+s.n+'問</span></span>'+
+    '</div>';
+  });
+
   html += '<div class="mrow"><p class="sec" style="margin:16px 0 0">範囲べつ</p>'+
     '<div class="seg mini" id="sortSeg" style="width:150px">'+
       '<button data-s="weak"'+(statSort==='weak'?' class="on"':'')+'>苦手な順</button>'+
@@ -1549,7 +1587,7 @@ function renderStats(){
     renderStats();
   });
   /* 範囲をタップ → その範囲を演習（要復習があれば復習モードで） */
-  body.querySelectorAll('.srow').forEach(el=>{
+  body.querySelectorAll('.srow[data-topic]').forEach(el=>{
     el.addEventListener('click', ()=>{
       const t = el.dataset.topic;
       const s = tally(TOPICS.find(x=>x.id===t).qs);
@@ -1665,7 +1703,7 @@ function resumeSession(r){
 function renderQ(){
   const q = curQ();
   if(!q){ finish(); return; }
-  const tName = S.topic==='__all__' ? q.tname : (TOPICS.find(t=>t.id===S.topic)||{}).name;
+  const tName = SCOPES[S.topic] ? q.tname : (TOPICS.find(t=>t.id===S.topic)||{}).name;
   $('pTitle').textContent = tName || '';
   $('pCount').textContent = (S.idx+1)+' / '+S.queue.length;
   $('progBar').style.width = (S.idx/S.queue.length*100)+'%';
