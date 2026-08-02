@@ -101,6 +101,7 @@
   /* ---------- 演習画面 ---------- */
   #play{flex:1; display:flex; flex-direction:column; min-height:0}
   .bar{display:flex; align-items:center; gap:6px; padding:8px 8px 7px; flex:none}
+  .mbar{padding-top:calc(8px + var(--safe-t)); border-bottom:1px solid var(--bd2); margin-bottom:8px}
   .ib{
     width:38px; height:38px; flex:none; border:0; background:transparent; border-radius:10px;
     display:flex; align-items:center; justify-content:center; transition:background .12s;
@@ -396,7 +397,9 @@
      6段のままだと決定キーが画面の外に出てしまうので、
      横幅を使って12列3段に組み替え、余白も詰める。 */
   @media (max-height:520px){
-    .mhead{padding:22px 0 16px}
+    .mhead{padding:14px 0 10px}
+    .mhead h1{font-size:21px}
+    .mhead .cap{margin-top:3px}
     .bar{padding:4px 8px}
     .ib{width:34px; height:34px}
     .qbox{margin-top:8px; padding:9px 13px; max-height:34vh}
@@ -437,8 +440,8 @@
 <body>
 <div class="app">
 
-  <!-- ========== メニュー ========== -->
-  <div id="menu">
+  <!-- ========== トップ（教科書かオリジナルかを選ぶ） ========== -->
+  <div id="home">
     <div class="mhead">
       <h1>指数・対数</h1>
       <p class="cap">数学 II</p>
@@ -451,6 +454,22 @@
     </button>
 
     <div id="resume" class="hide"></div>
+
+    <p class="sec">どちらを解く？</p>
+    <div class="tlist" id="sidelist"></div>
+
+    <div class="mfoot"><button class="lnk" id="resetAll">学習記録をすべて消去</button></div>
+  </div>
+
+  <!-- ========== メニュー（選んだ側の範囲を選ぶ） ========== -->
+  <div id="menu" class="hide">
+    <div class="bar mbar">
+      <button class="ib" id="toTop" aria-label="トップへ戻る">
+        <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <div class="ttl"><b id="sideTtl">教科書の問題</b><span id="sideCap"></span></div>
+      <span class="ib"></span>
+    </div>
 
     <p class="sec">出題モード</p>
     <div class="seg" id="modeSeg">
@@ -467,8 +486,7 @@
 
     <p class="sec">範囲</p>
     <div class="tlist" id="tlist"></div>
-
-    <div class="mfoot"><button class="lnk" id="resetAll">学習記録をすべて消去</button></div>
+    <div style="height:18px"></div>
   </div>
 
   <!-- ========== 演習 ========== -->
@@ -1349,21 +1367,35 @@ const GROUPS = [
   {name:'対数',           ids:['ldef','lprop','lbase','leq','lineq']},
   {name:'関数としての性質', ids:['func','graph']},
   {name:'応用・総合',      ids:['clog','comp','minmax']},
-  {name:'教科書の問題',    ids:['tb-neg','tb-root','tb-rat','tb-rcomp','tb-eeq',
-                              'tb-ldef','tb-lprop','tb-lbase','tb-lcomp','tb-leq',
-                              'tb-lmax','tb-clog','tb-exam','tb-ex']}
+  {name:'第1節 指数関数',   ids:['tb-neg','tb-root','tb-rat','tb-rcomp','tb-eeq']},
+  {name:'第2節 対数関数',   ids:['tb-ldef','tb-lprop','tb-lbase','tb-lcomp','tb-leq',
+                              'tb-lmax','tb-clog']},
+  {name:'章末',            ids:['tb-exam','tb-ex']}
 ];
 
-/* 範囲IDの代わりに使える「まとめ選択」。
-   教科書から起こした問題と、こちらで用意した問題は別ものなので、
-   片方だけを通しで演習できるようにしておく。 */
+/* 教科書から起こした問題と、こちらで用意した問題は別ものなので、
+   まずどちらを解くかを選んでもらい、そのあと範囲を選ぶ。
+   ここの id は範囲IDの代わりに「まとめて出題」の指定としても使える。 */
 const isTB = q => q.topic.indexOf('tb-')===0;
-const SCOPES = {
-  '__all__' : {name:'すべての範囲',    desc:'教科書とオリジナルを通して', test:()=>true},
-  '__tb__'  : {name:'教科書の問題だけ',  desc:'練習・例題・問・章末の問題', test:isTB},
-  '__mine__': {name:'オリジナル問題だけ', desc:'教科書とは別に用意した問題', test:q=>!isTB(q)}
+const SIDES = {
+  '__tb__'  : {key:'tb',   name:'教科書の問題',   desc:'練習・例題・問・章末・演習問題',
+               allName:'教科書の問題すべて', test:isTB},
+  '__mine__': {key:'mine', name:'オリジナル問題', desc:'教科書とは別に用意した問題',
+               allName:'オリジナル問題すべて', test:q=>!isTB(q)}
 };
+/* 旧バージョンで保存されたセッション（両方まとめて）も開けるように残しておく */
+const SCOPES = Object.assign({'__all__':{name:'すべての範囲', test:()=>true}}, SIDES);
 function scopeList(id){ return ALL.filter(SCOPES[id].test); }
+
+/* いま選んでいる側。閉じても覚えておく。 */
+const SIDEKEY = 'explog_side_v1';
+let SIDE = '__tb__';
+try{ const v = localStorage.getItem(SIDEKEY); if(SIDES[v]) SIDE = v; }catch(e){}
+function setSide(id){ SIDE = id; try{ localStorage.setItem(SIDEKEY, id); }catch(e){} }
+function sideOfTopic(id){
+  if(SIDES[id]) return id;
+  return (id && id.indexOf('tb-')===0) ? '__tb__' : '__mine__';
+}
 
 /* 一度でも正解した問題の割合（範囲ごとの手応えの目安） */
 function doneRate(list){
@@ -1390,16 +1422,50 @@ function renderResume(){
   $('dropResume').addEventListener('click', ()=>{ clearSession(); renderResume(); });
 }
 
-function renderMenu(){
-  $('modeNote').textContent = MODE_NOTE[S.mode];
-  Array.prototype.forEach.call($('modeSeg').children, b=>{
-    b.classList.toggle('on', b.dataset.m===S.mode);
-  });
+/* 1枚のカードを作る。範囲カードもトップの2枚もこれで作る。 */
+function mkItem(id, name, desc, n, wsum, rate, isAll, onTap){
+  const b = document.createElement('button');
+  b.className = 'titem' + (isAll?' all':'');
+  if(n===0){ b.disabled = true; }
+  let badge = '';
+  if(!isAll && S.mode!=='normal' && wsum>0) badge = '<span class="badge">×'+wsum+'</span>';
+  /* 通常モードでは、一度でも正解した割合を細い線で示す */
+  const bar = (rate>0) ? '<span class="mini-bar"><i style="width:'+Math.round(rate*100)+'%"></i></span>' : '';
+  b.innerHTML =
+    '<span class="nm"><b>'+esc(name)+'</b><span>'+esc(desc)+'</span>'+bar+'</span>'+
+    '<span class="rt2">'+badge+'<span class="num">'+n+'</span><span class="arw">›</span></span>';
+  b.addEventListener('click', ()=>{ if(n>0) onTap(); });
+  return b;
+}
+
+/* トップ画面 ── 教科書かオリジナルかを選ぶ */
+function renderHome(){
   renderResume();
   const st = tally(ALL);
   $('statPeek').textContent = st.tries
     ? '正解済み '+st.done+'/'+st.n + (st.todo? '　要復習 '+st.todo : '')
     : 'まだ記録がありません';
+  const box = $('sidelist');
+  box.innerHTML = '';
+  Object.keys(SIDES).forEach(sid=>{
+    const sd = SIDES[sid];
+    const list = scopeList(sid);
+    const s = tally(list);
+    const desc = s.tries
+      ? sd.desc+'　正解済み '+s.done+'/'+s.n+(s.todo? '　要復習 '+s.todo : '')
+      : sd.desc;
+    box.appendChild(mkItem(sid, sd.name, desc, list.length, 0, doneRate(list), false,
+      ()=>{ setSide(sid); renderMenu(); show('menu'); }));
+  });
+}
+
+function renderMenu(){
+  const sd = SIDES[SIDE];
+  $('sideTtl').textContent = sd.name;
+  $('modeNote').textContent = MODE_NOTE[S.mode];
+  Array.prototype.forEach.call($('modeSeg').children, b=>{
+    b.classList.toggle('on', b.dataset.m===S.mode);
+  });
   /* 復習モードは出題順そのものに意味があるのでシャッフルは無効 */
   $('shufBtn').disabled = S.mode!=='normal';
   $('shufBtn').setAttribute('aria-pressed', (S.shuffle && S.mode==='normal')?'true':'false');
@@ -1407,47 +1473,34 @@ function renderMenu(){
   const box = $('tlist');
   box.innerHTML = '';
 
-  const allN = poolOf('__all__', S.mode).length;
-  if(allN===0){
+  const sideN = poolOf(SIDE, S.mode).length;
+  $('sideCap').textContent = S.mode==='normal' ? '全'+scopeList(SIDE).length+'問' : sideN+'問';
+  if(sideN===0){
     const d = document.createElement('div');
     d.className = 'empty';
     d.innerHTML = S.mode==='wrong'
-      ? '復習が必要な問題はありません。<br>通常モードで問題を解くと、間違えた問題がここに集まります。'
-      : 'まだ間違えた記録がありません。<br>通常モードで問題を解いてみましょう。';
+      ? 'この区分に復習が必要な問題はありません。<br>通常モードで問題を解くと、間違えた問題がここに集まります。'
+      : 'この区分にはまだ間違えた記録がありません。<br>通常モードで問題を解いてみましょう。';
     box.appendChild(d);
     return;
   }
 
-  const mk = (id, name, desc, n, wsum, rate, isAll)=>{
-    const b = document.createElement('button');
-    b.className = 'titem' + (isAll?' all':'');
-    if(n===0){ b.disabled = true; }
-    let badge = '';
-    if(!isAll && S.mode!=='normal' && wsum>0) badge = '<span class="badge">×'+wsum+'</span>';
-    /* 通常モードでは、一度でも正解した割合を細い線で示す */
-    const bar = (S.mode==='normal' && rate>0)
-      ? '<span class="mini-bar"><i style="width:'+Math.round(rate*100)+'%"></i></span>' : '';
-    b.innerHTML =
-      '<span class="nm"><b>'+esc(name)+'</b><span>'+esc(desc)+'</span>'+bar+'</span>'+
-      '<span class="rt2">'+badge+'<span class="num">'+n+'</span><span class="arw">›</span></span>';
-    b.addEventListener('click', ()=>{ if(n>0) startSession(id); });
-    return b;
-  };
+  const mk = (id, name, desc, n, wsum, rate, isAll)=>
+    mkItem(id, name, desc, n, wsum, (S.mode==='normal'?rate:0), isAll, ()=>startSession(id));
 
-  /* まとめ選択（すべて／教科書だけ／オリジナルだけ）。0問のものは出さない。 */
-  Object.keys(SCOPES).forEach(sid=>{
-    const sc = SCOPES[sid];
-    const n = poolOf(sid, S.mode).length;
-    if(n===0) return;
-    const rate = doneRate(scopeList(sid));
-    const desc = S.mode==='normal'
-      ? sc.desc+(rate>0 ? '　正解済み '+Math.round(rate*100)+'%' : '')
-      : sc.desc;
-    box.appendChild(mk(sid, sc.name, desc, n, 0, 0, sid==='__all__'));
-  });
+  /* いちばん上は「この区分をまとめて」 */
+  const sideRate = doneRate(scopeList(SIDE));
+  box.appendChild(mk(SIDE, sd.allName,
+    S.mode==='normal'
+      ? '通して演習'+(sideRate>0 ? '　正解済み '+Math.round(sideRate*100)+'%' : '')
+      : '対象すべて',
+    sideN, 0, 0, true));
 
+  /* この区分に属する区切りだけを出す */
   GROUPS.forEach(g=>{
-    const ts = g.ids.map(id=>TOPICS.find(t=>t.id===id)).filter(Boolean);
+    const ts = g.ids.map(id=>TOPICS.find(t=>t.id===id))
+                    .filter(t=>t && sideOfTopic(t.id)===SIDE);
+    if(!ts.length) return;
     const pools = ts.map(t=>poolOf(t.id, S.mode));
     /* 復習モードで対象0の区分は見出しごと出さない */
     if(pools.every(p=>p.length===0)) return;
@@ -1458,7 +1511,8 @@ function renderMenu(){
     ts.forEach((t,i)=>{
       const p = pools[i];
       const wsum = p.reduce((s,q)=>s+wcount(q.id),0);
-      box.appendChild(mk(t.id, t.name, t.desc, p.length, wsum, doneRate(t.qs), false));
+      const nm = t.name.replace(/^教科書｜/, '');
+      box.appendChild(mk(t.id, nm, t.desc, p.length, wsum, doneRate(t.qs), false));
     });
   });
 }
@@ -1467,6 +1521,7 @@ function renderMenu(){
    画面切り替え
    ======================================================================= */
 function show(which){
+  $('home').classList.toggle('hide', which!=='home');
   $('menu').classList.toggle('hide', which!=='menu');
   $('play').classList.toggle('hide', which!=='play');
   $('done').classList.toggle('hide', which!=='done');
@@ -1628,7 +1683,7 @@ function renderStats(){
 
 function openStats(){ renderStats(); show('stats'); }
 $('statBtn').addEventListener('click', openStats);
-$('stBack').addEventListener('click', ()=>{ renderMenu(); show('menu'); });
+$('stBack').addEventListener('click', ()=>{ renderHome(); show('home'); });
 
 /* =======================================================================
    セッション
@@ -1707,6 +1762,7 @@ function readSession(){
 function resumeSession(r){
   S.mode = r.mode;
   S.topic = r.topic;
+  setSide(sideOfTopic(r.topic));   /* 続きから入ったときも、戻り先の側をそろえる */
   S.queue = r.ids.map(id=>BYID[id]);
   S.idx = r.idx;
   S.okCount = r.ok;
@@ -1836,9 +1892,14 @@ function goHome(){
   /* 抜けるときも必ず保存する。あとで「続きから」で同じ場所に戻れる。 */
   if(!$('play').classList.contains('hide') && S.queue.length) saveSession();
   closeSheets();
+  if(S.topic) setSide(sideOfTopic(S.topic));   /* 解いていた側のメニューへ戻す */
+  renderHome();
   renderMenu();
   show('menu');
 }
+
+/* メニューからトップ（教科書／オリジナルの選択）へ */
+function goTop(){ renderHome(); show('home'); }
 
 /* アプリを閉じた・切り替えたときも取りこぼさない */
 function saveIfPlaying(){
@@ -2483,6 +2544,8 @@ $('modeSeg').addEventListener('click', e=>{
   renderMenu();
 });
 
+$('toTop').addEventListener('click', goTop);
+
 $('shufBtn').addEventListener('click', ()=>{
   S.shuffle = !S.shuffle;
   $('shufBtn').setAttribute('aria-pressed', S.shuffle?'true':'false');
@@ -2490,7 +2553,7 @@ $('shufBtn').addEventListener('click', ()=>{
 
 $('resetAll').addEventListener('click', ()=>{
   confirmAsk('学習記録を消去しますか？','間違えた回数と復習リストがすべて消えます。この操作は元に戻せません。','すべて消去',()=>{
-    ST = {}; saveST(); renderMenu();
+    ST = {}; saveST(); renderHome(); renderMenu();
   });
 });
 
@@ -2515,8 +2578,9 @@ if(!(navigator.maxTouchPoints > 1)){
   const tip = $('padHint').querySelector('small');
   if(tip) tip.remove();
 }
+renderHome();
 renderMenu();
-show('menu');
+show('home');
 
 /* ホーム画面のショートカットから学習状況を直接開けるように */
 if(location.search.indexOf('view=stats')>=0) openStats();
