@@ -316,6 +316,7 @@
             display:flex; align-items:baseline; gap:10px}
   .hintline #hintLine{flex:1; min-width:0}
   .hintline .lnk{padding:2px 0; flex:none; font-size:11px}
+  .hintline #hintLine.warn{color:var(--err); font-weight:600}
   /* 入力の読み取り結果 */
   .prev{margin:5px 12px 0; padding:6px 12px 7px; display:flex; align-items:baseline; gap:9px; flex:none}
   .prev .pl{font-size:10px; color:var(--t3); letter-spacing:.1em; flex:none}
@@ -2141,6 +2142,7 @@ let IV = '', IC = 0;   // 入力値・カーソル位置
 function resetInput(){
   IV = ''; IC = 0;
   $('field').classList.remove('err');
+  clearWarn();
   paintField();
 }
 /* log は「底」と「真数」の2か所を埋める形なので、
@@ -2171,6 +2173,7 @@ function insert(t){
     IC += t.length;
   }
   $('field').classList.remove('err');
+  clearWarn();
   paintField();
   buzz(4);
 }
@@ -2186,6 +2189,8 @@ function doFn(f){
     else if(IC<IV.length) IC++;
   }
   else if(f==='go'){ submit(); return; }
+  $('field').classList.remove('err');
+  clearWarn();
   paintField();
 }
 let pickMode = false;   // 選択式かどうか
@@ -2367,6 +2372,7 @@ function openAnswer(){
   $('ansRes').classList.add('hide');
   $('ansQ').innerHTML = fmt(q.q) + (q.g ? '<br><span style="color:var(--t3)">ただし '+fmt(q.g)+'</span>' : '');
   pickMode = !!q.c;
+  $('hintLine').classList.remove('warn');
   $('hintLine').textContent = pickMode ? '' : (q.h || '');   /* 選択式に書式のヒントは要らない */
   $('howBtn').classList.toggle('hide', pickMode);            /* 書き方の早見表も記述式だけ */
   showHow(false);                 /* キーボードの表示/非表示もここで決まる */
@@ -2380,11 +2386,34 @@ function openAnswer(){
 /* =======================================================================
    採点
    ======================================================================= */
+/* 決定を押したのに採点されないときは、必ず理由を出す。
+   赤枠だけだと「押しても何も起きない」と見えてしまうため。 */
+function warnInput(msg){
+  const h = $('hintLine');
+  h.textContent = msg;
+  h.classList.add('warn');
+  $('field').classList.add('err');
+  buzz([14,60,14]);
+}
+function clearWarn(){
+  const h = $('hintLine');
+  if(h.classList.contains('warn')){
+    h.classList.remove('warn');
+    const q = curQ();
+    h.textContent = (q && !pickMode) ? (q.h || '') : '';
+  }
+}
+
 function submit(){
   const q = curQ();
   if(!q || q.self) return;   /* 証明問題は自己採点なので照合しない */
-  if(nz(IV)==='' || IV.indexOf(BOX)>=0){   /* □ が残っている＝まだ書きかけ */
-    $('field').classList.add('err');
+  if(nz(IV)===''){
+    warnInput('解答が入力されていません');
+    return;
+  }
+  if(IV.indexOf(BOX)>=0){    /* □ が残っている＝まだ書きかけ */
+    warnInput(IV[IC]===BOX ? '□ がまだ空です。数字を押して埋めてください'
+                           : '□ が残っています。→ で移って埋めてください');
     return;
   }
   const ok = judge(IV, q.a);
