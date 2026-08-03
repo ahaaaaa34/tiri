@@ -8,7 +8,7 @@
   "scope": "./",
   "id": "./",
   "display": "standalone",
-  "orientation": "any",
+  "orientation": "portrait",
   "background_color": "#FAFAF8",
   "theme_color": "#FAFAF8",
   "categories": ["education"],

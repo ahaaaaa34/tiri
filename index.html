@@ -2626,6 +2626,17 @@ show('home');
 /* ホーム画面のショートカットから学習状況を直接開けるように */
 if(location.search.indexOf('view=stats')>=0) openStats();
 
+/* ホーム画面から開いたときは縦のままにする。
+   manifest の orientation だけだと効かない端末があるので、
+   使える環境では画面の向きも直接ロックしておく（未対応なら黙って何もしない）。 */
+try{
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if(standalone && screen.orientation && screen.orientation.lock){
+    const r = screen.orientation.lock('portrait');
+    if(r && r.catch) r.catch(()=>{});
+  }
+}catch(e){}
+
 /* オフラインでも開けるようにする（file:// では登録できないので黙って見送る） */
 if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
   window.addEventListener('load', ()=>{
