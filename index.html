@@ -313,6 +313,8 @@
 
   /* ---------- 解答入力 ---------- */
   .ansq{padding:0 14px 8px; font-size:13px; color:var(--t2); line-height:1.7; flex:none}
+  .field .fr{vertical-align:-0.40em; margin:0 .16em}
+  .field .fr .fn,.field .fr .fd{font-size:.86em; padding:0 .22em}
   .field{
     margin:0 12px 4px; background:var(--card); border:1px solid var(--bd); border-radius:11px;
     min-height:52px; padding:13px 14px; font-size:19px; line-height:1.4; box-shadow:var(--sh);
@@ -328,12 +330,7 @@
   .hintline #hintLine{flex:1; min-width:0}
   .hintline .lnk{padding:2px 0; flex:none; font-size:11px}
   .hintline #hintLine.warn{color:var(--err); font-weight:600}
-  /* 入力の読み取り結果 */
-  .prev{margin:5px 12px 0; padding:6px 12px 7px; display:flex; align-items:baseline; gap:9px; flex:none}
-  .prev .pl{font-size:10px; color:var(--t3); letter-spacing:.1em; flex:none}
-  .prev .pv{font-size:17px; color:var(--t1); word-break:break-all}
-  .prev.todo .pl{color:var(--err)}
-  .prev .ar{display:inline-block; border:1px solid var(--err); border-radius:4px; padding:0 4px; margin-right:2px; font-size:11px}
+  .hintline #hintLine.todo{color:var(--err); font-weight:600}
   /* 埋めるべき □ は入力欄でもプレビューでも目立たせる */
   .bx{display:inline-block; min-width:.72em; padding:0 .06em; border:1px dashed var(--err);
       border-radius:3px; color:var(--err); line-height:1.15; text-align:center}
@@ -390,11 +387,18 @@
   .rsub{font-size:11.5px; color:var(--t3); margin-top:5px}
   .proof{font-size:14px; line-height:1.95; color:var(--t1); white-space:pre-line}
   .selfask{font-size:11.5px; color:var(--t3); margin-top:11px; text-align:center; letter-spacing:.04em}
-  .rmark{display:flex; align-items:center; gap:9px; font-size:19px; font-weight:600; letter-spacing:.06em}
-  .rmark svg{width:22px; height:22px; stroke-width:1.8; fill:none; stroke-linecap:round; stroke-linejoin:round}
-  .rmark.ok{color:var(--t1)} .rmark.ok svg{stroke:var(--t1)}
-  .rmark.ng{color:var(--err)} .rmark.ng svg{stroke:var(--err)}
-  .rmark.sk{color:var(--t2)} .rmark.sk svg{stroke:var(--t2); fill:var(--t2)}
+  /* 正解か不正解かは一目で分かってほしいので、文字だけでなく地色ごと変える */
+  .rmark{
+    display:inline-flex; align-items:center; gap:8px; font-size:17px; font-weight:600; letter-spacing:.1em;
+    padding:8px 17px 8px 13px; border-radius:999px;
+  }
+  .rmark svg{width:21px; height:21px; stroke-width:2; fill:none; stroke-linecap:round; stroke-linejoin:round}
+  .rmark.ok{background:var(--t1); color:var(--card)} .rmark.ok svg{stroke:var(--card)}
+  .rmark.ng{background:var(--err); color:var(--card)} .rmark.ng svg{stroke:var(--card)}
+  .rmark.sk{background:var(--bg2); color:var(--t2); border:1px solid var(--bd)}
+  .rmark.sk svg{stroke:var(--t2); fill:var(--t2)}
+  /* 答えの枠も、不正解のときだけ縁の色を変えて見分けやすくする */
+  .rans.ngb{border-color:var(--err)}
   .ryour{font-size:12px; color:var(--t3); margin-top:8px}
   .ryour b{color:var(--err); font-weight:400; font-family:"Times New Roman",serif; font-size:14px}
   .rans{
@@ -429,8 +433,6 @@
     .field{min-height:44px; padding:10px 14px; font-size:18px}
     .hintline{padding-bottom:5px}
     .k{height:38px; font-size:16px}
-    .prev{margin-top:2px; padding:3px 12px 4px}
-    .prev .pv{font-size:15px}
     .how{margin:0 12px 8px; padding:9px 12px; gap:6px 12px}
     .how b{font-size:14px; min-width:44px}
     .ch{min-height:40px; padding:8px 14px; font-size:14px}
@@ -441,7 +443,6 @@
   }
   /* 極端に低い画面（小型端末の横向き）は、あると入り切らないものを削る */
   @media (max-height:365px){
-    .prev{display:none !important}
     .how{max-height:132px; gap:5px 12px; padding:8px 12px}
     .how .hb{display:none}
     .ansq{font-size:12px}
@@ -598,7 +599,6 @@
     <div class="ansq mq" id="ansQ"></div>
     <div class="field" id="field"></div>
     <!-- 打った文字が数式としてどう読まれるかをその場で見せる -->
-    <div class="prev hide" id="prev"><span class="pl" id="prevLabel">こう読まれます</span><span class="pv mq" id="prevBody"></span></div>
     <div class="hintline">
       <span id="hintLine"></span>
       <button class="lnk" id="howBtn" aria-expanded="false">書き方 ▾</button>
@@ -1277,6 +1277,8 @@ function noParen(s){ return s.replace(/[()]/g,''); }
 /* 「分の」キーは 分母 → 分子 の順に打つ（4 分の 1 で 1/4）。
    照合や計算のために A⁄B を B/A に直しておく。 */
 const FBAR = '⁄';
+const CARET = '\u0001';        // 入力欄のカーソル位置を示す目印
+const TOKCH = '[0-9a-z.^\u0001]';   // 分数の分母・分子として1かたまりに扱う文字
 function tokenL(s, i){          // i の直前にある「ひとかたまり」の開始位置
   if(s[i-1]===')'){
     let d=0;
@@ -1287,7 +1289,7 @@ function tokenL(s, i){          // i の直前にある「ひとかたまり」�
     return i-1;
   }
   let j=i-1;
-  while(j>=0 && /[0-9a-z.^]/.test(s[j])) j--;
+  while(j>=0 && new RegExp(TOKCH).test(s[j])) j--;
   return j+1;
 }
 function tokenR(s, i){          // i の直後にある「ひとかたまり」の終了位置（含まない）
@@ -1300,7 +1302,7 @@ function tokenR(s, i){          // i の直後にある「ひとかたまり」�
     return i+2;
   }
   let j=i+1;
-  while(j<s.length && /[0-9a-z.^]/.test(s[j])) j++;
+  while(j<s.length && new RegExp(TOKCH).test(s[j])) j++;
   return j;
 }
 function unfrac(t){
@@ -2313,7 +2315,10 @@ function paintField(){
     syncAnsBtn();
     return;
   }else{
-    f.innerHTML = boxify(esc(IV.slice(0,IC))) + '<span class="caret"></span>' + boxify(esc(IV.slice(IC)));
+    /* カーソルの位置に目印を1文字はさんでから数式に組み、あとで縦棒に差し替える。
+       こうすると分数や上付きの中にカーソルがあっても位置がずれない。 */
+    const withCaret = IV.slice(0,IC) + CARET + IV.slice(IC);
+    f.innerHTML = preview(withCaret).split(CARET).join('<span class="caret"></span>');
   }
   syncAnsBtn();
   paintPreview();
@@ -2329,30 +2334,42 @@ function preview(s){
   let t = unfrac(String(s));   /* 打った 4⁄1 は 1/4 として読む */
   t = t.replace(/\^\(([^()]*)\)/g, '^{$1}');      // 2^(1/3) → 上付き 1/3
   t = t.replace(/√\(([^()]*)\)/g, '√{$1}');       // √(10)
-  t = t.replace(/√(\d+(?:\/\d+)?|[a-z])/g, '√{$1}');  // √2 にも横線を引く
+  t = t.replace(/√([\d\u0001]+(?:\/[\d\u0001]+)?|[a-z]\u0001?)/g, '√{$1}');  // √2 にも横線を引く
   /* log_2(3) の括弧は入力の都合なので、表示では外して log₂3 にする */
-  t = t.replace(/log_([\d□]+(?:\/\d+)?|[a-z])\(([^()]*)\)/g, 'log_{$1}$2');
-  t = t.replace(/log_([\d□]+(?:\/\d+)?|[a-z])/g, 'log_{$1}');
+  t = t.replace(/log_([\d□\u0001]+(?:\/[\d\u0001]+)?|[a-z]\u0001?)\(([^()]*)\)/g, 'log_{$1}$2');
+  t = t.replace(/log_([\d□\u0001]+(?:\/[\d\u0001]+)?|[a-z]\u0001?)/g, 'log_{$1}');
   return boxify(fracHTML(fmt(t)));
 }
+/* 答えが「ただの分数」のときだけ横棒に組む。
+   1/10^3 のような式まで組むと (1/10)^3 に見えてしまうので手を出さない。 */
+function fracAns(a){
+  const t = String(a);
+  if(/^-?[0-9a-z.]+\/[0-9a-z.]+$/.test(t)){
+    const neg = t[0]==='-' ? '-' : '';
+    const parts = (neg ? t.slice(1) : t).split('/');
+    return neg+'<span class="fr"><span class="fn">'+esc(parts[0])+'</span><span class="fd">'+esc(parts[1])+'</span></span>';
+  }
+  return fmt(t);
+}
+
 /* a/b を横棒の分数に組み直す（表示のときだけ） */
 function fracHTML(h){
-  return h.replace(/(\([^()]*\)|[0-9a-z.□]+)\/(\([^()]*\)|[0-9a-z.□]+)/g,
+  return h.replace(/(\([^()]*\)|[0-9a-z.□\u0001]+)\/(\([^()]*\)|[0-9a-z.□\u0001]+)/g,
     (m,a,b)=>'<span class="fr"><span class="fn">'+a+'</span><span class="fd">'+b+'</span></span>');
 }
+/* 入力欄がそのまま数式になったので、下の行は「次に何をすればいいか」だけを言う。
+   □ が残っている間はそれを、ふだんは問題ごとの書き方のヒントを出す。 */
 function paintPreview(){
-  const box = $('prev');
-  /* 数字だけ・記号なしの解答は見せても意味がないので出さない */
-  const worth = IV!=='' && !pickMode && /[\^√⁄]|log_/.test(IV);
-  box.classList.toggle('hide', !worth);
-  if(worth){
-    $('prevBody').innerHTML = preview(IV);
-    /* □ が残っている間は、次に何をすればいいかを出す */
-    const left = IV.indexOf(BOX)>=0;
-    $('prevLabel').innerHTML = left
-      ? (IV[IC]===BOX ? '□ に入力' : '<span class="ar">→</span> で次の □ へ')
-      : 'こう読まれます';
-    box.classList.toggle('todo', left);
+  const h = $('hintLine');
+  if(h.classList.contains('warn')) return;      /* 警告を出している間はそのまま */
+  const q = curQ();
+  if(pickMode){ h.classList.remove('todo'); h.textContent = ''; return; }
+  if(IV.indexOf(BOX)>=0){
+    h.classList.add('todo');
+    h.textContent = IV[IC]===BOX ? '□ に入力してください' : '→ を押して次の □ へ';
+  }else{
+    h.classList.remove('todo');
+    h.textContent = (q && q.h) || '';
   }
 }
 /* 書きかけの解答は閉じても消えない。それが分かるようにボタンに出す */
@@ -2511,11 +2528,7 @@ function warnInput(msg){
 }
 function clearWarn(){
   const h = $('hintLine');
-  if(h.classList.contains('warn')){
-    h.classList.remove('warn');
-    const q = curQ();
-    h.textContent = (q && !pickMode) ? (q.h || '') : '';
-  }
+  if(h.classList.contains('warn')){ h.classList.remove('warn'); paintPreview(); }
 }
 
 function submit(){
@@ -2587,7 +2600,7 @@ function showResult(q, ok, given){
     /* シートが計算スペースを覆うので、判定側にも問題文を出しておく */
     '<div class="rq mq">'+fmt(q.q)+(q.g?'<span class="rg">（'+fmt(q.g)+'）</span>':'')+'</div>' +
     mark + your +
-    '<div class="rans"><div class="lb">答え</div><div class="va mq">'+fmt(q.a[0])+'</div>'+alt+'</div>' +
+    '<div class="rans'+(ok===false?' ngb':'')+'"><div class="lb">答え</div><div class="va mq">'+fracAns(q.a[0])+'</div>'+alt+'</div>' +
     (q.e ? '<div class="rexp">'+fmt(q.e)+'</div>' : '') +
     '<div class="rbtns" id="resBtns"></div>';
 
