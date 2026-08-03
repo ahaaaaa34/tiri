@@ -313,7 +313,7 @@
 
   /* ---------- 解答入力 ---------- */
   .ansq{padding:0 14px 8px; font-size:13px; color:var(--t2); line-height:1.7; flex:none}
-  .field .fr{vertical-align:-0.40em; margin:0 .16em}
+  .field .fr{margin:0 .18em}
   .field .fr .fn,.field .fr .fd{font-size:.86em; padding:0 .22em}
   .field{
     margin:0 12px 4px; background:var(--card); border:1px solid var(--bd); border-radius:11px;
@@ -361,9 +361,12 @@
   .k.go:active{background:#000}
   .k .sm{font-size:12px}
   /* 横棒の分数（入力プレビュー用） */
-  .fr{display:inline-flex; flex-direction:column; align-items:center; vertical-align:-0.45em; margin:0 .12em; line-height:1.05}
-  .fr .fn{font-size:.78em; padding:0 .18em}
-  .fr .fd{font-size:.78em; padding:0 .18em; border-top:1px solid currentColor; margin-top:.06em}
+  .fr{display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle;
+      margin:0 .14em; line-height:1.12; position:relative; top:-.08em}
+  .fr .fn{font-size:.82em; padding:0 .2em}
+  .fr .fd{font-size:.82em; padding:0 .2em; border-top:1px solid currentColor; margin-top:.08em}
+  /* 分数が入る行は少し行間を広げて、上下の行とぶつからないようにする */
+  .rexp,.wexp,.proof,.qt,.ansq{line-height:2}
 
   /* 記号で書けない答え（増加/減少・対称の軸など）は選択式にする */
   .chbox{padding:2px 12px 10px; display:flex; flex-direction:column; gap:7px; overflow-y:auto; min-height:0}
@@ -1210,16 +1213,26 @@ ALL.forEach(q=>BYID[q.id]=q);
 /* =======================================================================
    数式マークアップ → HTML
    ======================================================================= */
+/* a/b を横棒の分数に組み直す。
+   1/a^3 の分母は a^3 なので、組み立て済みの <sup>…</sup> や根号のかたまりも
+   まとめて分母・分子として拾う。ここを取りこぼすと (1/a)^3 に見えてしまう。 */
+const FR_RT  = '<span class="rt">(?:<span class="ri">[^<]*<\\/span>)?&radic;<span class="rb">[^<]*<\\/span><\\/span>';
+const FR_TOK = '(?:\\([^()]*\\)|' + FR_RT + '|[0-9a-z.□\\u0001]+)'
+             + '(?:<sup>[^<]*<\\/sup>|<sub>[^<]*<\\/sub>)?';
+const FR_RE  = new RegExp('('+FR_TOK+')\\/('+FR_TOK+')', 'g');
 function fmt(s){
   /* 先に &, <, > をエスケープしてから数式マークアップを展開する。
      こうしないと "0<x<8" の "<x" がタグとして解釈されて文字が消える。 */
   return esc(String(s))
+    /* 答えは a^(5/3) のように括弧で書くので、これも上付きとして扱う */
+    .replace(/\^\(([^()]*)\)/g,'^{$1}')
     .replace(/√\[(.+?)\]\{(.+?)\}/g,'<span class="rt"><span class="ri">$1</span>&radic;<span class="rb">$2</span></span>')
     .replace(/√\{(.+?)\}/g,'<span class="rt">&radic;<span class="rb">$1</span></span>')
     .replace(/\^\{(.+?)\}/g,'<sup>$1</sup>')
     .replace(/_\{(.+?)\}/g,'<sub>$1</sub>')
     .replace(/\^(-?[0-9a-zA-Z])/g,'<sup>$1</sup>')
-    .replace(/_(-?[0-9a-zA-Z])/g,'<sub>$1</sub>');
+    .replace(/_(-?[0-9a-zA-Z])/g,'<sub>$1</sub>')
+    .replace(FR_RE, (m,a,b)=>'<span class="fr"><span class="fn">'+a+'</span><span class="fd">'+b+'</span></span>');
 }
 function esc(s){
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -2338,23 +2351,12 @@ function preview(s){
   /* log_2(3) の括弧は入力の都合なので、表示では外して log₂3 にする */
   t = t.replace(/log_([\d□\u0001]+(?:\/[\d\u0001]+)?|[a-z]\u0001?)\(([^()]*)\)/g, 'log_{$1}$2');
   t = t.replace(/log_([\d□\u0001]+(?:\/[\d\u0001]+)?|[a-z]\u0001?)/g, 'log_{$1}');
-  return boxify(fracHTML(fmt(t)));
+  return boxify(fmt(t));
 }
 /* 答えが「ただの分数」のときだけ横棒に組む。
    1/10^3 のような式まで組むと (1/10)^3 に見えてしまうので手を出さない。 */
-function fracAns(a){
-  const t = String(a);
-  if(/^-?[0-9a-z.]+\/[0-9a-z.]+$/.test(t)){
-    const neg = t[0]==='-' ? '-' : '';
-    const parts = (neg ? t.slice(1) : t).split('/');
-    return neg+'<span class="fr"><span class="fn">'+esc(parts[0])+'</span><span class="fd">'+esc(parts[1])+'</span></span>';
-  }
-  return fmt(t);
-}
-
-/* a/b を横棒の分数に組み直す（表示のときだけ） */
 function fracHTML(h){
-  return h.replace(/(\([^()]*\)|[0-9a-z.□\u0001]+)\/(\([^()]*\)|[0-9a-z.□\u0001]+)/g,
+  return h.replace(FR_RE,
     (m,a,b)=>'<span class="fr"><span class="fn">'+a+'</span><span class="fd">'+b+'</span></span>');
 }
 /* 入力欄がそのまま数式になったので、下の行は「次に何をすればいいか」だけを言う。
@@ -2600,7 +2602,7 @@ function showResult(q, ok, given){
     /* シートが計算スペースを覆うので、判定側にも問題文を出しておく */
     '<div class="rq mq">'+fmt(q.q)+(q.g?'<span class="rg">（'+fmt(q.g)+'）</span>':'')+'</div>' +
     mark + your +
-    '<div class="rans'+(ok===false?' ngb':'')+'"><div class="lb">答え</div><div class="va mq">'+fracAns(q.a[0])+'</div>'+alt+'</div>' +
+    '<div class="rans'+(ok===false?' ngb':'')+'"><div class="lb">答え</div><div class="va mq">'+fmt(q.a[0])+'</div>'+alt+'</div>' +
     (q.e ? '<div class="rexp">'+fmt(q.e)+'</div>' : '') +
     '<div class="rbtns" id="resBtns"></div>';
 
