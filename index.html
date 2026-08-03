@@ -1331,6 +1331,36 @@ const S = {
 const $ = id => document.getElementById(id);
 
 /* =======================================================================
+   範囲ごとの続き（通常モード）
+
+   同じ範囲をまた選んだとき、前に見ていたところから始められるようにする。
+   「続きから」は中断した1件だけを丸ごと戻すもので、こちらは範囲ごとに
+   「何問目まで進んだか」だけを覚えておくもの。
+   ======================================================================= */
+const POSKEY = 'explog_pos_v1';
+let POS = {};
+function loadPOS(){
+  try{ const r = localStorage.getItem(POSKEY); POS = r ? JSON.parse(r) : {}; }catch(e){ POS = {}; }
+  if(!POS || typeof POS !== 'object') POS = {};
+}
+function savePOS(){ try{ localStorage.setItem(POSKEY, JSON.stringify(POS)); }catch(e){} }
+/* 並べ替えたときの位置は次に開くと意味が変わるので覚えない */
+function posTrackable(){ return S.mode==='normal' && !S.shuffle; }
+function setPos(topic, idx){
+  if(!topic) return;
+  if(idx<=0){ if(POS[topic]!==undefined){ delete POS[topic]; savePOS(); } return; }
+  if(POS[topic]===idx) return;
+  POS[topic] = idx; savePOS();
+}
+function getPos(topic, len){
+  const v = POS[topic];
+  if(typeof v !== 'number' || !(v>0)) return 0;
+  return v < len ? v : 0;        /* 問題が減っていたら最初から */
+}
+function clearPos(topic){ if(POS[topic]!==undefined){ delete POS[topic]; savePOS(); } }
+loadPOS();
+
+/* =======================================================================
    出題プール
    ======================================================================= */
 function poolOf(topicId, mode){
@@ -1486,8 +1516,12 @@ function renderMenu(){
     return;
   }
 
-  const mk = (id, name, desc, n, wsum, rate, isAll)=>
-    mkItem(id, name, desc, n, wsum, (S.mode==='normal'?rate:0), isAll, ()=>startSession(id));
+  const mk = (id, name, desc, n, wsum, rate, isAll)=>{
+    /* 前に途中でやめた範囲は、どこから始まるかを見せておく */
+    const at = (S.mode==='normal' && !S.shuffle) ? getPos(id, n) : 0;
+    const d = at>0 ? (at+1)+'問目から　'+desc : desc;
+    return mkItem(id, name, d, n, wsum, (S.mode==='normal'?rate:0), isAll, ()=>startSession(id));
+  };
 
   /* いちばん上は「この区分をまとめて」 */
   const sideRate = doneRate(scopeList(SIDE));
@@ -1689,20 +1723,22 @@ $('stBack').addEventListener('click', ()=>{ renderHome(); show('home'); });
 /* =======================================================================
    セッション
    ======================================================================= */
-function startSession(topicId){
+function startSession(topicId, fromStart){
   let p = poolOf(topicId, S.mode);
   if(p.length===0){ renderMenu(); return; }
   /* 復習系のモードは「間違いが多い順」に意味があるので並べ替えない */
   if(S.shuffle && S.mode==='normal') p = shuffled(p);
-  runQueue(p, topicId);
+  if(fromStart) clearPos(topicId);
+  const at = (!fromStart && S.mode==='normal' && !S.shuffle) ? getPos(topicId, p.length) : 0;
+  runQueue(p, topicId, at);
 }
 /* 問題の並びを受け取ってセッションを始める（復習セッションもここを通る） */
-function runQueue(list, topicId){
+function runQueue(list, topicId, at){
   closeSheets();
   S.locked = false;
   S.topic = topicId;
   S.queue = list;
-  S.idx = 0;
+  S.idx = (at>0 && at<list.length) ? at : 0;
   S.okCount = 0;
   S.wrongList = [];
   S.scored = {};
@@ -1785,6 +1821,7 @@ function resumeSession(r){
 function renderQ(){
   const q = curQ();
   if(!q){ finish(); return; }
+  if(posTrackable()) setPos(S.topic, S.idx);
   const tName = SCOPES[S.topic] ? q.tname : (TOPICS.find(t=>t.id===S.topic)||{}).name;
   $('pTitle').textContent = tName || '';
   $('pCount').textContent = (S.idx+1)+' / '+S.queue.length;
@@ -1841,6 +1878,7 @@ function prev(){
 
 function finish(){
   clearSession();
+  clearPos(S.topic);          /* 最後まで解いたので、次はまた1問目から */
   $('progBar').style.width = '100%';
   const n = S.queue.length;
   $('dScore').innerHTML = S.okCount + '<i>/ '+n+'</i>';
@@ -1884,7 +1922,7 @@ function finish(){
     const again = S.wrongList.slice();
     add('間違えた問題をもう一度', false, ()=>runQueue(again.map(id=>BYID[id]), S.topic));
   }
-  add('同じ範囲をもう一度', S.wrongList.length>0, ()=>startSession(S.topic));
+  add('同じ範囲をもう一度', S.wrongList.length>0, ()=>startSession(S.topic, true));
   add('メニューに戻る', true, goHome);
   show('done');
 }
@@ -2557,7 +2595,7 @@ $('menuSheet').addEventListener('click', e=>{
       showResult(q, false, IV);
     }
     else if(act==='restart'){
-      confirmAsk('最初からやり直しますか？','この範囲を1問目から出題し直します。','やり直す',()=>startSession(S.topic));
+      confirmAsk('最初からやり直しますか？','この範囲を1問目から出題し直します。','やり直す',()=>startSession(S.topic, true));
     }
     else if(act==='home'){ goHome(); }
   }, 200);
@@ -2594,7 +2632,7 @@ $('shufBtn').addEventListener('click', ()=>{
 
 $('resetAll').addEventListener('click', ()=>{
   confirmAsk('学習記録を消去しますか？','間違えた回数と復習リストがすべて消えます。この操作は元に戻せません。','すべて消去',()=>{
-    ST = {}; saveST(); renderHome(); renderMenu();
+    ST = {}; saveST(); POS = {}; savePOS(); renderHome(); renderMenu();
   });
 });
 
