@@ -23,6 +23,7 @@
     --bd:#E0E0DC;
     --bd2:#EEEEEA;
     --err:#8B0000;
+    --ok:#00008B;
     --sh:0 1px 2px rgba(17,17,17,.04);
     --safe-b:env(safe-area-inset-bottom, 0px);
   }
@@ -51,7 +52,6 @@
   /* ---------- メニュー ---------- */
   #menu{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 18px calc(40px + var(--safe-b))}
   .mhead{padding:34px 0 22px; text-align:center}
-  .mhead .ver{margin:0 0 6px; font-size:11px; color:var(--t3); letter-spacing:.14em}
   .mhead h1{margin:0; font-size:25px; font-weight:600; letter-spacing:.06em}
   .mhead .cap{margin:6px 0 0; font-size:12px; color:var(--t3); letter-spacing:.18em}
   .sec{margin:0 0 9px; font-size:11px; color:var(--t3); letter-spacing:.14em; font-weight:600}
@@ -397,10 +397,8 @@
     padding:8px 17px 8px 13px; border-radius:999px;
   }
   .rmark svg{width:21px; height:21px; stroke-width:2; fill:none; stroke-linecap:round; stroke-linejoin:round}
-  /* 正解は白地に黒枠（下の「次の問題へ」の黒と紛れないように）、
-     不正解だけ #8B0000 で塗って目に飛び込むようにする */
-  .rmark.ok{background:var(--card); color:var(--t1); box-shadow:inset 0 0 0 2px var(--t1)}
-  .rmark.ok svg{stroke:var(--t1)}
+  /* 正解は青、不正解は赤で塗りつぶす */
+  .rmark.ok{background:var(--ok); color:var(--card)} .rmark.ok svg{stroke:var(--card)}
   .rmark.ng{background:var(--err); color:var(--card)} .rmark.ng svg{stroke:var(--card)}
   .rmark.sk{background:var(--bg2); color:var(--t2); border:1px solid var(--bd)}
   .rmark.sk svg{stroke:var(--t2); fill:var(--t2)}
@@ -467,7 +465,6 @@
   <!-- ========== トップ（教科書かオリジナルかを選ぶ） ========== -->
   <div id="home">
     <div class="mhead">
-      <p class="ver">v2</p>
       <h1>指数・対数</h1>
       <p class="cap">数学 II</p>
     </div>
