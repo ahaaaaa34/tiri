@@ -5,7 +5,7 @@
    なので、ページ本体は「ネットワーク優先・失敗したらキャッシュ」、
    アイコン等の変わらないものは「キャッシュ優先・裏で更新」にしている。 */
 
-const VERSION = 'v23';                       // 中身を変えたらここを上げる
+const VERSION = 'v24';                       // 中身を変えたらここを上げる
 const CACHE   = 'explog-' + VERSION;
 
 const SHELL = [

@@ -397,7 +397,10 @@
     padding:8px 17px 8px 13px; border-radius:999px;
   }
   .rmark svg{width:21px; height:21px; stroke-width:2; fill:none; stroke-linecap:round; stroke-linejoin:round}
-  .rmark.ok{background:var(--t1); color:var(--card)} .rmark.ok svg{stroke:var(--card)}
+  /* 正解は白地に黒枠（下の「次の問題へ」の黒と紛れないように）、
+     不正解だけ #8B0000 で塗って目に飛び込むようにする */
+  .rmark.ok{background:var(--card); color:var(--t1); box-shadow:inset 0 0 0 2px var(--t1)}
+  .rmark.ok svg{stroke:var(--t1)}
   .rmark.ng{background:var(--err); color:var(--card)} .rmark.ng svg{stroke:var(--card)}
   .rmark.sk{background:var(--bg2); color:var(--t2); border:1px solid var(--bd)}
   .rmark.sk svg{stroke:var(--t2); fill:var(--t2)}
@@ -464,7 +467,7 @@
   <!-- ========== トップ（教科書かオリジナルかを選ぶ） ========== -->
   <div id="home">
     <div class="mhead">
-      <p class="ver">v1</p>
+      <p class="ver">v2</p>
       <h1>指数・対数</h1>
       <p class="cap">数学 II</p>
     </div>
