@@ -86,6 +86,17 @@
   .titem.all{background:var(--t1); border-color:var(--t1); color:var(--card)}
   .titem.all .nm span,.titem.all .num,.titem.all .arw{color:rgba(255,255,255,.62)}
   .titem.all:active{background:#000}
+  /* 途中でやめた範囲は、カード＋「途中から」の2つ並びにする */
+  .trow{display:flex; gap:7px; align-items:stretch}
+  .trow .titem{flex:1; min-width:0}
+  .tcont{
+    flex:none; width:78px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    background:var(--bg2); border:1px solid var(--bd); border-radius:13px; box-shadow:var(--sh);
+    padding:8px 4px; transition:transform .06s, background .12s;
+  }
+  .tcont:active{transform:scale(.97); background:var(--bd2)}
+  .tcont .cl{font-size:10px; color:var(--t3); letter-spacing:.04em}
+  .tcont b{font-size:13px; font-weight:600; color:var(--t1); font-variant-numeric:tabular-nums}
   .titem[disabled]{opacity:.4; box-shadow:none}
   .titem.rsm{border-style:dashed; border-color:var(--bd); margin-bottom:0}
   .mini-bar{display:block; height:2px; background:var(--bd2); border-radius:2px; margin-top:7px; overflow:hidden}
@@ -1453,8 +1464,10 @@ function renderResume(){
   $('dropResume').addEventListener('click', ()=>{ clearSession(); renderResume(); });
 }
 
-/* 1枚のカードを作る。範囲カードもトップの2枚もこれで作る。 */
-function mkItem(id, name, desc, n, wsum, rate, isAll, onTap){
+/* 1枚のカードを作る。範囲カードもトップの2枚もこれで作る。
+   前に途中でやめている範囲には、右に「途中から」の小さいボタンを添える。
+   カード本体を押せば1問目から、そこを押したときだけ続きから。 */
+function mkItem(id, name, desc, n, wsum, rate, isAll, onTap, cont){
   const b = document.createElement('button');
   b.className = 'titem' + (isAll?' all':'');
   if(n===0){ b.disabled = true; }
@@ -1466,7 +1479,17 @@ function mkItem(id, name, desc, n, wsum, rate, isAll, onTap){
     '<span class="nm"><b>'+esc(name)+'</b><span>'+esc(desc)+'</span>'+bar+'</span>'+
     '<span class="rt2">'+badge+'<span class="num">'+n+'</span><span class="arw">›</span></span>';
   b.addEventListener('click', ()=>{ if(n>0) onTap(); });
-  return b;
+  if(!cont) return b;
+
+  const row = document.createElement('div');
+  row.className = 'trow';
+  const c = document.createElement('button');
+  c.className = 'tcont';
+  c.innerHTML = '<span class="cl">途中から</span><b>'+cont.at+'問目</b>';
+  c.setAttribute('aria-label', name+' の続き、'+cont.at+'問目から');
+  c.addEventListener('click', cont.onTap);
+  row.appendChild(b); row.appendChild(c);
+  return row;
 }
 
 /* トップ画面 ── 教科書かオリジナルかを選ぶ */
@@ -1517,10 +1540,11 @@ function renderMenu(){
   }
 
   const mk = (id, name, desc, n, wsum, rate, isAll)=>{
-    /* 前に途中でやめた範囲は、どこから始まるかを見せておく */
+    /* 前に途中でやめた範囲には「途中から」を添える。押さなければ1問目から。 */
     const at = (S.mode==='normal' && !S.shuffle) ? getPos(id, n) : 0;
-    const d = at>0 ? (at+1)+'問目から　'+desc : desc;
-    return mkItem(id, name, d, n, wsum, (S.mode==='normal'?rate:0), isAll, ()=>startSession(id));
+    const cont = at>0 ? {at:at+1, onTap:()=>startSession(id)} : null;
+    return mkItem(id, name, desc, n, wsum, (S.mode==='normal'?rate:0), isAll,
+                  ()=>startSession(id, true), cont);
   };
 
   /* いちばん上は「この区分をまとめて」 */
@@ -2627,7 +2651,7 @@ $('toTop').addEventListener('click', goTop);
 
 $('shufBtn').addEventListener('click', ()=>{
   S.shuffle = !S.shuffle;
-  $('shufBtn').setAttribute('aria-pressed', S.shuffle?'true':'false');
+  renderMenu();   /* 並べ替えると「途中から」は意味がなくなるので出し入れする */
 });
 
 $('resetAll').addEventListener('click', ()=>{
