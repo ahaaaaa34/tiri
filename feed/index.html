@@ -27,6 +27,7 @@
   --safeB:env(safe-area-inset-bottom,0px);
   --navH:50px;
   --topH:44px;
+  --toolH:54px;
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
 html,body{height:100%; margin:0; overflow:hidden; background:var(--bg)}
@@ -87,8 +88,7 @@ sup{vertical-align:.5em} sub{vertical-align:-.28em}
 /* ---------- 左下（TikTok の アカウント名＋動画タイトル の場所） ---------- */
 .meta{position:relative; z-index:2; padding:0 78px 0 14px; max-width:100%}
 /* 何問目か */
-.who{font-size:17px; font-weight:700; letter-spacing:.02em; display:flex; align-items:baseline; gap:8px}
-.who .sub{font-size:12px; font-weight:400; color:var(--t3)}
+.who{font-size:17px; font-weight:700; letter-spacing:.02em}
 /* 問題文 */
 .cap{
   margin-top:9px; font-size:19px; line-height:1.85; color:var(--t1);
@@ -101,12 +101,6 @@ sup{vertical-align:.5em} sub{vertical-align:-.28em}
 .lnks{margin-top:8px; display:flex; gap:16px; align-items:center}
 .lnk{font-size:12.5px; color:var(--t3); letter-spacing:.02em}
 .lnk:active{color:var(--t1)}
-.hintbox{margin-top:8px; font-size:13px; color:var(--t2); line-height:1.8;
-         border-left:2px solid var(--line); padding-left:10px}
-/* いちばん下の「♫ …」の行 */
-.music{margin-top:12px; display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--t2); overflow:hidden}
-.music svg{width:14px; height:14px; flex:none; fill:currentColor}
-.music span{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 
 /* 動画が映っている場所。ここをタップすると計算スペースが開く。 */
 .void{
@@ -222,7 +216,7 @@ sup{vertical-align:.5em} sub{vertical-align:-.28em}
   position:absolute; inset:0; z-index:2; background:#fff; border-radius:9px;
   display:flex; align-items:center; justify-content:center;
 }
-.penbtn svg{width:20px; height:20px; stroke:#000; stroke-width:2; fill:none}
+.nb .penbtn svg{width:20px; height:20px; stroke:#000; stroke-width:2; fill:none}
 .nb.pen span{color:var(--t3)}
 
 /* =======================================================================
@@ -361,23 +355,37 @@ sup{vertical-align:.5em} sub{vertical-align:-.28em}
 .note{font-size:11px; color:var(--t3); line-height:1.8; margin-top:10px}
 
 /* =======================================================================
-   書くモード
+   計算スペース
+
+   別の画面には移らない。問題も右のアイコン列も出したまま、
+   その上に透明なキャンバスを1枚だけ重ねて書く。
+   書いたものは書き終えたあとも残るので、カードを見れば計算が見える。
    ======================================================================= */
-#write{position:fixed; inset:0; z-index:7; background:#0e0e10; display:flex; flex-direction:column}
-#wq{
-  flex:none; padding:calc(var(--safeT) + 10px) 14px 10px; font-size:14.5px; line-height:1.9; color:var(--t1);
-  border-bottom:1px solid var(--line); max-height:34dvh; overflow-y:auto;
+#padLayer{
+  position:fixed; left:0; right:0; top:0; z-index:3;
+  bottom:calc(var(--navH) + var(--safeB));
+  pointer-events:none;                 /* 書くモードのときだけ受け取る */
 }
-#wq .g{display:block; margin-top:4px; font-size:12px; color:var(--t3)}
-.padwrap{flex:1; position:relative; min-height:0; background:#17171a}
+body.writing #padLayer{pointer-events:auto}
 #pad{position:absolute; inset:0; width:100%; height:100%; touch-action:none; display:block}
 #padHint{
   position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
   color:rgba(255,255,255,.22); font-size:13px; pointer-events:none; transition:opacity .2s; letter-spacing:.06em;
+  opacity:0;
 }
+/* 書いている間は、問題文と右の列を道具の列のぶんだけ持ち上げる */
+.card,.rail{transition:padding-bottom .18s, bottom .18s}
+body.writing .card{padding-bottom:calc(var(--navH) + var(--safeB) + var(--toolH) + 14px)}
+body.writing .rail{bottom:calc(var(--navH) + var(--safeB) + var(--toolH) + 18px)}
+body.writing .void,
+body.knows-write .void{opacity:0}
 #tools{
-  flex:none; display:flex; align-items:center; gap:4px; padding:8px 8px calc(8px + var(--safeB));
-  background:#000; border-top:1px solid rgba(255,255,255,.08);
+  position:fixed; left:0; right:0; z-index:5;
+  bottom:calc(var(--navH) + var(--safeB));
+  height:var(--toolH);
+  display:flex; align-items:center; gap:4px; padding:0 8px;
+  background:rgba(0,0,0,.86); backdrop-filter:blur(6px);
+  border-top:1px solid rgba(255,255,255,.08);
 }
 .tb{
   height:38px; min-width:36px; padding:0 7px; border-radius:9px; background:#1e1e21; color:var(--t2);
@@ -438,14 +446,12 @@ sup{vertical-align:.5em} sub{vertical-align:-.28em}
   </button>
 </nav>
 
-<!-- 書くモード -->
-<div id="write" class="hide">
-  <div id="wq" class="mq"></div>
-  <div class="padwrap">
-    <canvas id="pad"></canvas>
-    <div id="padHint">ここに計算を書けます</div>
-  </div>
-  <div id="tools">
+<!-- 計算スペース（画面はそのまま、上に重ねて書く） -->
+<div id="padLayer">
+  <canvas id="pad"></canvas>
+  <div id="padHint">ここに計算を書けます</div>
+</div>
+<div id="tools" class="hide">
     <button class="tb on" id="tPen" aria-label="ペン"><svg viewBox="0 0 24 24"><path d="M4 20l4-1 10-10-3-3L5 16z"/><path d="M14 6l3 3"/></svg></button>
     <div class="seg" id="penSeg">
       <button data-w="1.6"><i style="height:2px"></i></button>
@@ -456,8 +462,7 @@ sup{vertical-align:.5em} sub{vertical-align:-.28em}
     <button class="tb" id="tUndo" aria-label="戻す"><svg viewBox="0 0 24 24"><path d="M9 5L4 10l5 5"/><path d="M4 10h9a6 6 0 010 12h-3"/></svg></button>
     <button class="tb" id="tRedo" aria-label="やり直す"><svg viewBox="0 0 24 24"><path d="M15 5l5 5-5 5"/><path d="M20 10h-9a6 6 0 000 12h3"/></svg></button>
     <button class="tb" id="tClr" aria-label="全部消す"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg></button>
-    <button class="tb done" id="tDone">とじる</button>
-  </div>
+  <button class="tb done" id="tDone">書き終わり</button>
 </div>
 
 <div id="back"></div>
@@ -781,17 +786,11 @@ function cardHTML(q, n){
       '<span class="n">'+(SHUF?'ランダム':'じゅんばん')+'</span></button>'+
   '</div>'+
   '<div class="meta">'+
-    '<div class="who">'+n+'問目<span class="sub">'+esc(shortName(t))+'</span></div>'+
+    '<div class="who">'+n+'問目</div>'+
     '<div class="cap mq">'+fmt(q.q)+'</div>'+
     (q.g ? '<div class="given">ただし <b>'+fmt(q.g)+'</b></div>' : '')+
     '<div class="tags">#'+esc(shortName(t).replace(/\s/g,''))+' #'+(q.topic.indexOf('tb-')===0?'教科書':'オリジナル')+(q.self?' #証明':'')+'</div>'+
-    '<div class="lnks">'+
-      (q.h ? '<button class="lnk" data-a="hint">ヒントを見る</button>' : '')+
-      '<button class="lnk" data-a="answer">解答・解説</button>'+
-    '</div>'+
-    '<div class="hintbox hide"></div>'+
-    '<div class="music"><svg viewBox="0 0 24 24"><path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.6"/><circle cx="17.5" cy="16" r="2.6"/></svg>'+
-      '<span>'+esc(t.name)+' ・ 全'+list.length+'問 ・ '+esc(t.desc)+'</span></div>'+
+    '<div class="lnks"><button class="lnk" data-a="reveal">解答・解説</button></div>'+
   '</div>';
 }
 
@@ -821,7 +820,6 @@ function setCur(i){
   CUR = i;
   addCards(i + 6);                 /* 先の分をすこし作っておく */
   usePad(queue[i] ? queue[i].id : 'x');
-  if(!$('write').classList.contains('hide')) paintWQ();
 }
 
 function rebuild(){
@@ -833,6 +831,7 @@ function rebuild(){
   CUR = 0;
   for(const k in answered) delete answered[k];
   resetPadStore();
+  setWrite(false);
   if(!pool.length){
     const el = document.createElement('section');
     el.className = 'card';
@@ -914,7 +913,7 @@ function setScope(id){
 /* =======================================================================
    シート
    ======================================================================= */
-function openSheet(el){ $('back').classList.add('on'); el.classList.add('on'); }
+function openSheet(el){ setWrite(false); $('back').classList.add('on'); el.classList.add('on'); }
 function closeSheets(){
   $('back').classList.remove('on');
   ['ansSheet','scopeSheet','statSheet'].forEach(id=>{
@@ -1266,15 +1265,17 @@ function showSelf(q, again){
   armBtns(bt);
 }
 
-/* 答えだけ見る（記録に残さない＝スキップ扱い） */
+/* 答えを見る。自分では解いていないので不正解として記録する。
+   （答えずにスクロールで送ったぶんは、いままでどおり記録に残らない） */
 function reveal(){
   const q = curQ();
   if(!q) return;
+  if(answered[CUR]){ openAnswer(); return; }   /* もう答えている問題はその結果を出す */
   $('ansQ').innerHTML = fmt(q.q) + (q.g ? '<span class="g">ただし '+fmt(q.g)+'</span>' : '');
   openSheet($('ansSheet'));
   if(q.self){ showSelf(q, false); return; }
-  score(q, null);
-  showResult(q, null, IV, false);
+  score(q, false);
+  showResult(q, false, '', true);
 }
 
 /* =======================================================================
@@ -1343,7 +1344,7 @@ function paint(){
   ctx.drawImage(buf,0,0);
   if(cur) inkStroke(ctx, cur);
   const n = strokes.length + (cur?1:0);
-  $('padHint').style.opacity = n ? 0 : 1;
+  $('padHint').style.opacity = (n || !writing) ? 0 : 1;
   $('tUndo').disabled = strokes.length===0;
   $('tRedo').disabled = redoStack.length===0;
 }
@@ -1413,7 +1414,7 @@ function usePad(key){
   strokes = padStore[key].s;
   redoStack = padStore[key].r;
   cur = null;
-  if(!$('write').classList.contains('hide')) bake();
+  bake();
 }
 function resetPadStore(){
   for(const k in padStore) delete padStore[k];
@@ -1430,25 +1431,21 @@ $('tEra').addEventListener('click', ()=>setTool('era'));
 $('tUndo').addEventListener('click', undo);
 $('tRedo').addEventListener('click', redo);
 $('tClr').addEventListener('click', ()=>{ clearPad(); buzz(10); });
-$('tDone').addEventListener('click', closeWrite);
+$('tDone').addEventListener('click', ()=>setWrite(false));
 
-function paintWQ(){
+/* 画面はそのまま。キャンバスが指を受け取るかどうかだけを切り替える。 */
+let writing = false;
+function setWrite(on){
   const q = curQ();
-  if(!q) return;
-  $('wq').innerHTML = '<b style="font-family:inherit;font-size:12px;color:var(--t3);display:block;margin-bottom:5px;font-weight:400">'+
-                      (CUR+1)+'問目</b>' + fmt(q.q) + (q.g ? '<span class="g">ただし '+fmt(q.g)+'</span>' : '');
-}
-function openWrite(){
-  if(!curQ()) return;
-  paintWQ();
-  $('write').classList.remove('hide');
-  usePad(curQ().id);
-  requestAnimationFrame(()=>{ setupPad(); });
-  syncNav('write');
-}
-function closeWrite(){
-  $('write').classList.add('hide');
-  syncNav('home');
+  if(on && !q) return;
+  writing = on;
+  document.body.classList.toggle('writing', on);
+  if(on) document.body.classList.add('knows-write');
+  $('tools').classList.toggle('hide', !on);
+  syncNav(on ? 'write' : 'home');
+  if(on) usePad(q.id);
+  requestAnimationFrame(setupPad);
+  paint();
 }
 
 let rzT = null, lastW = innerWidth, lastH = innerHeight;
@@ -1456,7 +1453,7 @@ window.addEventListener('resize', ()=>{
   if(innerWidth===lastW && innerHeight===lastH) return;
   lastW = innerWidth; lastH = innerHeight;
   clearTimeout(rzT);
-  rzT = setTimeout(()=>{ if(!$('write').classList.contains('hide')) setupPad(); }, 140);
+  rzT = setTimeout(setupPad, 140);
 });
 function buzz(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
 
@@ -1583,18 +1580,10 @@ feed.addEventListener('click', e=>{
 function act(a){
   const q = curQ();
   if(a==='answer'){ openAnswer(); }
-  else if(a==='write'){ openWrite(); }
+  else if(a==='reveal'){ reveal(); }
+  else if(a==='write'){ setWrite(!writing); }
   else if(a==='scope'){ renderScope(); openSheet($('scopeSheet')); }
   else if(a==='stats'){ renderStats(); openSheet($('statSheet')); }
-  else if(a==='hint'){
-    const card = feed.querySelector('.card[data-i="'+CUR+'"]');
-    if(!card || !q) return;
-    const box = card.querySelector('.hintbox');
-    const on = box.classList.toggle('hide');
-    box.innerHTML = 'ヒント　'+esc(q.h||'');
-    const lk = card.querySelector('[data-a="hint"]');
-    if(lk) lk.textContent = on ? 'ヒントを見る' : 'ヒントを隠す';
-  }
   else if(a==='fav'){
     if(!q) return;
     if(FAV[q.id]) delete FAV[q.id]; else FAV[q.id] = 1;
@@ -1619,7 +1608,7 @@ function act(a){
     buzz(8);
   }
   else if(a==='home'){
-    closeWrite();
+    setWrite(false);
     closeSheets();
   }
 }
@@ -1640,6 +1629,7 @@ function syncNav(which){
    ======================================================================= */
 buildTabs();
 rebuild();
+requestAnimationFrame(setupPad);
 
 /* 案内は初回だけ */
 let seen = false;
