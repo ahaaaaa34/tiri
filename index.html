@@ -2600,14 +2600,25 @@ function score(q, ok){
 }
 
 /* 別解のうち「不等号を裏返しただけ」「単位付き」のものは表示しない（読み手には同じ答えなので） */
-/* 決定キーと結果画面のボタンはほぼ同じ位置に出る。
-   決定を押した指の click がそのまま「次の問題へ」に乗ってしまい、
-   答えを読む前に飛ばされていた。出したては少しの間だけ受け付けない。 */
-const BTN_ARM = 450;
+/* 決定キーと結果のボタンはほぼ同じ位置に出るので、決定を押した指の click が
+   そのまま「次の問題へ」に乗ってしまうことがある。 */
+/* 待たせるのではなく、「そのボタン自身を押し下げたときだけ効く」ようにする。
+   決定キーの指が離れたときの click は押し下げが無いので通らない。
+   自分で押したぶんは、その場ですぐ効く。 */
 function armBtns(box){
   if(!box) return;
-  box.style.pointerEvents = 'none';
-  setTimeout(()=>{ box.style.pointerEvents = ''; }, BTN_ARM);
+  Array.prototype.forEach.call(box.children, b=>{
+    let down = false;
+    b.addEventListener('pointerdown', ()=>{ down = true; });
+    b.addEventListener('click', e=>{
+      if(!down && e.detail !== 0){       /* detail 0 はキーボード操作なので通す */
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        return;
+      }
+      down = false;
+    }, true);
+  });
 }
 
 function shownAlts(list){
@@ -2671,7 +2682,27 @@ function showResult(q, ok, given){
 /* =======================================================================
    イベント
    ======================================================================= */
-$('ansBtn').addEventListener('click', openAnswer);
+/* 指を離した瞬間に効かせる。
+   click を待つと、直前まで計算スペースに触れていた指のときに
+   1回目が飛ばされることがあるため。押し下げと離すが同じものの上で
+   起きたときだけ動かすので、なぞって離したときには反応しない。 */
+function onTap(root, sel, run){
+  let downEl = null, last = 0;
+  root.addEventListener('pointerdown', e=>{ downEl = sel ? e.target.closest(sel) : root; });
+  root.addEventListener('pointerup', e=>{
+    const el = sel ? e.target.closest(sel) : root;
+    if(!el || el !== downEl) return;
+    downEl = null; last = Date.now();
+    run(el, e);
+  });
+  root.addEventListener('click', e=>{
+    const el = sel ? e.target.closest(sel) : root;
+    if(!el) return;
+    if(Date.now() - last < 500) return;   /* いま pointerup で動かしたぶんは二重に動かさない */
+    run(el, e);
+  });
+}
+onTap($('ansBtn'), null, openAnswer);
 $('menuBtn').addEventListener('click', ()=>{ syncPrev(); openSheet($('menuSheet')); });
 $('peekBtn').addEventListener('click', closeSheets);   // 入力は残したままシートだけ下ろす
 
