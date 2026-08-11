@@ -110,6 +110,22 @@
     border:1px solid rgba(139,0,0,.24); border-radius:20px; padding:1px 7px; background:rgba(139,0,0,.04);
   }
   .empty{border:1px dashed var(--bd); border-radius:13px; padding:26px 16px; text-align:center; color:var(--t3); font-size:12.5px; line-height:1.8}
+
+  /* ---------- 記録の持ち出し ---------- */
+  .bkrow{display:flex; gap:8px; margin-top:8px}
+  .bkbtn{flex:1; min-height:42px; border-radius:11px; border:1px solid var(--bd);
+         background:var(--card); color:inherit; font-size:13.5px}
+  .bkbtn.go{background:var(--ok); border-color:var(--ok); color:#fff; font-weight:600}
+  .bkbtn:active{opacity:.75}
+  .bknote{font-size:11px; color:var(--t3); line-height:1.85; margin-top:9px}
+  .bkbox{margin-top:12px; padding:12px; border:1px solid var(--bd); border-radius:12px; background:var(--card)}
+  .bkh{margin:0 0 8px; font-size:11.5px; color:var(--t3); line-height:1.8}
+  .bkta{width:100%; height:110px; box-sizing:border-box; padding:9px; border-radius:9px;
+        border:1px solid var(--bd); background:var(--bg2); color:inherit;
+        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px; line-height:1.5;
+        resize:none; -webkit-user-select:text; user-select:text}
+  .bkmsg{margin:8px 0 0; font-size:11.5px; line-height:1.7}
+  .bkmsg.ok{color:var(--ok)} .bkmsg.ng{color:var(--ng)}
   .mfoot{display:flex; justify-content:center; padding-top:6px}
   .lnk{background:none; border:0; color:var(--t3); font-size:11.5px; letter-spacing:.06em; text-decoration:underline; text-underline-offset:3px; padding:8px}
 
@@ -710,6 +726,7 @@
 
 <script src="./katex.min.js"></script>
 <script src="./tex.js"></script>
+<script src="./backup.js"></script>
 <script>
 "use strict";
 
@@ -1718,7 +1735,10 @@ function renderStats(){
   body.innerHTML = '';
 
   if(all.tries===0){
-    body.innerHTML = '<div class="stempty">まだ記録がありません。<br>問題を解くと、範囲ごとの得意・苦手がここに出ます。</div>';
+    /* 記録が無いときこそ「読み込む」が要るので、持ち出しだけは出しておく */
+    body.innerHTML = '<div class="stempty">まだ記録がありません。<br>問題を解くと、範囲ごとの得意・苦手がここに出ます。</div>'+
+                     '<p class="sec" style="margin-top:26px">記録の持ち出し</p><div id="bkHost"></div>';
+    bkPanel($('bkHost'));
     return;
   }
 
@@ -1813,7 +1833,9 @@ function renderStats(){
     html += '</div>';
   }
 
+  html += '<p class="sec" style="margin-top:26px">記録の持ち出し</p><div id="bkHost"></div>';
   body.innerHTML = html;
+  bkPanel($('bkHost'));
 
   $('sortSeg').addEventListener('click', e=>{
     const b = e.target.closest('button');
@@ -2704,6 +2726,74 @@ function onTap(root, sel, run){
     if(Date.now() - last < 500) return;   /* いま pointerup で動かしたぶんは二重に動かさない */
     run(el, e);
   });
+}
+
+/* =======================================================================
+   記録の持ち出し（画面まわり）
+   ======================================================================= */
+let bkFlash = null;      /* 取り込んだあと、描き直したさきで出す知らせ */
+function bkPanel(host){
+  host.innerHTML =
+    '<div class="bkrow">'+
+      '<button class="bkbtn" id="bkOut">書き出す</button>'+
+      '<button class="bkbtn" id="bkIn">読み込む</button>'+
+    '</div>'+
+    '<div class="bknote">記録はこの端末のブラウザの中にしかありません。'+
+      'アプリを入れ直したり、ブラウザのデータを消すと無くなります。'+
+      '書き出した文字列をメモなどに貼っておけば、あとで戻せます。</div>'+
+    '<div class="bkbox hide" id="bkBox"></div>'+
+    (bkFlash ? '<p class="bkmsg ok">'+bkFlash+'</p>' : '');
+  bkFlash = null;
+
+  const box = host.querySelector('#bkBox');
+
+  host.querySelector('#bkOut').addEventListener('click', ()=>{
+    const s = bkExport();
+    box.classList.remove('hide');
+    box.innerHTML =
+      '<p class="bkh">'+bkCount(s)+'問ぶんの記録です。全部コピーして、'+
+        'メモやメッセージに貼っておいてください。</p>'+
+      '<textarea class="bkta" id="bkTa" readonly></textarea>'+
+      '<div class="bkrow"><button class="bkbtn go" id="bkCopy">コピー</button>'+
+      '<button class="bkbtn" id="bkClose">とじる</button></div>';
+    const ta = box.querySelector('#bkTa');
+    ta.value = s;
+    box.querySelector('#bkCopy').addEventListener('click', ()=>{
+      ta.select(); ta.setSelectionRange(0, ta.value.length);
+      const done = ()=>{ box.querySelector('#bkCopy').textContent = 'コピーしました'; };
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(ta.value).then(done, ()=>{ try{ document.execCommand('copy'); done(); }catch(e){} });
+      }else{ try{ document.execCommand('copy'); done(); }catch(e){} }
+    });
+    box.querySelector('#bkClose').addEventListener('click', ()=>box.classList.add('hide'));
+  });
+
+  host.querySelector('#bkIn').addEventListener('click', ()=>{
+    box.classList.remove('hide');
+    box.innerHTML =
+      '<p class="bkh">書き出した文字列を貼りつけてください。'+
+        'いまの記録とつき合わせて、多いほうを残します（同じものを二度読み込んでも増えません）。</p>'+
+      '<textarea class="bkta" id="bkTa" placeholder="ここに貼りつけ"></textarea>'+
+      '<div class="bkrow"><button class="bkbtn go" id="bkGo">読み込む</button>'+
+      '<button class="bkbtn" id="bkClose">とじる</button></div>'+
+      '<p class="bkmsg" id="bkMsg"></p>';
+    box.querySelector('#bkClose').addEventListener('click', ()=>box.classList.add('hide'));
+    box.querySelector('#bkGo').addEventListener('click', ()=>{
+      const n = bkImport(box.querySelector('#bkTa').value);
+      const msg = box.querySelector('#bkMsg');
+      if(n === null){ msg.className = 'bkmsg ng'; msg.textContent = '読み込めませんでした。書き出した文字列を、切らずに全部貼りつけてください。'; return; }
+      /* このあと画面を描き直すので、知らせは次の描画で出す */
+      bkFlash = n + '問ぶんを取り込みました。';
+      bkAfterImport();
+    });
+  });
+}
+
+/* 取り込んだあとは、いまの画面をその記録で描き直す */
+function bkAfterImport(){
+  loadST();
+  renderStats();
+  renderHome();
 }
 onTap($('ansBtn'), null, openAnswer);
 $('menuBtn').addEventListener('click', ()=>{ syncPrev(); openSheet($('menuSheet')); });

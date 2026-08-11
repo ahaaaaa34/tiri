@@ -5,7 +5,7 @@
    なので、ページ本体は「ネットワーク優先・失敗したらキャッシュ」、
    アイコン等の変わらないものは「キャッシュ優先・裏で更新」にしている。 */
 
-const VERSION = 'v28';                       // 中身を変えたらここを上げる
+const VERSION = 'v29';                       // 中身を変えたらここを上げる
 const CACHE   = 'explog-' + VERSION;
 
 const SHELL = [
@@ -16,6 +16,7 @@ const SHELL = [
   './katex.min.js',
   './katex.min.css',
   './tex.js',
+  './backup.js',
   './fonts/KaTeX_AMS-Regular.woff2',
   './fonts/KaTeX_Caligraphic-Bold.woff2',
   './fonts/KaTeX_Caligraphic-Regular.woff2',
