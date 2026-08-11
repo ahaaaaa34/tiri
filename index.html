@@ -2295,7 +2295,6 @@ function setTool(t){
    上に出しておけば、見ながら打てる。
    ======================================================================= */
 const PAD_BG = '#FFFFFF';          /* 切り抜きの下地（計算スペースと同じ色） */
-const LASSO_COLOR = 'rgba(214,40,60,.7)';
 let lasso = null;                    /* 囲っている最中の点の列 */
 const clipStore = {};                /* 問題ごとの切り抜き */
 
@@ -2306,41 +2305,13 @@ function setLasso(on){
   $('tEra').classList.remove('on');
 }
 
-/* 囲う線はペンと同じ引き方で見せる（同じなめらかさ・太い線）。
-   ただし書いた線としては残さない。 */
+/* 囲っている線は、ペンで描いているのとまったく同じに見せる。
+   （描くのに使うのもペンと同じ関数。指を離したときだけ、線として残さず
+     囲いとして使う） */
 function drawLasso(c){
-  if(!lasso || lasso.length < 1) return;
-  c.save();
-  c.setTransform(dpr,0,0,dpr,0,0);
-  c.lineCap = 'round';
-  c.lineJoin = 'round';
-  c.lineWidth = 3.2;
-  c.strokeStyle = LASSO_COLOR;
-  if(lasso.length === 1){
-    c.beginPath();
-    c.arc(lasso[0].x, lasso[0].y, 1.6, 0, Math.PI*2);
-    c.fillStyle = LASSO_COLOR;
-    c.fill();
-  }else{
-    c.beginPath();
-    c.moveTo(lasso[0].x, lasso[0].y);
-    for(let i=1;i<lasso.length-1;i++){
-      const mx=(lasso[i].x+lasso[i+1].x)/2, my=(lasso[i].y+lasso[i+1].y)/2;
-      c.quadraticCurveTo(lasso[i].x, lasso[i].y, mx, my);
-    }
-    const L = lasso[lasso.length-1];
-    c.lineTo(L.x, L.y);
-    /* 閉じきっていなくても、始点まで薄くつないで「囲い」に見せる */
-    c.stroke();
-    c.globalAlpha = 0.45;
-    c.beginPath();
-    c.moveTo(L.x, L.y);
-    c.lineTo(lasso[0].x, lasso[0].y);
-    c.stroke();
-  }
-  c.restore();
+  if(!lasso || !lasso.length) return;
+  inkStroke(c, {tool:'pen', w:penW, pts:lasso});
 }
-
 /* 囲いを閉じて、その中だけを切り抜く */
 function cutLasso(){
   const pts = lasso;
