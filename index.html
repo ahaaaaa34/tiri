@@ -2707,26 +2707,6 @@ function showResult(q, ok, given){
 /* =======================================================================
    イベント
    ======================================================================= */
-/* 指を離した瞬間に効かせる。
-   click を待つと、直前まで計算スペースに触れていた指のときに
-   1回目が飛ばされることがあるため。押し下げと離すが同じものの上で
-   起きたときだけ動かすので、なぞって離したときには反応しない。 */
-function onTap(root, sel, run){
-  let downEl = null, last = 0;
-  root.addEventListener('pointerdown', e=>{ downEl = sel ? e.target.closest(sel) : root; });
-  root.addEventListener('pointerup', e=>{
-    const el = sel ? e.target.closest(sel) : root;
-    if(!el || el !== downEl) return;
-    downEl = null; last = Date.now();
-    run(el, e);
-  });
-  root.addEventListener('click', e=>{
-    const el = sel ? e.target.closest(sel) : root;
-    if(!el) return;
-    if(Date.now() - last < 500) return;   /* いま pointerup で動かしたぶんは二重に動かさない */
-    run(el, e);
-  });
-}
 
 /* =======================================================================
    記録の持ち出し（画面まわり）
@@ -2795,7 +2775,7 @@ function bkAfterImport(){
   renderStats();
   renderHome();
 }
-onTap($('ansBtn'), null, openAnswer);
+$('ansBtn').addEventListener('click', openAnswer);
 $('menuBtn').addEventListener('click', ()=>{ syncPrev(); openSheet($('menuSheet')); });
 $('peekBtn').addEventListener('click', closeSheets);   // 入力は残したままシートだけ下ろす
 
