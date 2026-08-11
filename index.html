@@ -53,6 +53,8 @@
   /* ---------- メニュー ---------- */
   #menu{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 18px calc(40px + var(--safe-b))}
   .mhead{padding:34px 0 22px; text-align:center}
+  /* 更新が届いたか分かるように、トップに小さく版を出す */
+  .mhead .ver{margin:0 0 6px; font-size:11px; color:var(--t3); letter-spacing:.14em}
   .mhead h1{margin:0; font-size:25px; font-weight:600; letter-spacing:.06em}
   .mhead .cap{margin:6px 0 0; font-size:12px; color:var(--t3); letter-spacing:.18em}
   .sec{margin:0 0 9px; font-size:11px; color:var(--t3); letter-spacing:.14em; font-weight:600}
@@ -480,6 +482,7 @@
   <!-- ========== トップ（教科書かオリジナルかを選ぶ） ========== -->
   <div id="home">
     <div class="mhead">
+      <p class="ver">v2</p>
       <h1>指数・対数</h1>
       <p class="cap">数学 II</p>
     </div>
