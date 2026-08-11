@@ -57,6 +57,7 @@ function atom(s, i){
     while(j<s.length && /[0-9A-Za-z.]/.test(s[j])) j++;
     if(j===i) return null;
     tex = s.slice(i, j);
+    if(tex === 'log') tex = '\\log';    /* 分母に来た log も命令として出す */
   }
   /* うしろに上付き・下付きが続くなら、それも込みで1かたまり */
   while(j<s.length && (s[j]==='^' || s[j]==='_')){
@@ -125,7 +126,9 @@ function conv(s){
 
 /* すでに組んだ文字列の末尾から、分子にすべきかたまりを切り出す */
 function lastAtom(out){
-  const m = /((?:\\left\((?:[^()]|\\left\(|\\right\))*\\right\)|\\sqrt(?:\[[^\]]*\])?\{[^{}]*\}|[0-9A-Za-z.]+)(?:[\^_]\{[^{}]*\})*)$/.exec(out);
+  /* \log のような命令の先頭の \ まで含めて切り出す。
+     ここで \ を置いていくと \ + frac に割れて、画面に frac の字が出る。 */
+  const m = /((?:\\left\((?:[^()]|\\left\(|\\right\))*\\right\)|\\sqrt(?:\[[^\]]*\])?\{[^{}]*\}|\\?[0-9A-Za-z.]+)(?:[\^_]\{[^{}]*\})*)$/.exec(out);
   if(!m) return null;
   return {head: out.slice(0, m.index), tex: m[0]};
 }
