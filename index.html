@@ -9,6 +9,7 @@
 <meta name="theme-color" content="#FAFAF8">
 <meta name="description" content="指数関数・対数関数の演習アプリ。手書きの計算スペースと専用キーボードで、スマホだけで解いて記録できます。">
 <link rel="manifest" href="./manifest.webmanifest">
+<link rel="stylesheet" href="./katex.min.css">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="icon" href="./icon-192.png" type="image/png">
 <title>指数・対数 ｜ 数学II</title>
@@ -194,6 +195,17 @@
   .statlink .sl{font-weight:600; flex:none}
   .statlink .sr{flex:1; text-align:right; font-size:11.5px; color:var(--t3); font-variant-numeric:tabular-nums}
   .statlink .arw{color:var(--t3); font-size:17px; line-height:1; flex:none}
+
+  /* ---------- KaTeX ----------
+     数式は KaTeX で組む。地の文はこれまでどおりの書体のまま。 */
+  .katex{font-size:1.05em}
+  .mq .katex{font-size:1em}
+  /* 埋めるべき □ */
+  .tbx{color:var(--ng)}
+  /* 入力欄のカーソル */
+  .tcaret{animation:tcar 1.05s steps(1) infinite; font-weight:300}
+  @keyframes tcar{50%{opacity:0}}
+
   /* 別リポジトリにある「フィード」への行き来。記録は同じものを見ている。 */
   .feedlink{margin-bottom:0; color:inherit; text-decoration:none}
   .feedlink .sr{font-size:11px}
@@ -693,6 +705,8 @@
   </div>
 </div>
 
+<script src="./katex.min.js"></script>
+<script src="./tex.js"></script>
 <script>
 "use strict";
 
@@ -1235,8 +1249,12 @@ const FR_TOK = '(?:\\([^()]*\\)|' + FR_RT + '|[0-9a-z.□\\u0001]+)'
              + '(?:<sup>[^<]*<\\/sup>|<sub>[^<]*<\\/sub>)?';
 const FR_RE  = new RegExp('('+FR_TOK+')\\/('+FR_TOK+')', 'g');
 function fmt(s){
-  /* 先に &, <, > をエスケープしてから数式マークアップを展開する。
-     こうしないと "0<x<8" の "<x" がタグとして解釈されて文字が消える。 */
+  /* まず KaTeX で組む。読み込めていないときだけ、下の昔の組み方に落ちる。 */
+  const k = texHTML(s, esc);
+  if(k !== null) return k;
+  return fmtOld(s);
+}
+function fmtOld(s){
   return esc(String(s))
     /* 答えは a^(5/3) のように括弧で書くので、これも上付きとして扱う */
     .replace(/\^\(([^()]*)\)/g,'^{$1}')
@@ -2358,6 +2376,11 @@ function boxify(html){
 /* 打った文字列を数式の形に直して見せる。
    ^ や √ や log_ が思ったとおりに効いているか、打ちながら確認できるように。 */
 function preview(s){
+  const k = texHTML(unfrac(String(s)), esc);
+  if(k !== null) return k;
+  return previewOld(s);
+}
+function previewOld(s){
   let t = unfrac(String(s));   /* 打った 4⁄1 は 1/4 として読む */
   t = t.replace(/\^\(([^()]*)\)/g, '^{$1}');      // 2^(1/3) → 上付き 1/3
   t = t.replace(/√\(([^()]*)\)/g, '√{$1}');       // √(10)
