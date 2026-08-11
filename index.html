@@ -126,6 +126,13 @@
         resize:none; -webkit-user-select:text; user-select:text}
   .bkmsg{margin:8px 0 0; font-size:11.5px; line-height:1.7}
   .bkmsg.ok{color:var(--ok)} .bkmsg.ng{color:var(--ng)}
+
+  /* ---------- 囲った計算 ---------- */
+  #ansClip{position:relative; margin:0 14px 8px; padding:6px 8px; border:1px solid var(--bd);
+           border-radius:10px; background:var(--bg2); text-align:center}
+  #ansClip img{max-width:100%; max-height:104px; display:inline-block; vertical-align:middle}
+  #ansClip .cx{position:absolute; right:6px; top:6px; font-size:10px; color:var(--t3);
+               background:var(--card); border-radius:99px; padding:3px 8px; line-height:1}
   .mfoot{display:flex; justify-content:center; padding-top:6px}
   .lnk{background:none; border:0; color:var(--t3); font-size:11.5px; letter-spacing:.06em; text-decoration:underline; text-underline-offset:3px; padding:8px}
 
@@ -579,6 +586,9 @@
       <button class="tb" id="tEra" aria-label="消しゴム">
         <svg viewBox="0 0 24 24"><path d="M8.5 19.5H20"/><path d="M15.5 4.5l4 4a1.5 1.5 0 010 2.2l-8 8H7l-3-3a1.5 1.5 0 010-2.2l9.3-9a1.5 1.5 0 012.2 0z"/></svg>
       </button>
+      <button class="tb" id="tSel" aria-label="囲って持っていく">
+        <svg viewBox="0 0 24 24"><path d="M12 4c4.4 0 8 2.7 8 6s-3.6 6-8 6-8-2.7-8-6 3.6-6 8-6z" stroke-dasharray="3 2.5"/><path d="M16.5 15.5l3 4.5"/></svg>
+      </button>
       <div class="tsp"></div>
       <button class="tb" id="tUndo" aria-label="元に戻す">
         <svg viewBox="0 0 24 24"><path d="M9 14l-4-4 4-4"/><path d="M5 10h9a5 5 0 010 10h-3"/></svg>
@@ -643,6 +653,7 @@
       <button class="lnk" id="clrIn">全消去</button>
     </div>
     <div class="ansq mq" id="ansQ"></div>
+    <div id="ansClip" class="hide"></div>
     <div class="field" id="field"></div>
     <!-- 打った文字が数式としてどう読まれるかをその場で見せる -->
     <div class="hintline">
@@ -1877,7 +1888,7 @@ function startSession(topicId, fromStart){
 /* 問題の並びを受け取ってセッションを始める（復習セッションもここを通る） */
 function runQueue(list, topicId, at){
   closeSheets();
-  S.locked = false;
+  S.locked = false; S.resFor = null;
   S.topic = topicId;
   S.queue = list;
   S.idx = (at>0 && at<list.length) ? at : 0;
@@ -1983,7 +1994,7 @@ function renderQ(){
   setFold(foldPref !== null ? foldPref : (innerHeight <= 520 && !q.g));
   usePad(S.idx+'/'+q.id);
   resetInput();
-  S.locked = false;
+  S.locked = false; S.resFor = null;
   syncPrev();
   saveSession();
 }
@@ -2167,6 +2178,7 @@ function paint(){
   ctx.clearRect(0,0,pad.width,pad.height);
   ctx.drawImage(buf,0,0);
   if(cur) inkStroke(ctx, cur);
+  drawLasso(ctx);
   const n = strokes.length + (cur?1:0);
   $('padHint').style.opacity = n ? 0 : 1;
   $('tUndo').disabled = strokes.length===0;
@@ -2184,11 +2196,19 @@ pad.addEventListener('pointerdown', e=>{
   e.preventDefault();
   pad.setPointerCapture(e.pointerId);
   drawing = true;
+  if(tool === 'sel'){ lasso = [ptOf(e)]; paint(); return; }
   redoStack.length = 0;
   cur = { tool:tool, w: tool==='era'?eraW:penW, pts:[ptOf(e)] };
   paint();
 });
 pad.addEventListener('pointermove', e=>{
+  if(drawing && lasso){
+    e.preventDefault();
+    const p = ptOf(e), last = lasso[lasso.length-1];
+    if(Math.abs(p.x-last.x)+Math.abs(p.y-last.y) >= 1.5) lasso.push(p);
+    paint();
+    return;
+  }
   if(!drawing || !cur) return;
   e.preventDefault();
   const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
@@ -2203,6 +2223,7 @@ pad.addEventListener('pointermove', e=>{
 function endDraw(){
   if(!drawing) return;
   drawing = false;
+  if(lasso){ cutLasso(); return; }
   if(cur){ strokes.push(cur); inkStroke(bctx, cur); cur = null; }
   paint();
 }
@@ -2227,7 +2248,7 @@ pad.addEventListener('touchend', e=>{
 
 function undo(){ if(strokes.length){ redoStack.push(strokes.pop()); bake(); buzz(6); } }
 function redo(){ if(redoStack.length){ const s=redoStack.pop(); strokes.push(s); inkStroke(bctx,s); paint(); buzz(6); } }
-function clearPad(){ strokes.length = 0; redoStack.length = 0; cur = null; bake(); }
+function clearPad(){ strokes.length = 0; redoStack.length = 0; cur = null; lasso = null; clearClip(); bake(); }
 
 /* 問題ごとの計算内容を出し入れする。
    1セッション156問ぶんを抱え続けないよう、古いものから捨てる。 */
@@ -2254,9 +2275,97 @@ function resetPadStore(){
 
 function setTool(t){
   tool = t;
+  lasso = null;
+  const sel = $('tSel'); if(sel) sel.classList.remove('on');
   $('tPen').classList.toggle('on', t==='pen');
   $('tEra').classList.toggle('on', t==='era');
 }
+
+/* =======================================================================
+   囲って持っていく
+
+   計算スペースの一部を丸で囲うと、その中だけを切り取っておく。
+   解答を打つ画面は計算スペースを覆ってしまうので、切り取ったぶんを
+   上に出しておけば、見ながら打てる。
+   ======================================================================= */
+const PAD_BG = '#FFFFFF';          /* 切り抜きの下地（計算スペースと同じ色） */
+const LASSO_COLOR = 'rgba(0,0,0,.55)';
+let lasso = null;                    /* 囲っている最中の点の列 */
+const clipStore = {};                /* 問題ごとの切り抜き */
+
+function setLasso(on){
+  tool = on ? 'sel' : 'pen';
+  $('tSel').classList.toggle('on', on);
+  $('tPen').classList.toggle('on', !on);
+  $('tEra').classList.remove('on');
+}
+
+/* 囲っている線は破線で見せるだけ。書いた線としては残さない。 */
+function drawLasso(c){
+  if(!lasso || lasso.length < 2) return;
+  c.save();
+  c.setTransform(dpr,0,0,dpr,0,0);
+  c.lineWidth = 1.4;
+  c.setLineDash([5,4]);
+  c.strokeStyle = LASSO_COLOR;
+  c.beginPath();
+  c.moveTo(lasso[0].x, lasso[0].y);
+  for(let i=1;i<lasso.length;i++) c.lineTo(lasso[i].x, lasso[i].y);
+  c.closePath();
+  c.stroke();
+  c.restore();
+}
+
+/* 囲いを閉じて、その中だけを切り抜く */
+function cutLasso(){
+  const pts = lasso;
+  lasso = null;
+  if(!pts || pts.length < 3){ paint(); return; }
+  let x0=1e9, y0=1e9, x1=-1e9, y1=-1e9;
+  pts.forEach(p=>{ x0=Math.min(x0,p.x); y0=Math.min(y0,p.y); x1=Math.max(x1,p.x); y1=Math.max(y1,p.y); });
+  const m = 6, W = pad.width/dpr, H = pad.height/dpr;
+  x0=Math.max(0,x0-m); y0=Math.max(0,y0-m); x1=Math.min(W,x1+m); y1=Math.min(H,y1+m);
+  const w = Math.round(x1-x0), h = Math.round(y1-y0);
+  if(w < 14 || h < 14){ setLasso(false); paint(); return; }   /* 小さすぎる囲いは無視 */
+
+  const cv = document.createElement('canvas');
+  cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr);
+  const cc = cv.getContext('2d');
+  cc.setTransform(dpr,0,0,dpr,0,0);
+  cc.fillStyle = PAD_BG;
+  cc.fillRect(0,0,w,h);
+  cc.beginPath();
+  cc.moveTo(pts[0].x-x0, pts[0].y-y0);
+  for(let i=1;i<pts.length;i++) cc.lineTo(pts[i].x-x0, pts[i].y-y0);
+  cc.closePath();
+  cc.clip();
+  cc.setTransform(1,0,0,1,0,0);
+  cc.drawImage(buf, Math.round(x0*dpr), Math.round(y0*dpr), Math.round(w*dpr), Math.round(h*dpr),
+                    0, 0, Math.round(w*dpr), Math.round(h*dpr));
+
+  if(padKey) clipStore[padKey] = cv.toDataURL('image/png');
+  setLasso(false);
+  paint();
+  buzz(8);
+  syncClip();
+}
+
+function clearClip(){
+  if(padKey) delete clipStore[padKey];
+  syncClip();
+}
+
+/* 解答を打つ画面の上に、切り抜きを出す */
+function syncClip(){
+  const host = $('ansClip');
+  if(!host) return;
+  const src = padKey ? clipStore[padKey] : null;
+  if(!src){ host.classList.add('hide'); host.innerHTML = ''; return; }
+  host.classList.remove('hide');
+  host.innerHTML = '<img src="'+src+'" alt="囲った計算"><button class="cx" id="clipX">消す</button>';
+  host.querySelector('#clipX').addEventListener('click', clearClip);
+}
+$('tSel').addEventListener('click', ()=>setLasso(tool !== 'sel'));
 $('tPen').addEventListener('click', ()=>setTool('pen'));
 $('tEra').addEventListener('click', ()=>setTool('era'));
 $('tUndo').addEventListener('click', undo);
@@ -2441,6 +2550,7 @@ function syncAnsBtn(){
   const b = $('ansBtn');
   if(!b) return;
   const q = curQ();
+  if(S.locked && q && S.resFor === q.id){ b.textContent = '判定を見る'; return; }
   if(q && q.self){ b.textContent = '解答を見る'; return; }
   if(IV==='') b.textContent = '解答する';
   else b.textContent = '解答する（入力中: '+(IV.length>14 ? IV.slice(0,14)+'…' : IV)+'）';
@@ -2473,7 +2583,8 @@ function dragToClose(sheet){
        キーボードや一覧の操作、判定パネルのスクロールと取り合わないようにする。 */
     if(!e.target.closest('.grip, .sh, .ansq')) return;
     if(e.target.closest('.lnk')) return;
-    if(S.locked) return;      /* 判定を表示中は閉じさせない（進む手段がなくなる） */
+    /* 判定中でも閉じられる。計算を見に行けるように。
+       閉じても「解答する」ボタンが「判定を見る」に変わって戻れる。 */
     on = true; sy = e.clientY; dy = 0;
     sheet.style.transition = 'none';
     sheet.setPointerCapture(e.pointerId);
@@ -2499,7 +2610,6 @@ dragToClose($('ansSheet'));
 dragToClose($('menuSheet'));
 $('back').addEventListener('click', ()=>{
   if($('confSheet').classList.contains('on')) { closeSheets(); return; }
-  if(S.locked) return;      // 判定表示中は誤タップで閉じない
   closeSheets();
 });
 
@@ -2533,6 +2643,8 @@ function buildChoices(q){
    「わかった／わからなかった」を自分で選んでもらう。 */
 function showSelf(q){
   S.locked = true;
+  S.resFor = q.id;
+  syncAnsBtn();
   $('ansInput').classList.add('hide');
   const r = $('ansRes');
   r.classList.remove('hide');
@@ -2548,7 +2660,7 @@ function showSelf(q){
     b.textContent = label;
     b.addEventListener('click', ()=>{
       score(q, ok);
-      S.locked = false;
+      S.locked = false; S.resFor = null;
       closeSheets();
       setTimeout(next, 180);
     });
@@ -2562,6 +2674,8 @@ function showSelf(q){
 function openAnswer(){
   const q = curQ();
   if(!q) return;
+  /* 判定を出したまま閉じていたときは、その判定に戻る */
+  if(S.locked && S.resFor === q.id){ openSheet($('ansSheet')); return; }
   if(q.self){ openSheet($('ansSheet')); showSelf(q); return; }
   $('ansInput').classList.remove('hide');
   $('ansRes').classList.add('hide');
@@ -2575,6 +2689,7 @@ function openAnswer(){
   $('field').classList.toggle('jp', pickMode);
   if(pickMode) buildChoices(q);
   paintField();
+  syncClip();
   openSheet($('ansSheet'));
 }
 
@@ -2652,6 +2767,8 @@ function shownAlts(list){
 
 function showResult(q, ok, given){
   S.locked = true;
+  S.resFor = q.id;
+  syncAnsBtn();
   $('ansInput').classList.add('hide');
   const r = $('ansRes');
   r.classList.remove('hide');
@@ -2664,7 +2781,9 @@ function showResult(q, ok, given){
     : '<div class="rmark ng"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>不正解</div>';
 
   const your = (ok===false && given!=null && given!=='')
-    ? '<div class="ryour">あなたの解答　<b>'+esc(given)+'</b></div>'
+    /* 打った形のまま出すと √[3]{3} のような生の記号が見えるので、
+       入力欄と同じように数式に組んでから見せる。 */
+    ? '<div class="ryour">あなたの解答　<b class="mq">'+preview(given)+'</b></div>'
     : (ok===null ? '<div class="ryour">記録には残していません</div>' : '');
 
   const alts = shownAlts(q.a);
@@ -2689,14 +2808,16 @@ function showResult(q, ok, given){
   };
   if(ok===false){
     add('もう一度解く', true, ()=>{
-      S.locked = false;
+      S.locked = false; S.resFor = null;
       closeSheets();
       resetInput();
     });
   }
   const last = S.idx===S.queue.length-1;
+  add('計算を見る', true, ()=>{ closeSheets(); syncAnsBtn(); });
   add(last ? '結果を見る' : '次の問題へ', false, ()=>{
-    S.locked = false;
+    S.locked = false; S.resFor = null;
+    syncAnsBtn();
     closeSheets();
     setTimeout(next, 180);
   });
