@@ -28,7 +28,11 @@
     --sh:0 1px 2px rgba(17,17,17,.04);
     --safe-b:env(safe-area-inset-bottom, 0px);
   }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  /* 画面の文字は選べないようにする。
+     Apple Pencil で書いていると、手のひらや軸が問題文に触れただけで
+     文字が選ばれて「コピー／調べる／翻訳」の黒いメニューが出てしまう。 */
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none}
   html,body{height:100%; overflow:hidden}
   body{
     margin:0; background:var(--bg); color:var(--t1);
@@ -123,7 +127,9 @@
   .bkta{width:100%; height:110px; box-sizing:border-box; padding:9px; border-radius:9px;
         border:1px solid var(--bd); background:var(--bg2); color:inherit;
         font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px; line-height:1.5;
-        resize:none; -webkit-user-select:text; user-select:text}
+        resize:none;
+        /* 記録の書き出し・読みこみ欄だけは、選んで貼りつけできるようにしておく */
+        -webkit-user-select:text; user-select:text; -webkit-touch-callout:default}
   .bkmsg{margin:8px 0 0; font-size:11.5px; line-height:1.7}
   .bkmsg.ok{color:var(--ok)} .bkmsg.ng{color:var(--ng)}
 
@@ -2194,6 +2200,9 @@ pad.addEventListener('pointerdown', e=>{
   if(penSeen && e.pointerType==='touch') return;
   if(e.pointerType==='mouse' && e.button!==0) return;
   e.preventDefault();
+  /* 何かの拍子に文字が選ばれていたら、書き始めに解いておく */
+  const sel = window.getSelection && window.getSelection();
+  if(sel && !sel.isCollapsed) sel.removeAllRanges();
   pad.setPointerCapture(e.pointerId);
   drawing = true;
   if(tool === 'sel'){ lasso = [ptOf(e)]; paint(); return; }
