@@ -1930,7 +1930,8 @@ function saveSession(){
   const base = {
     topic:S.topic, mode:S.mode, idx:S.idx, ok:S.okCount,
     ids:S.queue.map(q=>q.id), wrong:S.wrongList, scored:Object.keys(S.scored),
-    draft:IV, t:Date.now()
+    draft:IV, t:Date.now(),
+    pw:Math.round(baseW), ph:Math.round(baseH)   /* 書いたときの広さ */
   };
   try{
     localStorage.setItem(RKEY, JSON.stringify(Object.assign({pad:packStrokes()}, base)));
@@ -1966,6 +1967,9 @@ function resumeSession(r){
   S.scored = {};
   (r.scored||[]).forEach(id=>{ S.scored[id]=true; });
   resetPadStore();
+  /* 書いたときの広さに物差しを合わせる。合わせないと、画面の向きや
+     問題文のたたみ方が変わっているぶんだけ、書いた形がずれて出る。 */
+  baseW = r.pw || 0; baseH = r.ph || 0; baseFixed = !!(baseW && baseH);
   show('play');
   requestAnimationFrame(()=>{
     setupPad();
@@ -2129,6 +2133,10 @@ let eraW = 24;
 let penSeen = false;
 let fromTouch = false;         /* touch のほうで書き始めているか */     // スタイラスを検出したら以後タッチは無視（手のひら対策）
 let dpr = 1;
+/* 書いた中身は「書いたときの広さ」を物差しにして持っておく。
+   画面を回しても、問題文をたたんで広さが変わっても、同じ形のまま戻せる。
+   baseW/baseH がその物差し。ps は今の広さとの比。 */
+let baseW = 0, baseH = 0, ps = 1, baseFixed = false;
 let padKey = null;
 const padStore = {};     // 問題ごとに計算内容を保持（前の問題に戻っても残る）
 const padOrder = [];     // 古いものから捨てるための順番
@@ -2139,12 +2147,18 @@ function setupPad(){
   dpr = Math.min(window.devicePixelRatio||1, 2.5);
   pad.width  = buf.width  = Math.round(r.width*dpr);
   pad.height = buf.height = Math.round(r.height*dpr);
+  /* まだ何も書いていないうちは、今の広さをそのまま物差しにする。
+     書き始めたところで物差しが決まる。 */
+  if(!baseFixed){ baseW = r.width; baseH = r.height; }
+  /* 狭くなったぶんだけ縮めて収める。広くなったときは大きくせず、
+     余ったところを空けておく（書いたものの大きさは変わらない）。 */
+  ps = Math.min(1, r.width/baseW, r.height/baseH);
   bake();
 }
 function inkStroke(c, s){
   if(!s.pts.length) return;
   c.save();
-  c.setTransform(dpr,0,0,dpr,0,0);
+  c.setTransform(dpr*ps,0,0,dpr*ps,0,0);
   c.lineCap = 'round';
   c.lineJoin = 'round';
   c.lineWidth = s.w;
@@ -2193,7 +2207,8 @@ function paint(){
 }
 function ptOf(e){
   const r = pad.getBoundingClientRect();
-  return { x: e.clientX - r.left, y: e.clientY - r.top };
+  /* 物差しの上での位置にして持つ。あとで広さが変わっても崩れない。 */
+  return { x: (e.clientX - r.left)/ps, y: (e.clientY - r.top)/ps };
 }
 
 /* iPad の Safari は、はやく2回つづけて触ると、2回目を「ジェスチャかも」と
@@ -2252,11 +2267,20 @@ pad.addEventListener('pointermove', e=>{
   }
   paint();
 });
+/* 物差しの外まで書かれたら、物差しのほうを広げておく。
+   （画面の形が変わったあとは、枠の端が物差しの外に来ることがある）
+   ここでは見た目は変えない。次に広さが変わったときに、まとめて収まる。 */
+function growBase(pts){
+  for(let i=0;i<pts.length;i++){
+    if(pts[i].x > baseW) baseW = pts[i].x;
+    if(pts[i].y > baseH) baseH = pts[i].y;
+  }
+}
 function endDraw(){
   if(!drawing) return;
   drawing = false;
   if(lasso){ cutLasso(); return; }
-  if(cur){ strokes.push(cur); inkStroke(bctx, cur); cur = null; }
+  if(cur){ baseFixed = true; growBase(cur.pts); strokes.push(cur); inkStroke(bctx, cur); cur = null; }
   paint();
 }
 pad.addEventListener('pointerup', endDraw);
@@ -2337,6 +2361,7 @@ function usePad(key){
 function resetPadStore(){
   for(const k in padStore) delete padStore[k];
   padOrder.length = 0;
+  baseW = baseH = 0; ps = 1; baseFixed = false;   /* 物差しも取り直す */
 }
 
 function setTool(t){
@@ -2379,15 +2404,16 @@ function cutLasso(){
   if(!pts || pts.length < 3){ paint(); return; }
   let x0=1e9, y0=1e9, x1=-1e9, y1=-1e9;
   pts.forEach(p=>{ x0=Math.min(x0,p.x); y0=Math.min(y0,p.y); x1=Math.max(x1,p.x); y1=Math.max(y1,p.y); });
-  const m = 6, W = pad.width/dpr, H = pad.height/dpr;
+  const k = dpr*ps;                       /* 物差し1つぶんが、画面では何粒か */
+  const m = 6, W = pad.width/k, H = pad.height/k;
   x0=Math.max(0,x0-m); y0=Math.max(0,y0-m); x1=Math.min(W,x1+m); y1=Math.min(H,y1+m);
   const w = Math.round(x1-x0), h = Math.round(y1-y0);
   if(w < 8 || h < 8){ setLasso(false); paint(); return; }   /* 点を打っただけのときは無視 */
 
   const cv = document.createElement('canvas');
-  cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr);
+  cv.width = Math.round(w*k); cv.height = Math.round(h*k);
   const cc = cv.getContext('2d');
-  cc.setTransform(dpr,0,0,dpr,0,0);
+  cc.setTransform(k,0,0,k,0,0);
   cc.fillStyle = PAD_BG;
   cc.fillRect(0,0,w,h);
   cc.beginPath();
@@ -2396,8 +2422,8 @@ function cutLasso(){
   cc.closePath();
   cc.clip();
   cc.setTransform(1,0,0,1,0,0);
-  cc.drawImage(buf, Math.round(x0*dpr), Math.round(y0*dpr), Math.round(w*dpr), Math.round(h*dpr),
-                    0, 0, Math.round(w*dpr), Math.round(h*dpr));
+  cc.drawImage(buf, Math.round(x0*k), Math.round(y0*k), Math.round(w*k), Math.round(h*k),
+                    0, 0, Math.round(w*k), Math.round(h*k));
 
   if(padKey) clipStore[padKey] = cv.toDataURL('image/png');
   setLasso(false);
