@@ -2542,6 +2542,12 @@ function buildKB(){
     if(b.dataset.f) doFn(b.dataset.f);
     else insert(b.dataset.t);
   });
+  /* iPad は はやく2回つづけて触ると、2回目を「ジェスチャかも」と握ったまま
+     返してこない。キーも押しっぱなしのように無反応になる。
+     計算スペースと同じで、touch の既定の動きを止めておけばふつうに返ってくる。
+     キーは pointerdown で反応させているので、click を止めても困らない。 */
+  ['touchstart','touchmove','touchend'].forEach(t=>
+    kb.addEventListener(t, e=>{ e.preventDefault(); }, {passive:false}));
 }
 let IV = '', IC = 0;   // 入力値・カーソル位置
 function resetInput(){
