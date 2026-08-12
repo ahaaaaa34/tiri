@@ -2126,7 +2126,8 @@ let drawing = false, cur = null;
 let tool = 'pen';
 let penW = 2.2;          // 細 1.6 / 中 2.2 / 太 3.4
 let eraW = 24;
-let penSeen = false;     // スタイラスを検出したら以後タッチは無視（手のひら対策）
+let penSeen = false;
+let fromTouch = false;         /* touch のほうで書き始めているか */     // スタイラスを検出したら以後タッチは無視（手のひら対策）
 let dpr = 1;
 let padKey = null;
 const padStore = {};     // 問題ごとに計算内容を保持（前の問題に戻っても残る）
@@ -2195,20 +2196,27 @@ function ptOf(e){
   return { x: e.clientX - r.left, y: e.clientY - r.top };
 }
 
+/* 書き始めの下ごしらえ。pointer からでも touch からでも同じところを通す。 */
+function beginStroke(p){
+  drawing = true;
+  if(tool === 'sel'){ lasso = [p]; paint(); return; }
+  redoStack.length = 0;
+  cur = { tool:tool, w: tool==='era'?eraW:penW, pts:[p] };
+  paint();
+}
 pad.addEventListener('pointerdown', e=>{
   if(e.pointerType==='pen') penSeen = true;
   if(penSeen && e.pointerType==='touch') return;
   if(e.pointerType==='mouse' && e.button!==0) return;
+  if(fromTouch) return;                 /* touch のほうでもう始まっている */
   e.preventDefault();
   /* 何かの拍子に文字が選ばれていたら、書き始めに解いておく */
   const sel = window.getSelection && window.getSelection();
   if(sel && !sel.isCollapsed) sel.removeAllRanges();
-  pad.setPointerCapture(e.pointerId);
-  drawing = true;
-  if(tool === 'sel'){ lasso = [ptOf(e)]; paint(); return; }
-  redoStack.length = 0;
-  cur = { tool:tool, w: tool==='era'?eraW:penW, pts:[ptOf(e)] };
-  paint();
+  beginStroke(ptOf(e));
+  /* 画面の外まで手が出ても追えるようにする。
+     ここでしくじっても書き始めはもう済んでいるので、線は消えない。 */
+  try{ pad.setPointerCapture(e.pointerId); }catch(err){}
 });
 pad.addEventListener('pointermove', e=>{
   if(drawing && lasso){
@@ -2260,6 +2268,33 @@ pad.addEventListener('touchend', e=>{
     if(quick) undo();
   }
 }, {passive:true});
+
+/* iPad で、はやく2回つづけて点を打つと、2回目の pointerdown が
+   ブラウザに飲みこまれて届かないことがある（2回目だけ書けない）。
+   届かなかったときだけ、touch のほうで拾い直す。
+   pointer が来ていれば drawing がもう立っているので、ここは素通りする。 */
+function penTouch(t){
+  if(!t) return false;
+  return !penSeen || t.touchType === 'stylus';   /* ペンを使い出したら手のひらは無視 */
+}
+pad.addEventListener('touchstart', e=>{
+  if(drawing || e.touches.length !== 1) return;
+  const t = e.changedTouches[0];
+  if(!penTouch(t)) return;
+  fromTouch = true;
+  beginStroke(ptOf(t));
+}, {passive:true});
+pad.addEventListener('touchmove', e=>{
+  if(!fromTouch || !drawing) return;
+  const arr = lasso || (cur && cur.pts);
+  if(!arr || !arr.length) return;
+  const p = ptOf(e.changedTouches[0]), last = arr[arr.length-1];
+  if(Math.abs(p.x-last.x)+Math.abs(p.y-last.y) >= 0.7) arr.push(p);
+  paint();
+}, {passive:true});
+function endTouchDraw(){ if(!fromTouch) return; fromTouch = false; endDraw(); }
+pad.addEventListener('touchend', endTouchDraw, {passive:true});
+pad.addEventListener('touchcancel', endTouchDraw, {passive:true});
 
 function undo(){ if(strokes.length){ redoStack.push(strokes.pop()); bake(); buzz(6); } }
 function redo(){ if(redoStack.length){ const s=redoStack.pop(); strokes.push(s); inkStroke(bctx,s); paint(); buzz(6); } }
