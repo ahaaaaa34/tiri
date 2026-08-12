@@ -596,6 +596,9 @@
         <svg viewBox="0 0 24 24"><path d="M12 4c4.4 0 8 2.7 8 6s-3.6 6-8 6-8-2.7-8-6 3.6-6 8-6z" stroke-dasharray="3 2.5"/><path d="M16.5 15.5l3 4.5"/></svg>
       </button>
       <div class="tsp"></div>
+      <button class="tb" id="tFit" aria-label="枠に収める">
+        <svg viewBox="0 0 24 24"><path d="M3 8V3h5"/><path d="M21 8V3h-5"/><path d="M3 16v5h5"/><path d="M21 16v5h-5"/><rect x="8" y="8" width="8" height="8" rx="1.5"/></svg>
+      </button>
       <button class="tb" id="tUndo" aria-label="元に戻す">
         <svg viewBox="0 0 24 24"><path d="M9 14l-4-4 4-4"/><path d="M5 10h9a5 5 0 010 10h-3"/></svg>
       </button>
@@ -2203,6 +2206,7 @@ function paint(){
   const n = strokes.length + (cur?1:0);
   $('padHint').style.opacity = n ? 0 : 1;
   $('tUndo').disabled = strokes.length===0;
+  $('tFit').disabled  = strokes.length===0;
   $('tRedo').disabled = redoStack.length===0;
 }
 function ptOf(e){
@@ -2335,6 +2339,36 @@ pad.addEventListener('touchmove', e=>{
 function endTouchDraw(){ if(!fromTouch) return; fromTouch = false; endDraw(); }
 pad.addEventListener('touchend', endTouchDraw, {passive:true});
 pad.addEventListener('touchcancel', endTouchDraw, {passive:true});
+
+/* 書いたものを、いまの計算スペースいっぱいに収め直す。
+   ふだんは開き直すたびに自動で合うが、物差しを持たずに保存された
+   古い書き込みなど、どうしても位置がおかしいときの逃げ道。 */
+function fitPad(){
+  const all = strokes.concat(redoStack);
+  let x0=1e9, y0=1e9, x1=-1e9, y1=-1e9;
+  all.forEach(s=>s.pts.forEach(p=>{
+    if(p.x<x0) x0=p.x;  if(p.y<y0) y0=p.y;
+    if(p.x>x1) x1=p.x;  if(p.y>y1) y1=p.y;
+  }));
+  if(x1 < x0) return;                       /* 何も書いていない */
+  const r = pad.getBoundingClientRect();
+  if(!r.width || !r.height) return;
+  /* 物差しの上での「見えている広さ」に合わせる。ps はいじらないので
+     ほかの問題に書いたものは動かない。 */
+  const VW = r.width/ps, VH = r.height/ps, m = 10/ps;
+  const bw = Math.max(x1-x0, 1), bh = Math.max(y1-y0, 1);
+  const k = Math.min((VW-m*2)/bw, (VH-m*2)/bh, 2.5);   /* 大きくしすぎない */
+  all.forEach(s=>{
+    s.w *= k;
+    s.pts.forEach(p=>{ p.x = (p.x-x0)*k + m; p.y = (p.y-y0)*k + m; });
+    growBase(s.pts);
+  });
+  /* 収め直した形を、これからの物差しにする */
+  baseFixed = true;
+  bake();
+  buzz(8);
+}
+$('tFit').addEventListener('click', fitPad);
 
 function undo(){ if(strokes.length){ redoStack.push(strokes.pop()); bake(); buzz(6); } }
 function redo(){ if(redoStack.length){ const s=redoStack.pop(); strokes.push(s); inkStroke(bctx,s); paint(); buzz(6); } }
