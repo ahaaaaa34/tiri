@@ -2196,6 +2196,15 @@ function ptOf(e){
   return { x: e.clientX - r.left, y: e.clientY - r.top };
 }
 
+/* iPad の Safari は、はやく2回つづけて触ると、2回目を「ジェスチャかも」と
+   握ったまま返してこない。2回目の pointerdown も touchstart も届かず、
+   点が打てない（たんたん、の2つ目が書けない）。
+   touch の既定の動きをこちらで止めておくと、Safari はジェスチャ判定を
+   あきらめて、ふつうに合図を返してくるようになる。
+   実機で4とおり試して、これだけが通った。 */
+['touchstart','touchmove','touchend'].forEach(t=>
+  pad.addEventListener(t, e=>{ e.preventDefault(); }, {passive:false}));
+
 /* 書き始めの下ごしらえ。pointer からでも touch からでも同じところを通す。 */
 function beginStroke(p){
   drawing = true;
