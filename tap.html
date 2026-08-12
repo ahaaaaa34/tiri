@@ -11,6 +11,10 @@
   body{font-family:"Hiragino Sans",system-ui,sans-serif; display:flex; flex-direction:column}
   header{padding:7px 12px; font-size:12px; line-height:1.55; color:#555; background:#fff; border-bottom:1px solid #ddd}
   header b{color:#111}
+  /* 更新できたかが一目で分かるように */
+  .ver{display:inline-block; margin-right:8px; padding:2px 9px; border-radius:999px;
+       background:#111; color:#fff; font-size:13px; font-weight:700; letter-spacing:.06em;
+       vertical-align:1px}
   .padwrap{height:26vh; margin:7px; position:relative}
   #pad{position:absolute; inset:0; width:100%; height:100%; background:#fff;
        border:1px solid #ddd; border-radius:12px; touch-action:none; display:block}
@@ -29,6 +33,7 @@
 </head>
 <body>
 <header>
+  <span class="ver">v2</span>
   <b>白い枠の中で、ペンで はやく2回「たんたん」。</b>
   打ったあとは <b>ペンを画面のすぐ上に残したまま</b>（遠ざけないで）少し待ってください。<br>
   画面のどこに飛んだイベントも全部ひろいます。撮って送ってください。
