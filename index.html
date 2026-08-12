@@ -459,8 +459,10 @@
   .rans .lb{font-size:10px; color:var(--t3); letter-spacing:.16em; margin-bottom:4px}
   .rans .va{font-size:19px; font-family:"Times New Roman",serif}
   .rexp{margin-top:10px; font-size:12.5px; color:var(--t2); line-height:1.85; padding:0 2px}
-  .rbtns{display:flex; gap:8px; margin-top:16px}
-  .rbtns .pbtn{flex:1}
+  .rbtns{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px}
+  .rbtns .pbtn{flex:1 1 0; width:auto}
+  /* 4つ並ぶと1行では文字が折れてしまうので、2つずつ2段にする */
+  .rbtns.four .pbtn{flex:1 1 calc(50% - 4px)}
 
   .cmsg{padding:2px 18px 18px; font-size:14px; line-height:1.8; color:var(--t2)}
 
@@ -2849,6 +2851,21 @@ function submit(){
   showResult(q, ok, IV);
 }
 
+/* 誤字などで不正解になったぶんを、あとから正解に付け替える。
+   記録・この回の正解数・まちがい一覧の3つをそろえて直す。 */
+function makeRight(q, given){
+  const i = S.wrongList.indexOf(q.id);
+  if(i < 0) return;                  /* すでに直してある */
+  S.wrongList.splice(i, 1);
+  S.okCount++;
+  const r = rec(q.id);
+  if(r.w > 0) r.w--;
+  r.c++; r.p = 0;
+  saveST();
+  saveSession();
+  showResult(q, true, given);        /* 判定の見た目も正解に差し替える */
+}
+
 function score(q, ok){
   if(S.scored[q.id]) return;   // 1問につき最初の1回だけ記録
   S.scored[q.id] = true;
@@ -2929,6 +2946,9 @@ function showResult(q, ok, given){
     bt.appendChild(b);
   };
   if(ok===false){
+    /* 打ち間違い・書き間違いで落とした時の手直し。
+       記録の「まちがい」を1つ取り消して「正解」に付け替える。 */
+    if(S.wrongList.indexOf(q.id) >= 0) add('正解にする', true, ()=>makeRight(q, given));
     add('もう一度解く', true, ()=>{
       S.locked = false; S.resFor = null;
       closeSheets();
@@ -2943,6 +2963,7 @@ function showResult(q, ok, given){
     closeSheets();
     setTimeout(next, 180);
   });
+  bt.classList.toggle('four', bt.children.length >= 4);
   if(ok!==null) buzz(ok?8:[14,60,14]);
   armBtns(bt);
 }
