@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>たんたん調べ</title>
+<style>
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none}
+  html,body{height:100%; margin:0; overflow:hidden; background:#f4f4f5; color:#111}
+  body{font-family:"Hiragino Sans",system-ui,sans-serif; display:flex; flex-direction:column}
+  header{padding:8px 12px; font-size:12px; line-height:1.6; color:#555; background:#fff; border-bottom:1px solid #ddd}
+  header b{color:#111}
+  .padwrap{height:38vh; margin:8px; position:relative}
+  #pad{position:absolute; inset:0; width:100%; height:100%; background:#fff;
+       border:1px solid #ddd; border-radius:12px; touch-action:none; display:block}
+  .bar{display:flex; gap:8px; align-items:center; padding:0 12px 6px; font-size:12px}
+  .bar button{font:inherit; padding:6px 12px; border-radius:9px; border:1px solid #ccc; background:#fff}
+  .bar .n{margin-left:auto; font-variant-numeric:tabular-nums}
+  #log{flex:1; min-height:0; overflow:auto; margin:0 8px 8px; padding:8px 10px; background:#111; color:#e8e8e8;
+       border-radius:12px; font-family:ui-monospace,Menlo,monospace; font-size:10.5px; line-height:1.55;
+       white-space:pre; -webkit-user-select:text; user-select:text}
+  #log .d{color:#7fd1ff}   /* pointer */
+  #log .t{color:#ffd479}   /* touch */
+  #log .x{color:#ff8a8a}   /* 消えた・取り消した */
+  #log .g{color:#8ce99a}   /* 点が増えた */
+</style>
+</head>
+<body>
+<header>
+  ここに <b>ペンで はやく2回「たんたん」</b> と打ってください。<br>
+  下に、iPad から届いた出来事がそのまま出ます。撮って送ってください。
+</header>
+<div class="padwrap"><canvas id="pad"></canvas></div>
+<div class="bar">
+  <button id="clr">消してやり直す</button>
+  <span class="n">点の数 <b id="cnt">0</b></span>
+</div>
+<div id="log"></div>
+
+<script>
+const pad = document.getElementById('pad'), logEl = document.getElementById('log');
+const ctx = pad.getContext('2d');
+let dpr = 1, t0 = 0, last = 0, strokes = [], cur = null, drawing = false;
+
+function fit(){
+  dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const r = pad.getBoundingClientRect();
+  pad.width = Math.round(r.width * dpr);
+  pad.height = Math.round(r.height * dpr);
+  redraw();
+}
+function redraw(){
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,pad.width,pad.height);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.lineCap = ctx.lineJoin = 'round';
+  ctx.lineWidth = 3.2;
+  ctx.strokeStyle = ctx.fillStyle = '#111';
+  const all = cur ? strokes.concat([cur]) : strokes;
+  all.forEach(s=>{
+    if(s.length === 1){ ctx.beginPath(); ctx.arc(s[0].x, s[0].y, 1.6, 0, Math.PI*2); ctx.fill(); return; }
+    ctx.beginPath(); ctx.moveTo(s[0].x, s[0].y);
+    for(let i=1;i<s.length;i++) ctx.lineTo(s[i].x, s[i].y);
+    ctx.stroke();
+  });
+  document.getElementById('cnt').textContent = strokes.length;
+}
+window.addEventListener('resize', fit);
+
+/* ---------------- 記録 ---------------- */
+function log(cls, text){
+  const now = performance.now();
+  if(!t0) t0 = now;
+  const gap = last ? Math.round(now - last) : 0;
+  last = now;
+  const line = document.createElement('div');
+  line.className = cls;
+  line.textContent = ('+' + String(gap).padStart(4) + 'ms  ') + text;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+  while(logEl.children.length > 400) logEl.removeChild(logEl.firstChild);
+}
+function ptOf(e){
+  const r = pad.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+/* ---------------- pointer ---------------- */
+['pointerdown','pointerup','pointercancel','pointerout','pointerleave','lostpointercapture','gotpointercapture']
+.forEach(t=>{
+  pad.addEventListener(t, e=>{
+    log('d', t + '  ' + e.pointerType + ' id=' + e.pointerId +
+        (e.isPrimary ? ' 主' : ' 副') + ' 圧=' + (e.pressure||0).toFixed(2));
+  }, true);
+});
+let moves = 0;
+pad.addEventListener('pointermove', ()=>{ moves++; }, true);
+
+/* ---------------- touch ---------------- */
+['touchstart','touchend','touchcancel'].forEach(t=>{
+  pad.addEventListener(t, e=>{
+    const c = e.changedTouches[0];
+    log('t', t + '  ' + (c && c.touchType ? c.touchType : '種類なし') +
+        ' 本数=' + e.touches.length + ' 力=' + (c && c.force !== undefined ? c.force.toFixed(2) : '-'));
+  }, {capture:true, passive:true});
+});
+pad.addEventListener('dblclick', ()=>log('x', 'dblclick が来た'), true);
+pad.addEventListener('click', ()=>log('d', 'click'), true);
+
+/* ---------------- ここから本番の書く処理（アプリと同じ形） ---------------- */
+pad.addEventListener('pointerdown', e=>{
+  if(e.pointerType === 'mouse' && e.button !== 0) return;
+  e.preventDefault();
+  drawing = true;
+  moves = 0;
+  cur = [ptOf(e)];
+  redraw();
+  try{ pad.setPointerCapture(e.pointerId); log('d', '   → capture 取れた'); }
+  catch(err){ log('x', '   → capture でしくじった: ' + err.name); }
+  log('g', '   → 書き始めた');
+});
+pad.addEventListener('pointermove', e=>{
+  if(!drawing || !cur) return;
+  e.preventDefault();
+  const p = ptOf(e), l = cur[cur.length-1];
+  if(Math.abs(p.x-l.x) + Math.abs(p.y-l.y) >= 0.7) cur.push(p);
+  redraw();
+});
+function end(){
+  if(!drawing) return;
+  drawing = false;
+  if(cur){ strokes.push(cur); cur = null; }
+  redraw();
+  log('g', '   → 書き終わった（点の数 ' + strokes.length + ' / 動き ' + moves + '回）');
+}
+pad.addEventListener('pointerup', end);
+pad.addEventListener('pointercancel', ()=>{ log('x', '   → pointercancel で中断'); end(); });
+
+document.getElementById('clr').addEventListener('click', ()=>{
+  strokes = []; cur = null; drawing = false;
+  logEl.innerHTML = ''; t0 = 0; last = 0;
+  redraw();
+});
+
+fit();
+log('d', '用意できました。ペンで はやく2回 たんたん と打ってください。');
+</script>
+</body>
+</html>

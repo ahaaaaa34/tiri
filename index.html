@@ -2255,10 +2255,17 @@ pad.addEventListener('pointercancel', endDraw);
 
 /* 2本指タップで1つ戻す（手書きアプリの定番操作） */
 let twoAt = 0;
+/* ペンが混じっているときは「2本指」と見なさない。
+   ペン＋手のひら を2本指と取りちがえると、書いている線が消える。 */
+function fingersOnly(e){
+  for(let i=0;i<e.touches.length;i++) if(e.touches[i].touchType === 'stylus') return false;
+  return true;
+}
 pad.addEventListener('touchstart', e=>{
-  if(e.touches.length===2){
+  if(e.touches.length===2 && fingersOnly(e)){
     twoAt = Date.now();
-    if(drawing){ drawing=false; cur=null; paint(); }   // 1本目の指が引いた線は取り消す
+    /* 指で引きかけた線だけ取り消す。ペンで書いている線には触らない。 */
+    if(drawing && !penSeen){ drawing=false; cur=null; paint(); }
   }
 }, {passive:true});
 pad.addEventListener('touchend', e=>{
