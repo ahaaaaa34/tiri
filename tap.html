@@ -3,194 +3,140 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>たんたん調べ 3</title>
+<title>たんたん試し 4</title>
 <style>
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;
     -webkit-user-select:none; user-select:none; -webkit-touch-callout:none}
   html,body{height:100%; margin:0; overflow:hidden; background:#f4f4f5; color:#111}
   body{font-family:"Hiragino Sans",system-ui,sans-serif; display:flex; flex-direction:column}
-  header{padding:7px 12px; font-size:12px; line-height:1.55; color:#555; background:#fff; border-bottom:1px solid #ddd}
+  header{padding:8px 12px; font-size:12.5px; line-height:1.6; color:#555; background:#fff; border-bottom:1px solid #ddd}
   header b{color:#111}
-  /* 更新できたかが一目で分かるように */
   .ver{display:inline-block; margin-right:8px; padding:2px 9px; border-radius:999px;
-       background:#111; color:#fff; font-size:13px; font-weight:700; letter-spacing:.06em;
-       vertical-align:1px}
-  .padwrap{height:26vh; margin:7px; position:relative}
-  #pad{position:absolute; inset:0; width:100%; height:100%; background:#fff;
-       border:1px solid #ddd; border-radius:12px; touch-action:none; display:block}
-  .bar{display:flex; gap:8px; align-items:center; padding:0 12px 5px; font-size:12px}
-  .bar button{font:inherit; padding:5px 11px; border-radius:9px; border:1px solid #ccc; background:#fff}
-  .bar .n{margin-left:auto; font-variant-numeric:tabular-nums}
-  #log{flex:1; min-height:0; overflow:auto; margin:0 7px 7px; padding:7px 9px; background:#111; color:#dcdcdc;
-       border-radius:12px; font-family:ui-monospace,Menlo,monospace; font-size:10px; line-height:1.5;
-       white-space:pre; -webkit-user-select:text; user-select:text}
-  #log .d{color:#7fd1ff}   /* pointer が下りた・上がった */
-  #log .h{color:#6b7a86}   /* ただの通過・ホバー */
-  #log .t{color:#ffd479}   /* touch */
-  #log .x{color:#ff8a8a}   /* あやしいもの */
-  #log .g{color:#8ce99a}   /* こちらの処理 */
+       background:#111; color:#fff; font-size:13px; font-weight:700; letter-spacing:.06em; vertical-align:1px}
+  .grid{flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:8px; padding:8px}
+  .cell{position:relative; background:#fff; border:1px solid #ddd; border-radius:12px; overflow:hidden}
+  .cell canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
+  .cell .tag{position:absolute; left:10px; top:7px; font-size:11.5px; color:#8a8a8a; pointer-events:none; line-height:1.4}
+  .cell .tag b{display:block; font-size:16px; color:#111}
+  .cell .num{position:absolute; right:12px; top:4px; font-size:30px; font-weight:800; color:#c9c9c9;
+             font-variant-numeric:tabular-nums; pointer-events:none}
+  .cell .num.ok{color:#1a8a3a}
+  footer{padding:6px 12px 10px; display:flex; align-items:center; gap:10px; font-size:12px; color:#666}
+  footer button{font:inherit; padding:7px 14px; border-radius:10px; border:1px solid #ccc; background:#fff}
 </style>
 </head>
 <body>
 <header>
-  <span class="ver">v3</span>
-  <b>白い枠の中で、ペンで はやく2回「たんたん」。</b>
-  打ったあとは <b>ペンを画面のすぐ上に残したまま</b>（遠ざけないで）少し待ってください。<br>
-  近づけただけでは何も出ません。触れたときだけ出ます。
+  <span class="ver">v4</span>
+  <b>4つの枠それぞれで、ペンで はやく2回「たんたん」。</b><br>
+  数字が <b>2</b> になった枠が当たりです。どれが 2 になったか教えてください。
 </header>
-<div class="padwrap"><canvas id="pad"></canvas></div>
-<div class="bar">
-  <button id="clr">消してやり直す</button>
-  <span class="n">線 <b id="cnt">0</b>　ホバー <b id="hov">0</b>　出入り <b id="ovr">0</b></span>
+
+<div class="grid">
+  <div class="cell" id="cA"><canvas></canvas><span class="tag"><b>A</b>今のアプリと同じ</span><span class="num">0</span></div>
+  <div class="cell" id="cB"><canvas></canvas><span class="tag"><b>B</b>touch を止める</span><span class="num">0</span></div>
+  <div class="cell" id="cC"><canvas></canvas><span class="tag"><b>C</b>touch だけで書く</span><span class="num">0</span></div>
+  <div class="cell" id="cD"><canvas></canvas><span class="tag"><b>D</b>指定をゆるめる</span><span class="num">0</span></div>
 </div>
-<div id="log"></div>
+
+<footer>
+  <button id="clr">ぜんぶ消してやり直す</button>
+  <span>1つの枠で「たんたん」→ 次の枠へ、を4回。</span>
+</footer>
 
 <script>
-const pad = document.getElementById('pad'), logEl = document.getElementById('log');
-const ctx = pad.getContext('2d');
-let dpr = 1, last = 0, down = false, strokes = [], cur = null, drawing = false;
+/* =====================================================================
+   同じ「書く」しくみを、4とおりのやり方で並べる。
+   iPad が2回目の合図を飲みこむのを、どれなら抜けられるかを見る。
+   ===================================================================== */
+function make(id, opt){
+  const cell = document.getElementById(id);
+  const cv = cell.querySelector('canvas');
+  const num = cell.querySelector('.num');
+  const ctx = cv.getContext('2d');
+  let dpr = 1, strokes = [], cur = null;
 
-/* ---------------- 絵 ---------------- */
-function fit(){
-  dpr = Math.min(window.devicePixelRatio || 1, 3);
-  const r = pad.getBoundingClientRect();
-  pad.width = Math.round(r.width * dpr);
-  pad.height = Math.round(r.height * dpr);
-  redraw();
-}
-function redraw(){
-  ctx.setTransform(1,0,0,1,0,0);
-  ctx.clearRect(0,0,pad.width,pad.height);
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-  ctx.lineCap = ctx.lineJoin = 'round';
-  ctx.lineWidth = 3.2;
-  ctx.strokeStyle = ctx.fillStyle = '#111';
-  (cur ? strokes.concat([cur]) : strokes).forEach(s=>{
-    if(s.length === 1){ ctx.beginPath(); ctx.arc(s[0].x, s[0].y, 1.6, 0, Math.PI*2); ctx.fill(); return; }
-    ctx.beginPath(); ctx.moveTo(s[0].x, s[0].y);
-    for(let i=1;i<s.length;i++) ctx.lineTo(s[i].x, s[i].y);
-    ctx.stroke();
-  });
-  document.getElementById('cnt').textContent = strokes.length;
-}
-window.addEventListener('resize', fit);
-function ptOf(e){
-  const r = pad.getBoundingClientRect();
-  return { x: e.clientX - r.left, y: e.clientY - r.top };
+  cv.style.touchAction = opt.touchAction;
+
+  function fit(){
+    dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const r = cv.getBoundingClientRect();
+    cv.width = Math.round(r.width * dpr);
+    cv.height = Math.round(r.height * dpr);
+    draw();
+  }
+  function draw(){
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.clearRect(0,0,cv.width,cv.height);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.lineCap = ctx.lineJoin = 'round';
+    ctx.lineWidth = 3.4;
+    ctx.strokeStyle = ctx.fillStyle = '#111';
+    (cur ? strokes.concat([cur]) : strokes).forEach(s=>{
+      if(s.length === 1){ ctx.beginPath(); ctx.arc(s[0].x, s[0].y, 1.7, 0, Math.PI*2); ctx.fill(); return; }
+      ctx.beginPath(); ctx.moveTo(s[0].x, s[0].y);
+      for(let i=1;i<s.length;i++) ctx.lineTo(s[i].x, s[i].y);
+      ctx.stroke();
+    });
+    num.textContent = strokes.length;
+    num.classList.toggle('ok', strokes.length >= 2);
+  }
+  window.addEventListener('resize', fit);
+  function pt(e){
+    const r = cv.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+  function begin(p){ cur = [p]; draw(); }
+  function move(p){
+    if(!cur) return;
+    const l = cur[cur.length-1];
+    if(Math.abs(p.x-l.x) + Math.abs(p.y-l.y) >= 0.7) cur.push(p);
+    draw();
+  }
+  function end(){ if(!cur) return; strokes.push(cur); cur = null; draw(); }
+
+  /* ---- pointer で書く ---- */
+  if(opt.pointer){
+    cv.addEventListener('pointerdown', e=>{
+      e.preventDefault();
+      begin(pt(e));
+      try{ cv.setPointerCapture(e.pointerId); }catch(err){}
+    });
+    cv.addEventListener('pointermove', e=>{ if(cur){ e.preventDefault(); move(pt(e)); } });
+    cv.addEventListener('pointerup', end);
+    cv.addEventListener('pointercancel', end);
+  }
+
+  /* ---- touch で書く ---- */
+  if(opt.touch){
+    cv.addEventListener('touchstart', e=>{ e.preventDefault(); begin(pt(e.changedTouches[0])); }, {passive:false});
+    cv.addEventListener('touchmove',  e=>{ e.preventDefault(); move(pt(e.changedTouches[0])); }, {passive:false});
+    cv.addEventListener('touchend',   e=>{ e.preventDefault(); end(); }, {passive:false});
+    cv.addEventListener('touchcancel', end, {passive:true});
+  }
+
+  /* ---- 書くのは pointer のまま、touch の既定の動きだけ止める ---- */
+  if(opt.blockTouch){
+    ['touchstart','touchmove','touchend'].forEach(t=>
+      cv.addEventListener(t, e=>e.preventDefault(), {passive:false}));
+  }
+
+  fit();
+  return { reset(){ strokes = []; cur = null; draw(); } };
 }
 
-/* ---------------- 記録 ---------------- */
-/* ホバー（近づけただけ）は数だけ数える。1行ずつ出すと流れて読めない。 */
-let hov = 0, ovr = 0;
-function tick(kind){
-  if(kind === 'h'){ hov++; document.getElementById('hov').textContent = hov; }
-  else { ovr++; document.getElementById('ovr').textContent = ovr; }
-}
-/* 触れている間だけは、動きもまとめて1行にして残す */
-let pend = null;
-function flush(){
-  if(!pend) return;
-  const p = pend; pend = null;
-  put('h', p.name + ' ×' + p.n + '   ' + p.where);
-}
-function put(cls, text){
-  const now = performance.now();
-  const gap = last ? Math.round(now - last) : 0;
-  last = now;
-  const line = document.createElement('div');
-  line.className = cls;
-  line.textContent = '+' + String(gap).padStart(4) + 'ms  ' + text;
-  logEl.appendChild(line);
-  logEl.scrollTop = logEl.scrollHeight;
-  while(logEl.children.length > 500) logEl.removeChild(logEl.firstChild);
-}
-function log(cls, text){ flush(); put(cls, text); }
-function pile(name, where){
-  if(pend && pend.name === name){ pend.n++; return; }
-  flush();
-  pend = {name:name, n:1, where:where};
-}
-function who(e){
-  const t = e.target;
-  if(!t || !t.tagName) return '（不明）';
-  return t.tagName.toLowerCase() + (t.id ? '#' + t.id : '');
-}
-function pinfo(e){
-  return (e.pointerType || '?') + ' id=' + e.pointerId + (e.isPrimary ? ' 主' : ' 副') +
-         ' 圧=' + (e.pressure === undefined ? '-' : e.pressure.toFixed(2)) + '   ' + who(e);
-}
-function tinfo(e){
-  const c = e.changedTouches && e.changedTouches[0];
-  return (c && c.touchType ? c.touchType : '種類なし') + ' 本数=' + e.touches.length +
-         ' 力=' + (c && c.force !== undefined ? c.force.toFixed(2) : '-') + '   ' + who(e);
-}
-
-/* ---- 画面ぜんぶを見張る（枠の外に飛んでも拾えるように） ---- */
-const BIG = ['pointerdown','pointerup','pointercancel','gotpointercapture','lostpointercapture',
-             'touchstart','touchend','touchcancel',
-             'mousedown','mouseup','click','dblclick','contextmenu',
-             'gesturestart','gestureend','selectstart'];
-const MOVE = ['pointermove','touchmove','mousemove'];
-const OVER = ['pointerover','pointerenter','pointerout','pointerleave'];
-
-BIG.forEach(t=>window.addEventListener(t, e=>{
-  if(t === 'pointerdown' || t === 'touchstart') down = true;
-  const cls = /^touch/.test(t) ? 't' : (/dblclick|contextmenu|gesture|cancel/.test(t) ? 'x' : 'd');
-  log(cls, t + '  ' + (/^touch/.test(t) ? tinfo(e) : (e.pointerId !== undefined ? pinfo(e) : who(e))));
-  if(t === 'pointerup' || t === 'pointercancel' || t === 'touchend' || t === 'touchcancel') down = false;
-}, true));
-/* 触れているあいだの動きだけ1行にまとめて残す。浮いているだけなら数えるだけ。 */
-MOVE.forEach(t=>window.addEventListener(t, e=>{
-  if(!down){ tick('h'); return; }
-  pile(t + (e.pointerType ? '(' + e.pointerType + ' id=' + e.pointerId + ')' : ''), who(e));
-}, true));
-OVER.forEach(t=>window.addEventListener(t, e=>{
-  if(!down){ tick('o'); return; }
-  log('h', t + '  ' + pinfo(e));
-}, true));
-document.addEventListener('selectionchange', ()=>log('x', 'selectionchange（文字が選ばれた）'), true);
-window.addEventListener('blur', ()=>log('x', 'ページが後ろに回った'), true);
-document.addEventListener('visibilitychange', ()=>log('x', 'visibilitychange ' + document.visibilityState), true);
-
-/* ---------------- 本番の書く処理 ---------------- */
-pad.addEventListener('pointerdown', e=>{
-  if(e.pointerType === 'mouse' && e.button !== 0) return;
-  e.preventDefault();
-  drawing = true;
-  cur = [ptOf(e)];
-  redraw();
-  try{ pad.setPointerCapture(e.pointerId); }
-  catch(err){ log('x', '    capture でしくじった: ' + err.name); }
-  log('g', '    → 書き始めた');
-});
-pad.addEventListener('pointermove', e=>{
-  if(!drawing || !cur) return;
-  e.preventDefault();
-  const p = ptOf(e), l = cur[cur.length-1];
-  if(Math.abs(p.x-l.x) + Math.abs(p.y-l.y) >= 0.7) cur.push(p);
-  redraw();
-});
-function end(){
-  if(!drawing) return;
-  drawing = false;
-  if(cur){ strokes.push(cur); cur = null; }
-  redraw();
-  log('g', '    → 書き終わった（線 ' + strokes.length + '本目）');
-}
-pad.addEventListener('pointerup', end);
-pad.addEventListener('pointercancel', end);
-
-document.getElementById('clr').addEventListener('click', ()=>{
-  strokes = []; cur = null; drawing = false; down = false; last = 0; pend = null;
-  hov = 0; ovr = 0;
-  document.getElementById('hov').textContent = '0';
-  document.getElementById('ovr').textContent = '0';
-  logEl.innerHTML = '';
-  redraw();
-});
-
-fit();
-put('g', '用意できました。ペンで はやく2回 たんたん と打ってください。');
+const cells = [
+  /* A: 今のアプリと同じ。pointer だけで書き、touch には手を出さない。 */
+  make('cA', {pointer:true,  touch:false, blockTouch:false, touchAction:'none'}),
+  /* B: 書くのは pointer のまま。touch の既定の動きを止めて、
+        Safari のジェスチャ判定そのものを起こさせない。 */
+  make('cB', {pointer:true,  touch:false, blockTouch:true,  touchAction:'none'}),
+  /* C: pointer を一切使わず、touch だけで書く。 */
+  make('cC', {pointer:false, touch:true,  blockTouch:false, touchAction:'none'}),
+  /* D: touch-action を manipulation に。none だと逆に効かない版があるらしいので。 */
+  make('cD', {pointer:true,  touch:false, blockTouch:false, touchAction:'manipulation'}),
+];
+document.getElementById('clr').addEventListener('click', ()=>cells.forEach(c=>c.reset()));
 </script>
 </body>
 </html>
