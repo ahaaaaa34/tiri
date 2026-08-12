@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>たんたん調べ 2</title>
+<title>たんたん調べ 3</title>
 <style>
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;
     -webkit-user-select:none; user-select:none; -webkit-touch-callout:none}
@@ -33,22 +33,22 @@
 </head>
 <body>
 <header>
-  <span class="ver">v2</span>
+  <span class="ver">v3</span>
   <b>白い枠の中で、ペンで はやく2回「たんたん」。</b>
   打ったあとは <b>ペンを画面のすぐ上に残したまま</b>（遠ざけないで）少し待ってください。<br>
-  画面のどこに飛んだイベントも全部ひろいます。撮って送ってください。
+  近づけただけでは何も出ません。触れたときだけ出ます。
 </header>
 <div class="padwrap"><canvas id="pad"></canvas></div>
 <div class="bar">
   <button id="clr">消してやり直す</button>
-  <span class="n">線 <b id="cnt">0</b> ／ 届いた合図 <b id="raw">0</b></span>
+  <span class="n">線 <b id="cnt">0</b>　ホバー <b id="hov">0</b>　出入り <b id="ovr">0</b></span>
 </div>
 <div id="log"></div>
 
 <script>
 const pad = document.getElementById('pad'), logEl = document.getElementById('log');
 const ctx = pad.getContext('2d');
-let dpr = 1, last = 0, raw = 0, strokes = [], cur = null, drawing = false;
+let dpr = 1, last = 0, down = false, strokes = [], cur = null, drawing = false;
 
 /* ---------------- 絵 ---------------- */
 function fit(){
@@ -80,7 +80,14 @@ function ptOf(e){
 }
 
 /* ---------------- 記録 ---------------- */
-let pend = null;                    /* 動き系はまとめて1行にする */
+/* ホバー（近づけただけ）は数だけ数える。1行ずつ出すと流れて読めない。 */
+let hov = 0, ovr = 0;
+function tick(kind){
+  if(kind === 'h'){ hov++; document.getElementById('hov').textContent = hov; }
+  else { ovr++; document.getElementById('ovr').textContent = ovr; }
+}
+/* 触れている間だけは、動きもまとめて1行にして残す */
+let pend = null;
 function flush(){
   if(!pend) return;
   const p = pend; pend = null;
@@ -99,7 +106,6 @@ function put(cls, text){
 }
 function log(cls, text){ flush(); put(cls, text); }
 function pile(name, where){
-  raw++; document.getElementById('raw').textContent = raw;
   if(pend && pend.name === name){ pend.n++; return; }
   flush();
   pend = {name:name, n:1, where:where};
@@ -124,15 +130,23 @@ const BIG = ['pointerdown','pointerup','pointercancel','gotpointercapture','lost
              'touchstart','touchend','touchcancel',
              'mousedown','mouseup','click','dblclick','contextmenu',
              'gesturestart','gestureend','selectstart'];
-const SMALL = ['pointerover','pointerenter','pointerout','pointerleave','pointermove','touchmove','mousemove'];
+const MOVE = ['pointermove','touchmove','mousemove'];
+const OVER = ['pointerover','pointerenter','pointerout','pointerleave'];
 
 BIG.forEach(t=>window.addEventListener(t, e=>{
-  raw++; document.getElementById('raw').textContent = raw;
+  if(t === 'pointerdown' || t === 'touchstart') down = true;
   const cls = /^touch/.test(t) ? 't' : (/dblclick|contextmenu|gesture|cancel/.test(t) ? 'x' : 'd');
   log(cls, t + '  ' + (/^touch/.test(t) ? tinfo(e) : (e.pointerId !== undefined ? pinfo(e) : who(e))));
+  if(t === 'pointerup' || t === 'pointercancel' || t === 'touchend' || t === 'touchcancel') down = false;
 }, true));
-SMALL.forEach(t=>window.addEventListener(t, e=>{
+/* 触れているあいだの動きだけ1行にまとめて残す。浮いているだけなら数えるだけ。 */
+MOVE.forEach(t=>window.addEventListener(t, e=>{
+  if(!down){ tick('h'); return; }
   pile(t + (e.pointerType ? '(' + e.pointerType + ' id=' + e.pointerId + ')' : ''), who(e));
+}, true));
+OVER.forEach(t=>window.addEventListener(t, e=>{
+  if(!down){ tick('o'); return; }
+  log('h', t + '  ' + pinfo(e));
 }, true));
 document.addEventListener('selectionchange', ()=>log('x', 'selectionchange（文字が選ばれた）'), true);
 window.addEventListener('blur', ()=>log('x', 'ページが後ろに回った'), true);
@@ -167,8 +181,10 @@ pad.addEventListener('pointerup', end);
 pad.addEventListener('pointercancel', end);
 
 document.getElementById('clr').addEventListener('click', ()=>{
-  strokes = []; cur = null; drawing = false; raw = 0; last = 0; pend = null;
-  document.getElementById('raw').textContent = '0';
+  strokes = []; cur = null; drawing = false; down = false; last = 0; pend = null;
+  hov = 0; ovr = 0;
+  document.getElementById('hov').textContent = '0';
+  document.getElementById('ovr').textContent = '0';
   logEl.innerHTML = '';
   redraw();
 });
