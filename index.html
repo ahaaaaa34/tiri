@@ -545,7 +545,7 @@
 
     <div id="resume" class="hide"></div>
 
-    <p class="sec">どちらを解く？</p>
+    <p class="sec">どれを解く？</p>
     <div class="tlist" id="sidelist"></div>
 
     <p class="sec">別のかたちで</p>
@@ -1283,6 +1283,77 @@ const TOPICS = [
      e:'log_{10} 4 = 2 log_{10} 2 = 2×0.3010 = 0.6020\n\nよって　0.52 < 0.6020 = log_{10} 4\nすなわち　log_{10} 10^{0.52} < log_{10} 4\n\n底10は1より大きいから　10^{0.52} < 4'},
     {id:'tb-ex-7voxb3', q:'［演習問題11(3)］18^{100} の最高位の数字を求めよ', g:'log_{10} 2 = 0.3010,  log_{10} 3 = 0.4771', a:['3'], h:'例: 3', e:'(1)より log_{10}18^{100}=125.52 なので 18^{100}=10^{0.52}×10^{125}。log_{10}3=0.4771<0.52 より 3<10^{0.52}、(2)より 10^{0.52}<4。よって 3×10^{125}<18^{100}<4×10^{125} となり、最高位の数字は3'}
   ]
+},
+{
+  id:'ck-law', name:'チェック｜指数法則', desc:'問題集8・指数法則1〜3',
+  qs:[
+    {id:'ck-law-p8a', q:'［問題集8(1)］a^7 a^{-4}', g:'a ≠ 0,  b ≠ 0', a:['a^3'], h:'例: a^3', e:'a^{7+(-4)}=a^{7-4}=a^3'},
+    {id:'ck-law-p8b', q:'［問題集8(2)］(a^{-2})^{-6}', g:'a ≠ 0,  b ≠ 0', a:['a^12'], h:'例: a^12', e:'a^{(-2)×(-6)}=a^{12}'},
+    {id:'ck-law-p8c', q:'［問題集8(3)］(a^{-3}b)^{-4}', g:'a ≠ 0,  b ≠ 0', a:['a^12b^-4'], h:'例: a^12b^-4', e:'(a^{-3})^{-4}b^{-4}=a^{(-3)×(-4)}b^{-4}=a^{12}b^{-4}'},
+    {id:'ck-law-p8d', q:'［問題集8(4)］a^{-2} ÷ a^6', g:'a ≠ 0,  b ≠ 0', a:['a^-8'], h:'例: a^-8', e:'a^{-2-6}=a^{-8}'},
+    {id:'ck-law-p8e', q:'［問題集8(5)］3^4 × 3^{-5} ÷ 3^{-6}', a:['243'], h:'例: 243', e:'3^{4-5+6}=3^5=243'},
+    {id:'ck-law-p8f', q:'［問題集8(6)］8^5 × 32^{-4} ÷ 2^{-7}', a:['4'], h:'例: 4', e:'(2^3)^5×(2^5)^{-4}×2^7=2^{15-20+7}=2^2=4'},
+    {id:'ck-law-r1', q:'指数法則1　a^m a^n を1つの累乗で表すと',
+     c:['a^{m+n}','a^{mn}','a^{m-n}','(a^m)^n'], a:['a^{m+n}'], e:'指数どうしを足す。a^m a^n = a^{m+n}'},
+    {id:'ck-law-r2', q:'指数法則2　(a^m)^n を1つの累乗で表すと',
+     c:['a^{mn}','a^{m+n}','a^{n-m}','a^m a^n'], a:['a^{mn}'], e:'指数どうしを掛ける。(a^m)^n = a^{mn}'},
+    {id:'ck-law-r3', q:'指数法則3　(ab)^n を展開すると',
+     c:['a^n b^n','a^n + b^n','(ab)^{n+1}','a^{n} b'], a:['a^n b^n'], e:'それぞれに指数がつく。(ab)^n = a^n b^n'}
+  ]
+},
+{
+  id:'ck-root', name:'チェック｜累乗根', desc:'練習3・練習8',
+  qs:[
+    {id:'ck-root-r3a', q:'［練習3(1)］√[3]{343}', a:['7'], h:'例: 7', e:'343=7^3 なので 7'},
+    {id:'ck-root-r3b', q:'［練習3(2)］√[5]{32}', a:['2'], h:'例: 2', e:'32=2^5 なので 2'},
+    {id:'ck-root-r3c', q:'［練習3(3)］√[4]{0.0001}', a:['0.1'], h:'小数で。例: 0.1', e:'0.0001=(0.1)^4 なので 0.1'},
+    {id:'ck-root-r8a', q:'［練習8(1)］① √[3]{3}　② √[4]{9}　③ √[7]{27}　を小さい方から順に並べよ', a:['1<3<2'], h:'番号のみ。例: 1<3<2', e:'それぞれ ①3^{1/3}、②3^{2/4}=3^{1/2}、③3^{3/7}。1/3<3/7<1/2 なので ①<③<②'},
+    {id:'ck-root-r8b', q:'［練習8(2)］① √{1/2}　② √[3]{1/4}　③ √[4]{1/8}　を小さい方から順に並べよ', a:['3<2<1'], h:'番号のみ。例: 3<2<1', e:'それぞれ ①2^{-1/2}、②2^{-2/3}、③2^{-3/4}。-3/4<-2/3<-1/2 なので ③<②<①'}
+  ]
+},
+{
+  id:'ck-eeq', name:'チェック｜指数方程式・不等式', desc:'練習9',
+  qs:[
+    {id:'ck-eeq-r9a', q:'［練習9(1)］8^x = 4', a:['2/3'], h:'分数で。例: 3分の2', e:'2^{3x}=2^2 → 3x=2 → x=2/3'},
+    {id:'ck-eeq-r9b', q:'［練習9(2)］3^{2x-1} = 243', a:['3'], h:'例: 3', e:'243=3^5 なので 2x-1=5 → x=3'},
+    {id:'ck-eeq-r9c', q:'［練習9(3)］25^x = 5^{3-x}', a:['1'], h:'例: 1', e:'5^{2x}=5^{3-x} → 2x=3-x → x=1'},
+    {id:'ck-eeq-r9d', q:'［練習9(4)］2^x - 32 < 0', a:['x<5'], h:'例: x<5', e:'2^x<2^5。底2>1 なので x<5'},
+    {id:'ck-eeq-r9e', q:'［練習9(5)］(1/2)^{x-1} ≦ 1/16', a:['x≧5'], h:'例: x≧5', e:'1/16=(1/2)^4。底1/2<1 なので不等号が裏返り x-1≧4 → x≧5'},
+    {id:'ck-eeq-r9f', q:'［練習9(6)］(1/3)^{2x+1} > (1/81)^x', a:['x>1/2'], h:'例: x>2分の1', e:'(1/81)^x=(1/3)^{4x}。底1/3<1 なので 2x+1<4x → x>1/2'}
+  ]
+},
+{
+  id:'ck-lval', name:'チェック｜対数の値', desc:'問題集15',
+  qs:[
+    {id:'ck-lval-a', q:'［問題集15(1)］log_7 49', a:['2'], h:'例: 2', e:'49=7^2 なので 2'},
+    {id:'ck-lval-b', q:'［問題集15(2)］log_2 64', a:['6'], h:'例: 6', e:'64=2^6 なので 6'},
+    {id:'ck-lval-c', q:'［問題集15(3)］log_5 5', a:['1'], h:'例: 1', e:'底と真数が同じなので 1'},
+    {id:'ck-lval-d', q:'［問題集15(4)］log_4 1', a:['0'], h:'例: 0', e:'1=4^0 なので 0'},
+    {id:'ck-lval-e', q:'［問題集15(5)］log_3 (1/81)', a:['-4'], h:'例: -4', e:'1/81=3^{-4} なので -4'},
+    {id:'ck-lval-f', q:'［問題集15(6)］log_{√2} 8', a:['6'], h:'例: 6', e:'8=2^3=(√{2})^6 なので 6'},
+    {id:'ck-lval-g', q:'［問題集15(7)］log_{0.2} 125', a:['-3'], h:'例: -3', e:'0.2=1/5、125=(1/5)^{-3} なので -3'},
+    {id:'ck-lval-h', q:'［問題集15(8)］log_{36} √{1/6}', a:['-1/4'], h:'分数で。例: 4分の-1', e:'√{1/6}=6^{-1/2}=36^{-1/4} なので -1/4'}
+  ]
+},
+{
+  id:'ck-lcalc', name:'チェック｜対数の計算', desc:'練習14・練習15(3)・問題集16',
+  qs:[
+    {id:'ck-lcalc-r14a', q:'［練習14(1)］log_6 12 + log_6 3', a:['2'], h:'例: 2', e:'log_6(12×3)=log_6 36=2'},
+    {id:'ck-lcalc-r14b', q:'［練習14(2)］log_5 15 - log_5 75', a:['-1'], h:'例: -1', e:'log_5(15/75)=log_5(1/5)=-1'},
+    {id:'ck-lcalc-r15c', q:'［練習15(3)］log_2 3 · log_3 8', a:['3'], h:'例: 3', e:'底の変換で log_3 8=log_2 8/log_2 3。掛けると log_2 8=3'},
+    {id:'ck-lcalc-p16a', q:'［問題集16(1)］log_{10} 25 + log_{10} 4', a:['2'], h:'例: 2', e:'log_{10}(25×4)=log_{10}100=2'},
+    {id:'ck-lcalc-p16b', q:'［問題集16(2)］log_6 42 - log_6 7', a:['1'], h:'例: 1', e:'log_6(42/7)=log_6 6=1'},
+    {id:'ck-lcalc-p16c', q:'［問題集16(3)］log_3 54 + log_3 6 - 2log_3 2', a:['4'], h:'例: 4', e:'log_3(54×6/2^2)=log_3 81=4'}
+  ]
+},
+{
+  id:'ck-clog', name:'チェック｜常用対数', desc:'問題集18',
+  qs:[
+    {id:'ck-clog-a', q:'［問題集18(1)］log_{10} 0.003', g:'log_{10} 2 = 0.3010,  log_{10} 3 = 0.4771', a:['-2.5229'], h:'例: -2.5229', e:'log_{10}(3×10^{-3})=0.4771-3=-2.5229'},
+    {id:'ck-clog-b', q:'［問題集18(2)］log_{10} 24', g:'log_{10} 2 = 0.3010,  log_{10} 3 = 0.4771', a:['1.3801'], h:'例: 1.3801', e:'24=2^3×3 なので 3×0.3010+0.4771=1.3801'},
+    {id:'ck-clog-d', q:'［問題集18(4)］log_{10} √{72}', g:'log_{10} 2 = 0.3010,  log_{10} 3 = 0.4771', a:['0.9286'], h:'例: 0.9286', e:'(1/2)log_{10}(2^3×3^2)=(1/2)(3×0.3010+2×0.4771)=0.9286'},
+    {id:'ck-clog-e', q:'［問題集18(5)］log_3 8　小数第5位を四捨五入して小数第4位まで', g:'log_{10} 2 = 0.3010,  log_{10} 3 = 0.4771', a:['1.8927'], h:'例: 1.8927', e:'log_3 8=3×0.3010÷0.4771=0.9030÷0.4771=1.89268… → 1.8927'}
+  ]
 }
 ];
 
@@ -1577,18 +1648,23 @@ const GROUPS = [
   {name:'第1節 指数関数',   ids:['tb-neg','tb-root','tb-rat','tb-rcomp','tb-eeq']},
   {name:'第2節 対数関数',   ids:['tb-ldef','tb-lprop','tb-lbase','tb-lcomp','tb-leq',
                               'tb-lmax','tb-clog']},
-  {name:'章末',            ids:['tb-exam','tb-ex']}
+  {name:'章末',            ids:['tb-exam','tb-ex']},
+  {name:'指数',            ids:['ck-law','ck-root','ck-eeq']},
+  {name:'対数',            ids:['ck-lval','ck-lcalc','ck-clog']}
 ];
 
 /* 教科書から起こした問題と、こちらで用意した問題は別ものなので、
-   まずどちらを解くかを選んでもらい、そのあと範囲を選ぶ。
+   まずどれを解くかを選んでもらい、そのあと範囲を選ぶ。
    ここの id は範囲IDの代わりに「まとめて出題」の指定としても使える。 */
 const isTB = q => q.topic.indexOf('tb-')===0;
+const isCK = q => q.topic.indexOf('ck-')===0;
 const SIDES = {
   '__tb__'  : {key:'tb',   name:'教科書の問題',   desc:'練習・例題・問・章末・演習問題',
                allName:'教科書の問題すべて', test:isTB},
   '__mine__': {key:'mine', name:'オリジナル問題', desc:'教科書とは別に用意した問題',
-               allName:'オリジナル問題すべて', test:q=>!isTB(q)}
+               allName:'オリジナル問題すべて', test:q=>!isTB(q) && !isCK(q)},
+  '__ck__'  : {key:'ck',   name:'チェック',       desc:'教科書・問題集で印をつけたところ',
+               allName:'チェックすべて', test:isCK}
 };
 /* 旧バージョンで保存されたセッション（両方まとめて）も開けるように残しておく */
 const SCOPES = Object.assign({'__all__':{name:'すべての範囲', test:()=>true}}, SIDES);
@@ -1601,7 +1677,9 @@ try{ const v = localStorage.getItem(SIDEKEY); if(SIDES[v]) SIDE = v; }catch(e){}
 function setSide(id){ SIDE = id; try{ localStorage.setItem(SIDEKEY, id); }catch(e){} }
 function sideOfTopic(id){
   if(SIDES[id]) return id;
-  return (id && id.indexOf('tb-')===0) ? '__tb__' : '__mine__';
+  if(id && id.indexOf('tb-')===0) return '__tb__';
+  if(id && id.indexOf('ck-')===0) return '__ck__';
+  return '__mine__';
 }
 
 /* 一度でも正解した問題の割合（範囲ごとの手応えの目安） */
@@ -1735,7 +1813,7 @@ function renderMenu(){
     ts.forEach((t,i)=>{
       const p = pools[i];
       const wsum = p.reduce((s,q)=>s+wcount(q.id),0);
-      const nm = t.name.replace(/^教科書｜/, '');
+      const nm = t.name.replace(/^(教科書|チェック)｜/, '');
       box.appendChild(mk(t.id, nm, t.desc, p.length, wsum, doneRate(t.qs), false));
     });
   });
@@ -2686,7 +2764,7 @@ function paintField(){
       ? '<span class="ph">下から選んでください</span>'
       : '<span class="caret"></span><span class="ph">ここに解答を入力</span>';
   }else if(pickMode){
-    f.innerHTML = esc(IV);
+    f.innerHTML = fmt(IV);      /* 選んだものも、選択肢と同じ組み方で見せる */
     syncAnsBtn();
     return;
   }else{
@@ -2816,8 +2894,9 @@ function buildChoices(q){
   box.innerHTML = '';
   q.c.forEach(label=>{
     const b = document.createElement('button');
-    b.className = 'ch' + (label===IV ? ' on' : '');
-    b.textContent = label;
+    b.className = 'ch mq' + (label===IV ? ' on' : '');
+    /* 選択肢も数式として組む。a^{m+n} のような形が生の字で出ないように。 */
+    b.innerHTML = fmt(label);
     b.addEventListener('click', ()=>{
       IV = label; IC = IV.length;
       Array.prototype.forEach.call(box.children, x=>x.classList.remove('on'));
