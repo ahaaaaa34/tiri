@@ -8,15 +8,15 @@
 
 /* 数式のかたまりに入れる文字 */
 const MCH = "\u0001" + "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-          + ".,+-=<>()[]{}^_/√∛□≦≧≠×÷·・ ";
+          + ".,+-=<>()[]{}^_/√∛□≦≧≠×÷·・± ";
 /* ただの数字やかっこだけの並びは、日本語の中の「6(2)」のような字なので数式にしない。
    下のどれかが入っていて初めて数式として組む。 */
-const MSIG = /[\^_√∛×÷·・≦≧□/\u0001]|[A-Za-z]/;
+const MSIG = /[\^_√∛×÷·・≦≧□±/\u0001]|[A-Za-z]/;
 
 /* 入力欄のカーソル位置を示す目印 */
 const CT = '\u0001';
 
-const SYM = {'×':'\\times ', '÷':'\\div ', '·':'\\cdot ', '・':'\\cdot ',
+const SYM = {'×':'\\times ', '÷':'\\div ', '·':'\\cdot ', '・':'\\cdot ', '±':'\\pm ',
              '≦':'\\leqq ', '≧':'\\geqq ', '≠':'\\neq ', '<':'<', '>':'>',
              '□':'\\htmlClass{tbx}{\\square}',
              '\u0001':'\\htmlClass{tcaret}{|}'};
@@ -64,7 +64,7 @@ function atom(s, i){
     tex = r[0]; j = r[1];
   }else{
     j = i;
-    while(j<s.length && /[0-9A-Za-z.\u0001]/.test(s[j])) j++;
+    while(j<s.length && /[0-9A-Za-z.□\u0001]/.test(s[j])) j++;   /* □ は穴うめの箱 */
     if(j===i) return pre ? [pre, i] : null;
     tex = conv(s.slice(i, j));   /* 分母に来た log も命令として出る */
   }
@@ -161,6 +161,9 @@ const RE_TOK  = /\\?[0-9A-Za-z.]+(?:\\htmlClass\{tcaret\}\{\|\}[0-9A-Za-z.]*)*$/
 /* かっこの前に付いた log_2 のような名前。これも分子に入れないと
    log_2(7)/log_2(3) が「log の中が分数」に化ける。 */
 const RE_FN   = /\\?[0-9A-Za-z.]+(?:_\{[^{}]*\})?$/;
+/* log_2 8 のように、間を空けて書いた log の中身。ここで切ると
+   log_2 8/log_2 3 が「log の中が分数」に化ける。 */
+const RE_LOGA = /\\log\s*(?:_\{[^{}]*\})?\s*(?:\\,)?$/;
 
 function lastAtom(out){
   let tail = '', m;
@@ -182,6 +185,8 @@ function lastAtom(out){
   else if((m = RE_TOK.exec(out)))  start = m.index;
 
   if(start < 0) return null;
+  const lg = RE_LOGA.exec(out.slice(0, start));   /* 手前の log ごと切り出す */
+  if(lg) start = lg.index;
   return {head: out.slice(0, start), tex: out.slice(start) + tail};
 }
 
