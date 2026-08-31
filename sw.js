@@ -5,13 +5,15 @@
    なので、ページ本体は「ネットワーク優先・失敗したらキャッシュ」、
    アイコン等の変わらないものは「キャッシュ優先・裏で更新」にしている。 */
 
-const VERSION = 'v48';                       // 中身を変えたらここを上げる
+const VERSION = 'v49';                       // 中身を変えたらここを上げる
 const CACHE   = 'explog-' + VERSION;
 
 const SHELL = [
   './',
   './index.html',
   './koppen.html',
+  './kobun.html',
+  './kobun-words.js',
   './manifest.webmanifest',
   './katex.min.js',
   './katex.min.css',
