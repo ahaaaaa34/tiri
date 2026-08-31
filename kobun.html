@@ -106,6 +106,15 @@
   .rvm{display:flex; gap:8px; font-size:17px; line-height:1.6; margin-bottom:6px}
   .rvm .no{flex:none; color:var(--t3); font-size:13px; padding-top:3px}
   .rvm b{font-weight:600}
+  .rvex{margin-top:12px; padding-top:10px; border-top:1px dashed var(--bd2)}
+  .exi{margin-bottom:11px; display:flex; gap:8px}
+  .exi .no{flex:none; color:var(--t3); font-size:12px; padding-top:2px}
+  .exi .bd{flex:1; min-width:0}
+  .exi .g{margin:0; font-size:14.5px; line-height:1.85;
+          font-family:"Hiragino Mincho ProN","Yu Mincho",serif}
+  .exi .g b{font-weight:600; background:linear-gradient(transparent 62%, rgba(139,0,0,.16) 62%)}
+  .exi .y{margin:3px 0 0; font-size:12px; color:var(--t2); line-height:1.7}
+  .exi .src{font-size:10.5px; color:var(--t3); margin-left:6px; white-space:nowrap}
   .rvsub{margin-top:10px; padding-top:9px; border-top:1px dashed var(--bd2)}
   .rvsub p{margin:0 0 4px; font-size:12px; color:var(--t2); line-height:1.7}
   .rvsub p .lb{color:var(--t3); margin-right:6px}
@@ -327,6 +336,14 @@ function show(id){
   window.scrollTo(0,0);
 }
 function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+/* 例文の { } でくくったところを、その語として目立たせる */
+function exLine(e){
+  const g = esc(e.s).replace(/\{([^}]*)\}/g, '<b>$1</b>');
+  return '<div class="exi"><span class="no">' + (LAB[(e.n||1)-1] || '') + '</span>' +
+         '<div class="bd"><p class="g">' + g +
+         (e.src ? '<span class="src">〈' + esc(e.src) + '〉</span>' : '') + '</p>' +
+         '<p class="y">' + esc(e.t) + '</p></div></div>';
+}
 
 /* ---- 範囲（品詞ごと。語がふえたら番号でも分ける） ---- */
 function scopes(){
@@ -524,6 +541,11 @@ function reveal(){
   const tgt = targetIdx(w);
   let h = '<p class="rvl">こたえ</p>';
   tgt.forEach(i=>{ h += '<div class="rvm"><span class="no">' + LAB[i] + '</span><b>' + esc(w.means[i].t) + '</b></div>'; });
+  if(w.ex && w.ex.length){
+    h += '<div class="rvex"><p class="rvl">例文</p>';
+    w.ex.forEach(e=>{ h += exLine(e); });
+    h += '</div>';
+  }
   const rest = w.means.map((m,i)=>i).filter(i=>tgt.indexOf(i)<0);
   h += '<div class="rvsub">';
   if(w.key) h += '<p><span class="lb">KEY</span>' + esc(w.key) + '</p>';
