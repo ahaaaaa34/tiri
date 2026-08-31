@@ -119,6 +119,11 @@
   .jb.ng{color:var(--err); border-color:rgba(139,0,0,.3)}
   .jb.ok{color:#fff; background:var(--ok); border-color:var(--ok)}
   .jb.dim{opacity:.5; font-weight:500}
+  /* つないだキーボードで使うときの目印。指で触る画面には出さない */
+  .kk{display:none}
+  @media (hover:hover) and (pointer:fine){
+    .kk{display:block; font-style:normal; font-size:10px; font-weight:400; opacity:.7; margin-top:1px}
+  }
 
   /* 学習状況 */
   .stsum{display:flex; gap:8px; margin:16px 0 18px}
@@ -211,8 +216,8 @@
     <div class="foot">
       <button class="pbtn" id="showBtn">答え合わせ</button>
       <div class="judge hide" id="judgeRow">
-        <button class="jb ng" id="ngBtn">まちがえた</button>
-        <button class="jb ok" id="okBtn">できた</button>
+        <button class="jb ng" id="ngBtn">まちがえた<i class="kk">←</i></button>
+        <button class="jb ok" id="okBtn">できた<i class="kk">Enter / →</i></button>
       </div>
     </div>
   </div>
@@ -447,12 +452,24 @@ function renderQ(){
     d.innerHTML = '<div class="sl2"></div><input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><div class="mk"></div>';
     d.querySelector('.sl2').textContent = s.labs.join('') + ' の意味';
     const inp = d.querySelector('input');
+    inp.setAttribute('enterkeyhint', i < sl.length-1 ? 'next' : 'done');
+    /* キーボードを出したまま最後まで進めるようにする。
+       Enter だけで 次の欄 → 答え合わせ → 次の問題 と進む。 */
     inp.addEventListener('keydown', ev=>{
-      if(ev.key !== 'Enter' || ev.isComposing) return;
-      ev.preventDefault();
-      const all = box.querySelectorAll('input');
-      if(i < all.length-1) all[i+1].focus();
-      else { inp.blur(); reveal(); }
+      if(ev.isComposing) return;                 /* 変換中の Enter は確定なので触らない */
+      if(ev.key === 'Enter'){
+        ev.preventDefault();
+        if(S.shown){ judge(S.auto !== false); return; }
+        const all = box.querySelectorAll('input');
+        if(i < all.length-1) all[i+1].focus();
+        else reveal();
+        return;
+      }
+      /* 答えを出したあとは、矢印で ○／✕ を選べる（自動判定を直したいとき） */
+      if(S.shown && (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft')){
+        ev.preventDefault();
+        judge(ev.key === 'ArrowRight');
+      }
     });
     box.appendChild(d);
   });
@@ -485,7 +502,6 @@ function reveal(){
     const good = judgeText(val, s.accept);
     row.classList.add(good ? 'ok' : 'ng');
     row.querySelector('.mk').textContent = good ? '合っていそう' : (val.trim() ? 'ちがうかも' : '書いていない');
-    row.querySelector('input').blur();
     if(!good) allOk = false;
   });
   S.auto = allOk;
@@ -501,6 +517,8 @@ function reveal(){
   if(w.note) h += '<p><span class="lb">POINT</span>' + esc(w.note) + '</p>';
   h += '</div>';
   const r = $('reveal'); r.innerHTML = h; r.classList.remove('hide');
+  /* キーボードで下半分が隠れても読めるよう、こたえを画面の上に送る */
+  window.scrollTo(0, Math.max(0, r.offsetTop - 56));
 
   $('showBtn').classList.add('hide');
   $('judgeRow').classList.remove('hide');
@@ -576,12 +594,65 @@ function renderStats(){
   });
 }
 
-/* パソコンで見るとき用：答えを出したあとは → できた／← まちがえた */
+/* =======================================================================
+   キーボードだけで最後まで操作できるようにする
+     トップ　　： Enter 全部を始める／1〜9 その範囲／R 復習／S 学習状況
+     出題　　　： Enter 答え合わせ →（もう一度）次へ／→ できた／← まちがえた
+     　　　　　　H ヒント／Esc やめる
+     おわり　　： Enter まちがえた語だけもう一度／Esc トップへ
+   ======================================================================= */
+function nowAt(){
+  return ['home','play','stats','done'].filter(k=>!$(k).classList.contains('hide'))[0];
+}
 document.addEventListener('keydown', e=>{
-  if($('play').classList.contains('hide') || !S.shown) return;
-  if(e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
-  if(e.key === 'ArrowRight' || e.key === 'Enter'){ e.preventDefault(); judge(S.auto !== false); }
-  if(e.key === 'ArrowLeft'){ e.preventDefault(); judge(false); }
+  if(e.isComposing || e.metaKey || e.ctrlKey || e.altKey) return;
+  const inField = e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
+  const at = nowAt();
+
+  if(at === 'play'){
+    if(e.key === 'Escape'){ $('backBtn').click(); return; }   /* 入力欄の中からでもやめられる */
+    if(inField) return;              /* あとは入力欄の handler にまかせる */
+    if(e.key === 'Enter' || e.key === ' '){
+      e.preventDefault();
+      if(S.shown) judge(S.auto !== false); else reveal();
+      return;
+    }
+    if(S.shown && e.key === 'ArrowRight'){ e.preventDefault(); judge(true);  return; }
+    if(S.shown && e.key === 'ArrowLeft' ){ e.preventDefault(); judge(false); return; }
+    if(!S.shown && (e.key === 'h' || e.key === 'H')){ $('hintBtn').click(); return; }
+    return;
+  }
+  if(inField) return;
+
+  if(at === 'home'){
+    const items = $('tlist').querySelectorAll('.titem');
+    if(e.key === 'Enter'){
+      e.preventDefault();
+      const b = $('tlist').querySelector('.titem:not([disabled])');
+      if(b) b.click();
+      return;
+    }
+    if(/^[1-9]$/.test(e.key)){
+      const b = items[+e.key - 1];
+      if(b && !b.disabled) b.click();
+      return;
+    }
+    if(e.key === 'r' || e.key === 'R'){ if(!$('reviewBtn').disabled) $('reviewBtn').click(); return; }
+    if(e.key === 's' || e.key === 'S'){ $('statBtn').click(); return; }
+    return;
+  }
+  if(at === 'stats'){
+    if(e.key === 'Escape' || e.key === 'Enter') $('stBack').click();
+    return;
+  }
+  if(at === 'done'){
+    if(e.key === 'Enter'){
+      e.preventDefault();
+      ($('againWrong').classList.contains('hide') ? $('toHome2') : $('againWrong')).click();
+      return;
+    }
+    if(e.key === 'Escape') $('toHome2').click();
+  }
 });
 
 renderHome(); show('home');
