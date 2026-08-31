@@ -493,15 +493,30 @@ function reveal(){
   const w = curW(); if(!w || S.shown) return;
   S.shown = true;
 
+  /* 意味が2つ以上あるときは、書く順番までは問わない。
+     その欄の意味に合っていればそのまま、合っていなければ
+     まだ当たっていない別の意味に合うかどうかも見る。 */
   const sl = slotsOf(w);
   const rows = $('slots').querySelectorAll('.slot');
+  const vals = sl.map((s,i)=> rows[i] ? rows[i].querySelector('input').value : '');
+  const hit  = sl.map(()=>-1);     /* その欄が、どの意味に当たったか */
+  const used = sl.map(()=>false);
+  vals.forEach((v,i)=>{ if(judgeText(v, sl[i].accept)){ hit[i] = i; used[i] = true; } });
+  vals.forEach((v,i)=>{
+    if(hit[i] >= 0 || !v.trim()) return;
+    for(let j=0;j<sl.length;j++){
+      if(used[j] || !judgeText(v, sl[j].accept)) continue;
+      hit[i] = j; used[j] = true; break;
+    }
+  });
   let allOk = true;
   sl.forEach((s,i)=>{
     const row = rows[i]; if(!row) return;
-    const val = row.querySelector('input').value;
-    const good = judgeText(val, s.accept);
+    const good = hit[i] >= 0;
     row.classList.add(good ? 'ok' : 'ng');
-    row.querySelector('.mk').textContent = good ? '合っていそう' : (val.trim() ? 'ちがうかも' : '書いていない');
+    row.querySelector('.mk').textContent = good
+      ? ('合っていそう' + (hit[i] !== i ? '（' + sl[hit[i]].labs.join('') + ' の意味）' : ''))
+      : (vals[i].trim() ? 'ちがうかも' : '書いていない');
     if(!good) allOk = false;
   });
   S.auto = allOk;
