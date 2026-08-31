@@ -115,6 +115,8 @@
   .exi .g b{font-weight:600; background:linear-gradient(transparent 62%, rgba(139,0,0,.16) 62%)}
   .exi .y{margin:3px 0 0; font-size:12px; color:var(--t2); line-height:1.7}
   .exi .src{font-size:10.5px; color:var(--t3); margin-left:6px; white-space:nowrap}
+  /* 本に載っていた例文ではなく、こちらで作った文 */
+  .exi .src.mine{color:var(--t3); border:1px solid var(--bd); border-radius:20px; padding:1px 6px}
   .rvsub{margin-top:10px; padding-top:9px; border-top:1px dashed var(--bd2)}
   .rvsub p{margin:0 0 4px; font-size:12px; color:var(--t2); line-height:1.7}
   .rvsub p .lb{color:var(--t3); margin-right:6px}
@@ -339,9 +341,10 @@ function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;'
 /* 例文の { } でくくったところを、その語として目立たせる */
 function exLine(e){
   const g = esc(e.s).replace(/\{([^}]*)\}/g, '<b>$1</b>');
+  const tag = e.mine ? '<span class="src mine">〈作例〉</span>'
+                     : (e.src ? '<span class="src">〈' + esc(e.src) + '〉</span>' : '');
   return '<div class="exi"><span class="no">' + (LAB[(e.n||1)-1] || '') + '</span>' +
-         '<div class="bd"><p class="g">' + g +
-         (e.src ? '<span class="src">〈' + esc(e.src) + '〉</span>' : '') + '</p>' +
+         '<div class="bd"><p class="g">' + g + tag + '</p>' +
          '<p class="y">' + esc(e.t) + '</p></div></div>';
 }
 
@@ -543,7 +546,7 @@ function reveal(){
   tgt.forEach(i=>{ h += '<div class="rvm"><span class="no">' + LAB[i] + '</span><b>' + esc(w.means[i].t) + '</b></div>'; });
   if(w.ex && w.ex.length){
     h += '<div class="rvex"><p class="rvl">例文</p>';
-    w.ex.forEach(e=>{ h += exLine(e); });
+    w.ex.slice().sort((a,b)=>(a.n||1)-(b.n||1)).forEach(e=>{ h += exLine(e); });
     h += '</div>';
   }
   const rest = w.means.map((m,i)=>i).filter(i=>tgt.indexOf(i)<0);
