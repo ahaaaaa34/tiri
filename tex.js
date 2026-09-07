@@ -8,16 +8,17 @@
 
 /* 数式のかたまりに入れる文字 */
 const MCH = "\u0001" + "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-          + ".,+-=<>()[]{}^_/√∛□≦≧≠×÷·・± ";
+          + ".,+-=<>()[]{}^_/√∛□≦≧≠×÷·・± " + "π′→∞";
 /* ただの数字やかっこだけの並びは、日本語の中の「6(2)」のような字なので数式にしない。
    下のどれかが入っていて初めて数式として組む。 */
-const MSIG = /[\^_√∛×÷·・≦≧□±/\u0001]|[A-Za-z]/;
+const MSIG = /[\^_√∛×÷·・≦≧□±/\u0001π′→∞]|[A-Za-z]/;
 
 /* 入力欄のカーソル位置を示す目印 */
 const CT = '\u0001';
 
 const SYM = {'×':'\\times ', '÷':'\\div ', '·':'\\cdot ', '・':'\\cdot ', '±':'\\pm ',
              '≦':'\\leqq ', '≧':'\\geqq ', '≠':'\\neq ', '<':'<', '>':'>',
+             'π':'\\pi ', '′':"'", '→':'\\to ', '∞':'\\infty ',
              '□':'\\htmlClass{tbx}{\\square}',
              '\u0001':'\\htmlClass{tcaret}{|}'};
 
@@ -109,6 +110,13 @@ function conv(s){
   while(i < s.length){
     const c = s[i];
 
+    /* lim_{x→2} のような極限。下に付くものを添字として組む。 */
+    if(c==='l' && s.slice(i,i+3)==='lim'){
+      i += 3;
+      if(s[i]==='_'){ const [b, ni] = script(s, i+1); out += '\\lim_{' + b + '}'; i = ni; }
+      else out += '\\lim ';
+      continue;
+    }
     if(c==='l' && s.slice(i,i+3)==='log'){
       i += 3;
       if(s[i]==='_'){ const [b, ni] = script(s, i+1); out += '\\log_{' + b + '}'; i = ni; }
@@ -165,18 +173,25 @@ const RE_FN   = /\\?[0-9A-Za-z.]+(?:_\{[^{}]*\})?$/;
    log_2 8/log_2 3 が「log の中が分数」に化ける。 */
 const RE_LOGA = /\\log\s*(?:_\{[^{}]*\})?\s*(?:\\,)?$/;
 
+/* かっこの種類ごとの、開き・閉じの組 */
+const PAIRS = [['\\left(', '\\right)'], ['\\left\\{', '\\right\\}']];
+
 function lastAtom(out){
   let tail = '', m;
+  /* \pi のような命令のうしろに付く区切りの空白は、あっても無いものとして見る */
+  out = out.replace(/(\\[A-Za-z]+)\s+$/, '$1');
   while((m = RE_TC.exec(out))){  tail = m[0] + tail; out = out.slice(0, m.index); }
   while((m = RE_SCR.exec(out))){ tail = m[0] + tail; out = out.slice(0, m.index); }
 
   let start = -1;
-  if(out.slice(-7) === '\\right)'){
-    /* 対応する \left( を後ろから数えて探す */
+  const pair = PAIRS.find(p => out.slice(-p[1].length) === p[1]);
+  if(pair){
+    /* 対応する開きかっこを後ろから数えて探す */
+    const [op, cl] = pair;
     let i = out.length, d = 0;
     while(i > 0){
-      if(i >= 7 && out.startsWith('\\right)', i-7)){ d++; i -= 7; continue; }
-      if(i >= 6 && out.startsWith('\\left(',  i-6)){ d--; i -= 6; if(d === 0){ start = i; break; } continue; }
+      if(i >= cl.length && out.startsWith(cl, i-cl.length)){ d++; i -= cl.length; continue; }
+      if(i >= op.length && out.startsWith(op, i-op.length)){ d--; i -= op.length; if(d === 0){ start = i; break; } continue; }
       i--;
     }
     if(start > 0){ const f = RE_FN.exec(out.slice(0, start)); if(f) start = f.index; }
