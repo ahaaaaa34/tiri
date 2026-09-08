@@ -8,10 +8,10 @@
 
 /* 数式のかたまりに入れる文字 */
 const MCH = "\u0001" + "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-          + ".,+-=<>()[]{}^_/√∛□≦≧≠×÷·・± " + "π′→∞";
+          + ".,+-=<>()[]{}^_/√∛□≦≧≠×÷·・± " + "π′→∞∫|αβ";
 /* ただの数字やかっこだけの並びは、日本語の中の「6(2)」のような字なので数式にしない。
    下のどれかが入っていて初めて数式として組む。 */
-const MSIG = /[\^_√∛×÷·・≦≧□±/\u0001π′→∞]|[A-Za-z]/;
+const MSIG = /[\^_√∛×÷·・≦≧□±/\u0001π′→∞∫|αβ]|[A-Za-z]/;
 
 /* 入力欄のカーソル位置を示す目印 */
 const CT = '\u0001';
@@ -19,6 +19,7 @@ const CT = '\u0001';
 const SYM = {'×':'\\times ', '÷':'\\div ', '·':'\\cdot ', '・':'\\cdot ', '±':'\\pm ',
              '≦':'\\leqq ', '≧':'\\geqq ', '≠':'\\neq ', '<':'<', '>':'>',
              'π':'\\pi ', '′':"'", '→':'\\to ', '∞':'\\infty ',
+             '∫':'\\int ', '|':'|', 'α':'\\alpha ', 'β':'\\beta ',
              '□':'\\htmlClass{tbx}{\\square}',
              '\u0001':'\\htmlClass{tcaret}{|}'};
 
@@ -46,7 +47,7 @@ function script(s, i){
   let j = i;
   if(s[j]==='-') j++;
   if(j<s.length && /[0-9]/.test(s[j])){ while(j<s.length && /[0-9\u0001]/.test(s[j])) j++; }
-  else if(j<s.length && /[A-Za-z□]/.test(s[j])){ j++; while(s[j]===CT) j++; }   /* □ は log や ⁿ√ のひな形の穴 */
+  else if(j<s.length && /[A-Za-zαβ□]/.test(s[j])){ j++; while(s[j]===CT) j++; }   /* □ は log や ⁿ√ のひな形の穴 */
   return [pre + conv(s.slice(i, j)), j];
 }
 
@@ -143,6 +144,11 @@ function conv(s){
     if(c==='{'){ const r = balanced(s, i, '{', '}');
       if(r){ out += '\\left\\{' + conv(r[0]) + '\\right\\}'; i = r[1]; continue; } }
     if(c==='}'){ i++; continue; }
+    /* 定積分の [ … ]_a^b。中身の高さに合わせて伸ばす。
+       根号の指数 √[3]{8} は上の √ のところで先に読み終えているので、ここには来ない。 */
+    if(c==='['){ const r = balanced(s, i, '[', ']');
+      if(r){ out += '\\left[' + conv(r[0]) + '\\right]'; i = r[1]; continue; } }
+    if(c===']'){ i++; continue; }
 
     if(SYM[c]){ out += SYM[c]; i++; continue; }
     if(c===' '){ out += '\\,'; i++; continue; }
@@ -165,7 +171,7 @@ const RE_SQRT = /\\sqrt(?:\[[^\]]*\])?\{(?:[^{}]|\{[^{}]*\})*\}$/;
    ここで \ を置いていくと \ + frac に割れて、画面に frac の字が出る。
    カーソルの目印は、かたまりの切れ目にしない。切れ目にすると、
    分母と分子の間にカーソルがあるときだけ分数にならない。 */
-const RE_TOK  = /\\?[0-9A-Za-z.]+(?:\\htmlClass\{tcaret\}\{\|\}[0-9A-Za-z.]*)*$/;
+const RE_TOK  = /(?:[0-9.]*\\[A-Za-z]+|[0-9A-Za-z.]+)(?:\\htmlClass\{tcaret\}\{\|\}[0-9A-Za-z.]*)*$/;
 /* かっこの前に付いた log_2 のような名前。これも分子に入れないと
    log_2(7)/log_2(3) が「log の中が分数」に化ける。 */
 const RE_FN   = /\\?[0-9A-Za-z.]+(?:_\{[^{}]*\})?$/;
@@ -194,7 +200,11 @@ function lastAtom(out){
       if(i >= op.length && out.startsWith(op, i-op.length)){ d--; i -= op.length; if(d === 0){ start = i; break; } continue; }
       i--;
     }
-    if(start > 0){ const f = RE_FN.exec(out.slice(0, start)); if(f) start = f.index; }
+    /* かっこの前に付いた log_2 のような名前は分子に含める。
+       ただし lim は「かっこの中身の極限」なので、分子に飲みこませない
+       （飲みこむと lim(x^2-9)/(x+3) が「lim の分数」に化ける）。 */
+    if(start > 0){ const f = RE_FN.exec(out.slice(0, start));
+      if(f && !/^\\lim/.test(f[0])) start = f.index; }
   }
   else if((m = RE_SQRT.exec(out))) start = m.index;
   else if((m = RE_TOK.exec(out)))  start = m.index;
