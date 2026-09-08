@@ -536,7 +536,7 @@
   <!-- ========== トップ（教科書かオリジナルかを選ぶ） ========== -->
   <div id="home">
     <div class="mhead">
-      <p class="ver">v6.1</p>
+      <p class="ver">v6.2</p>
       <h1>微分法と積分法</h1>
       <p class="cap">数学 II　第6章</p>
     </div>
@@ -2197,6 +2197,14 @@ function prev(){
   S.idx--;
   renderQ();
 }
+/* 画面が切り替わる前の 180ms のあいだに、同じボタンを続けて叩かれることがある。
+   （はやく2回たたく癖のある操作では、2回目・3回目も同じボタンに乗る。）
+   押したときの問題番号を覚えておいて、まだそこにいるときだけ動かす。
+   こうしないと「次の問題へ」を3回たたいたときに3問先まで飛んでしまう。 */
+function laterMove(fn){
+  const from = S.idx;
+  setTimeout(()=>{ if(S.idx === from) fn(); }, 180);
+}
 
 function finish(){
   clearSession();
@@ -2942,7 +2950,7 @@ function showSelf(q){
       score(q, ok);
       S.locked = false; S.resFor = null;
       closeSheets();
-      setTimeout(next, 180);
+      laterMove(next);
     });
     bt.appendChild(b);
   };
@@ -3117,7 +3125,7 @@ function showResult(q, ok, given){
     S.locked = false; S.resFor = null;
     syncAnsBtn();
     closeSheets();
-    setTimeout(next, 180);
+    laterMove(next);
   });
   bt.classList.toggle('four', bt.children.length >= 4);
   if(ok!==null) buzz(ok?8:[14,60,14]);
@@ -3224,8 +3232,10 @@ $('menuSheet').addEventListener('click', e=>{
   const b = e.target.closest('.sitem');
   if(!b || b.disabled) return;
   const act = b.dataset.act;
+  const from = S.idx;                 /* 続けて叩かれたぶんを効かせないため */
   closeSheets();
   setTimeout(()=>{
+    if(act==='prev' && S.idx !== from) return;
     if(act==='jump'){ openJump(); }
     else if(act==='prev'){ prev(); }
     else if(act==='retry'){ clearPad(); resetInput(); }
