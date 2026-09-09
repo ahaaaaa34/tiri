@@ -536,7 +536,7 @@
   <!-- ========== トップ（教科書かオリジナルかを選ぶ） ========== -->
   <div id="home">
     <div class="mhead">
-      <p class="ver">v6.4</p>
+      <p class="ver">v6.5</p>
       <h1>微分法と積分法</h1>
       <p class="cap">数学 II　第6章</p>
     </div>
@@ -2163,25 +2163,47 @@ function jumpMark(q){
   if(!S.scored[q.id]) return ['na','未'];
   return S.wrongList.indexOf(q.id) >= 0 ? ['ng','×'] : ['ok','○'];
 }
+/* 数式を組むのは重い。227問ぶんを一度に組むと、開くまで1秒以上かかって
+   画面が固まったように見える。見えているところだけ組んで、
+   スクロールで近づいたぶんを足していく。 */
+let jumpIO = null;
+function jumpShow(b){
+  if(!b.dataset.raw) return;
+  b.querySelector('.jq').innerHTML = fmt(b.dataset.raw);
+  delete b.dataset.raw;
+}
 function openJump(){
   const list = $('jumpList');
+  if(jumpIO){ jumpIO.disconnect(); jumpIO = null; }
   list.innerHTML = '';
+  const frag = document.createDocumentFragment();
   S.queue.forEach((q, i)=>{
     const [cls, mk] = jumpMark(q);
     const b = document.createElement('button');
     b.className = 'jitem' + (i===S.idx ? ' now' : '');
     b.dataset.i = i;
+    b.dataset.raw = q.q;
     b.innerHTML = '<span class="jn">'+(i+1)+'</span>'+
-                  '<span class="jq mq">'+fmt(q.q)+'</span>'+
+                  '<span class="jq mq">'+esc(q.q)+'</span>'+
                   '<span class="jm '+cls+'">'+mk+'</span>';
-    list.appendChild(b);
+    frag.appendChild(b);
   });
+  list.appendChild(frag);
+  const items = list.children;
+  if('IntersectionObserver' in window){
+    jumpIO = new IntersectionObserver(es=>{
+      es.forEach(en=>{ if(en.isIntersecting){ jumpShow(en.target); jumpIO.unobserve(en.target); } });
+    }, {root:list, rootMargin:'400px'});
+    for(let i=0;i<items.length;i++) jumpIO.observe(items[i]);
+  }else{
+    for(let i=0;i<items.length;i++) jumpShow(items[i]);
+  }
   const done = S.queue.filter(q=>S.scored[q.id]).length;
   $('jumpCap').textContent = done + ' / ' + S.queue.length + ' 問';
   openSheet($('jumpSheet'));
   /* いま解いている問題が見えるところに来るように */
   const now = list.querySelector('.jitem.now');
-  if(now) now.scrollIntoView({block:'center'});
+  if(now){ jumpShow(now); now.scrollIntoView({block:'center'}); }
 }
 $('jumpList').addEventListener('click', e=>{
   const b = e.target.closest('.jitem');
