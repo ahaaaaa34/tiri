@@ -536,7 +536,7 @@
   <!-- ========== トップ（教科書かオリジナルかを選ぶ） ========== -->
   <div id="home">
     <div class="mhead">
-      <p class="ver">v6.3</p>
+      <p class="ver">v6.4</p>
       <h1>微分法と積分法</h1>
       <p class="cap">数学 II　第6章</p>
     </div>
@@ -1369,26 +1369,32 @@ const TOKCH = '[0-9a-zπ.^\u0001]';   // 分数の分母・分子として1か�
 /* π を入れてあるのは、3 → 分の → 32π と打ったときに 32π をひとかたまりに
    見てほしいため。入れないと 32 だけが分子になり、32/3·π と出てしまう。 */
 function tokenL(s, i){          // i の直前にある「ひとかたまり」の開始位置
-  if(s[i-1]===')'){
+  /* カーソルの目印は、かたまりの切れ目にしない。
+     目印があると (a+b) のようなかっこのかたまりを見落として分数が崩れる。 */
+  let k = i-1;
+  while(k>=0 && s[k]===CARET) k--;
+  if(s[k]===')'){
     let d=0;
-    for(let j=i-1;j>=0;j--){
+    for(let j=k;j>=0;j--){
       if(s[j]===')') d++;
       else if(s[j]==='('){ d--; if(d===0) return j; }
     }
-    return i-1;
+    return k;
   }
   let j=i-1;
   while(j>=0 && new RegExp(TOKCH).test(s[j])) j--;
   return j+1;
 }
 function tokenR(s, i){          // i の直後にある「ひとかたまり」の終了位置（含まない）
-  if(s[i+1]==='('){
+  let k = i+1;
+  while(k<s.length && s[k]===CARET) k++;
+  if(s[k]==='('){
     let d=0;
-    for(let j=i+1;j<s.length;j++){
+    for(let j=k;j<s.length;j++){
       if(s[j]==='(') d++;
       else if(s[j]===')'){ d--; if(d===0) return j+1; }
     }
-    return i+2;
+    return k+1;
   }
   let j=i+1;
   while(j<s.length && new RegExp(TOKCH).test(s[j])) j++;

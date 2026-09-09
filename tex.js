@@ -165,7 +165,11 @@ function conv(s){
    かっこは正規表現だと「いちばん手前の ( 」まで飲みこんでしまい、
    (a)=(b)/(c) が丸ごと分子になるので、対応する ( を数えて探す。 */
 const RE_TC   = /\\htmlClass\{tcaret\}\{\|\}$/;          /* カーソルの目印 */
-const RE_SCR  = /[\^_]\{[^{}]*\}$/;                        /* 上付き・下付き */
+/* 上付き・下付き。中にカーソルの目印（\htmlClass{tcaret}{|}）が入っていても
+   はがせるようにする。目印はかっこを含むので、素朴に [^{}]* と書くと
+   x^{3|} のようなときだけ分数に組めなくなる。 */
+const CT_TEX  = '\\\\htmlClass\\{tcaret\\}\\{\\|\\}';
+const RE_SCR  = new RegExp('[\\^_]\\{(?:' + CT_TEX + '|[^{}])*\\}$');
 const RE_SQRT = /\\sqrt(?:\[[^\]]*\])?\{(?:[^{}]|\{[^{}]*\})*\}$/;
 /* \log のような命令は先頭の \ まで含めて切り出す。
    ここで \ を置いていくと \ + frac に割れて、画面に frac の字が出る。
@@ -174,7 +178,7 @@ const RE_SQRT = /\\sqrt(?:\[[^\]]*\])?\{(?:[^{}]|\{[^{}]*\})*\}$/;
 const RE_TOK  = /(?:[0-9.]*\\[A-Za-z]+|[0-9A-Za-z.]+)(?:\\htmlClass\{tcaret\}\{\|\}[0-9A-Za-z.]*)*$/;
 /* かっこの前に付いた log_2 のような名前。これも分子に入れないと
    log_2(7)/log_2(3) が「log の中が分数」に化ける。 */
-const RE_FN   = /\\?[0-9A-Za-z.]+(?:_\{[^{}]*\})?$/;
+const RE_FN   = new RegExp('\\\\?[0-9A-Za-z.]+(?:_\\{(?:' + CT_TEX + '|[^{}])*\\})?$');
 /* log_2 8 のように、間を空けて書いた log の中身。ここで切ると
    log_2 8/log_2 3 が「log の中が分数」に化ける。 */
 const RE_LOGA = /\\log\s*(?:_\{[^{}]*\})?\s*(?:\\,)?$/;
@@ -182,12 +186,16 @@ const RE_LOGA = /\\log\s*(?:_\{[^{}]*\})?\s*(?:\\,)?$/;
 /* かっこの種類ごとの、開き・閉じの組 */
 const PAIRS = [['\\left(', '\\right)'], ['\\left\\{', '\\right\\}']];
 
+/* \pi のような命令のうしろに付く区切りの空白は、あっても無いものとして見る。
+   はがすたびに呼ぶ。カーソルの目印をはがしたあとに空白が出てくることがあり、
+   そこで見落とすと 32π|/3 のときだけ分数に組めなくなる。 */
+const trimCmd = t => t.replace(/(\\[A-Za-z]+)\s+$/, '$1');
+
 function lastAtom(out){
   let tail = '', m;
-  /* \pi のような命令のうしろに付く区切りの空白は、あっても無いものとして見る */
-  out = out.replace(/(\\[A-Za-z]+)\s+$/, '$1');
-  while((m = RE_TC.exec(out))){  tail = m[0] + tail; out = out.slice(0, m.index); }
-  while((m = RE_SCR.exec(out))){ tail = m[0] + tail; out = out.slice(0, m.index); }
+  out = trimCmd(out);
+  while((m = RE_TC.exec(out))){  tail = m[0] + tail; out = trimCmd(out.slice(0, m.index)); }
+  while((m = RE_SCR.exec(out))){ tail = m[0] + tail; out = trimCmd(out.slice(0, m.index)); }
 
   let start = -1;
   const pair = PAIRS.find(p => out.slice(-p[1].length) === p[1]);
