@@ -438,6 +438,24 @@
   .rexp,.wexp,.proof,.qt,.ansq{line-height:2}
 
   /* 記号で書けない答え（増加/減少・対称の軸など）は選択式にする */
+  /* グラフをかく問題 */
+  .gbox{padding:2px 12px 10px; flex:none; display:flex; flex-direction:column; gap:8px; min-height:0}
+  /* 横長の紙にかくと教科書のグラフと形が変わって見えるので、縦横の比を 4:3 で保つ。
+     横向きの画面でも横に伸びきらないよう、高さから幅の上限を決めて中央に置く。 */
+  .gwrap{position:relative; width:100%; max-width:min(100%, 58vh); aspect-ratio:4/3;
+         margin-inline:auto; background:var(--card);
+         border:1px solid var(--bd); border-radius:12px; overflow:hidden}
+  .gwrap canvas{position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none}
+  .gtools{display:flex; gap:8px; align-items:stretch}
+  .gtools .gb{flex:1 1 0; padding:10px 6px; border:1px solid var(--bd); border-radius:10px;
+              background:var(--card); font-size:13px; color:var(--t2); box-shadow:var(--sh)}
+  .gtools .gb:active{background:var(--bg2)}
+  .gtools .gb:disabled{opacity:.4}
+  .gtools .pbtn{flex:2 1 0; margin-top:0 !important}
+  .gres{display:block; width:100%; border:1px solid var(--bd); border-radius:12px; margin-top:8px}
+  .glegend{display:flex; gap:14px; justify-content:center; font-size:11.5px; color:var(--t3); margin-top:6px}
+  .glegend i{display:inline-block; width:16px; height:3px; border-radius:2px; vertical-align:2px; margin-right:5px}
+  .gwhy{margin-top:6px; text-align:center; font-size:12.5px; color:var(--ng)}
   .chbox{padding:2px 12px 10px; display:flex; flex-direction:column; gap:7px; overflow-y:auto; min-height:0}
   .ch{
     min-height:50px; padding:12px 16px; text-align:left; border:1px solid var(--bd);
@@ -480,7 +498,8 @@
   }
   .rans .lb{font-size:10px; color:var(--t3); letter-spacing:.16em; margin-bottom:4px}
   .rans .va{font-size:19px; font-family:"Times New Roman",serif}
-  .rexp{margin-top:10px; font-size:12.5px; color:var(--t2); line-height:1.85; padding:0 2px}
+  .rexp{margin-top:10px; font-size:12.5px; color:var(--t2); line-height:1.85; padding:0 2px;
+         white-space:pre-line}   /* 解説は行の区切りをそのまま活かす */
   .rbtns{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px}
   .rbtns .pbtn{flex:1 1 0; width:auto}
   /* 4つ並ぶと1行では文字が折れてしまうので、2つずつ2段にする */
@@ -536,7 +555,7 @@
   <!-- ========== トップ（教科書かオリジナルかを選ぶ） ========== -->
   <div id="home">
     <div class="mhead">
-      <p class="ver">v6.5</p>
+      <p class="ver">v6.6</p>
       <h1>微分法と積分法</h1>
       <p class="cap">数学 II　第6章</p>
     </div>
@@ -718,6 +737,15 @@
       <span class="hb">タップでキーボードに戻る</span>
     </button>
     <div class="chbox hide" id="choices"></div>
+    <!-- グラフをかく問題。方眼の上に曲線をかいてもらう -->
+    <div class="gbox hide" id="gbox">
+      <div class="gwrap"><canvas id="gcv"></canvas></div>
+      <div class="gtools">
+        <button class="gb" id="gUndo">1つ戻す</button>
+        <button class="gb" id="gClear">消す</button>
+        <button class="pbtn" id="gGo">決定</button>
+      </div>
+    </div>
   </div>
   <div class="res hide" id="ansRes"></div>
 </div>
@@ -1250,6 +1278,35 @@ const TOPICS = [
     {id:'iarea-16ig6sk', q:'曲線 y = x^3 と x 軸、直線 x = 2 で囲まれた図形の面積', a:['4'], h:'例: 4', e:'0 ≦ x ≦ 2 で y ≧ 0 なので S = ∫_0^2 x^3dx = [x^4/4]_0^2 = 4'},
     {id:'iarea-1se0qpf', q:'放物線 y = x^2 と直線 y = x + 2 で囲まれた図形の面積', a:['9/2'], h:'分の キーで。2 → 分の → 9', e:'x^2 = x+2 より (x+1)(x-2) = 0、x = -1, 2。この区間で直線が上にあるので\nS = ∫_{-1}^{2}(x+2-x^2)dx = [x^2/2+2x-x^3/3]_{-1}^{2} = 9/2'}
   ]
+},
+{
+  id:'tb-graph', name:'教科書｜グラフをかく', desc:'p.211〜213, 220 グラフをかく問題',
+  qs:[
+    {id:'tb-graph-13t3dyr', q:'［例題5］y = x^3-6x^2+9x-1 のグラフをかけ', gr:{f:'x^3-6x^2+9x-1', x:[0,4], y:[-2,4], gx:1, gy:1}, a:['x = 1 で極大値 3、x = 3 で極小値 -1'], h:'方眼の上に、指かペンで曲線をかいてください', e:'y′ = 3x^2-12x+9 = 3(x-1)(x-3)\ny′ = 0 より x = 1, 3\nx ≦ 1 で増加、1 ≦ x ≦ 3 で減少、3 ≦ x で増加。\n極大値 y(1) = 3、極小値 y(3) = -1。y 切片は -1。'},
+    {id:'tb-graph-7rmi7m', q:'［練習13(1)］y = 2x^3+3x^2 のグラフをかけ', gr:{f:'2x^3+3x^2', x:[-2,1], y:[-4,5], gx:1, gy:1}, a:['x = -1 で極大値 1、x = 0 で極小値 0'], h:'方眼の上に、指かペンで曲線をかいてください', e:'y′ = 6x^2+6x = 6x(x+1)\ny′ = 0 より x = -1, 0\n極大値 y(-1) = 1、極小値 y(0) = 0。\n原点を通り、x = -3/2 でも x 軸と交わる。'},
+    {id:'tb-graph-2syv66', q:'［練習13(2)］y = -x^3+x^2+x のグラフをかけ', gr:{f:'-x^3+x^2+x', x:[-1,2], y:[-3,2], gx:1, gy:1}, a:['x = -1/3 で極小値 -5/27、x = 1 で極大値 1'], h:'方眼の上に、指かペンで曲線をかいてください', e:'y′ = -3x^2+2x+1 = -(3x+1)(x-1)\ny′ = 0 より x = -1/3, 1\nx ≦ -1/3 で減少、-1/3 ≦ x ≦ 1 で増加、1 ≦ x で減少。\n極小値 y(-1/3) = -5/27 ≒ -0.19、極大値 y(1) = 1。原点を通る。'},
+    {id:'tb-graph-m1txcc', q:'［練習14(1)］y = x^3+6x^2+12x+5 のグラフをかけ', gr:{f:'x^3+6x^2+12x+5', x:[-4,0], y:[-12,6], gx:1, gy:2, ys:2}, a:['極値はなく、つねに増加する（x = -2 で接線が水平）'], h:'方眼の上に、指かペンで曲線をかいてください', e:'y′ = 3x^2+12x+12 = 3(x+2)^2 ≧ 0\nつねに増加するので極値はない。\nx = -2 のところだけ接線が水平になり、y(-2) = -3。y 切片は 5。'},
+    {id:'tb-graph-alkdvb', q:'［練習14(2)］y = 2-x^3 のグラフをかけ', gr:{f:'2-x^3', x:[-2,2], y:[-8,12], gx:1, gy:2, ys:4}, a:['極値はなく、つねに減少する（x = 0 で接線が水平）'], h:'方眼の上に、指かペンで曲線をかいてください', e:'y′ = -3x^2 ≦ 0\nつねに減少するので極値はない。\nx = 0 で接線が水平になり、y(0) = 2。x = ∛2 ≒ 1.26 で x 軸と交わる。'},
+    {id:'tb-graph-12g0hix', q:'［例題6］y = x^3-3x^2+3x+1 のグラフをかけ', gr:{f:'x^3-3x^2+3x+1', x:[-1,3], y:[-6,10], gx:1, gy:2, ys:2}, a:['極値はなく、つねに増加する（x = 1 で接線が水平）'], h:'方眼の上に、指かペンで曲線をかいてください', e:'y′ = 3x^2-6x+3 = 3(x-1)^2 ≧ 0\nつねに増加するので極値はない。\nx = 1 のところだけ接線が水平で、y(1) = 2。y 切片は 1。'},
+    {id:'tb-graph-6f80it', q:'［応用例題2］y = (3/4)x^4-x^3-3x^2 のグラフをかけ', gr:{f:'(3/4)x^4-x^3-3x^2', x:[-2,3], y:[-10,10], gx:1, gy:2, ys:2}, a:['x = -1 で極小値 -5/4、x = 0 で極大値 0、x = 2 で極小値 -8'], h:'方眼の上に、指かペンで曲線をかいてください', e:'y′ = 3x^3-3x^2-6x = 3x(x+1)(x-2)\ny′ = 0 より x = -1, 0, 2\n極小値 y(-1) = -5/4、極大値 y(0) = 0、極小値 y(2) = -8。\n原点を通る、下に2つのくぼみをもつ形。'},
+    {id:'tb-graph-1h8jrpf', q:'［練習15(2)］y = x^4-8x^2+16 のグラフをかけ', gr:{f:'x^4-8x^2+16', x:[-3,3], y:[-2,26], gx:1, gy:4, ys:4}, a:['x = ±2 で極小値 0、x = 0 で極大値 16'], h:'方眼の上に、指かペンで曲線をかいてください', e:'y′ = 4x^3-16x = 4x(x+2)(x-2)\ny′ = 0 より x = -2, 0, 2\n極小値 y(±2) = 0、極大値 y(0) = 16。\ny = (x^2-4)^2 なので x = ±2 で x 軸に接する。y 軸について対称。'},
+    {id:'tb-graph-p4hs9o', q:'［練習15(3)］y = -x^4+4x^3-4x^2+2 のグラフをかけ', gr:{f:'-x^4+4x^3-4x^2+2', x:[-1,3], y:[-8,4], gx:1, gy:2, ys:2}, a:['x = 0 で極大値 2、x = 1 で極小値 1、x = 2 で極大値 2'], h:'方眼の上に、指かペンで曲線をかいてください', e:'y′ = -4x^3+12x^2-8x = -4x(x-1)(x-2)\ny′ = 0 より x = 0, 1, 2\n極大値 y(0) = 2、極小値 y(1) = 1、極大値 y(2) = 2。\n上に2つの山、その間に浅いくぼみがある形。'},
+    {id:'tb-graph-np96xq', q:'［練習15(4)］y = x^4+2x^3+1 のグラフをかけ', gr:{f:'x^4+2x^3+1', x:[-2,1], y:[-2,5], gx:1, gy:1}, a:['x = -3/2 で極小値 -11/16、極大値はない'], h:'方眼の上に、指かペンで曲線をかいてください', e:'y′ = 4x^3+6x^2 = 2x^2(2x+3)\ny′ = 0 より x = -3/2, 0\nx = 0 の前後で y′ の符号は変わらないので、そこは極値ではない。\n極小値 y(-3/2) = -11/16 ≒ -0.69 だけ。y 切片は 1。'},
+    {id:'tb-graph-ojl54z', q:'［問題8(1)］y = x^3-27x のグラフをかけ', gr:{f:'x^3-27x', x:[-5,5], y:[-60,60], gx:1, gy:10, ys:20}, a:['x = -3 で極大値 54、x = 3 で極小値 -54'], h:'方眼の上に、指かペンで曲線をかいてください', e:'y′ = 3x^2-27 = 3(x+3)(x-3)\ny′ = 0 より x = -3, 3\n極大値 y(-3) = 54、極小値 y(3) = -54。\n原点で x 軸と交わり、原点について対称な形。\nx = ±3√3 ≒ ±5.2 でも x 軸と交わるが、そこは方眼の外。'},
+    {id:'tb-graph-1tvv33q', q:'［問題8(2)］y = -(1/3)x^3-2x のグラフをかけ', gr:{f:'-(1/3)x^3-2x', x:[-3,3], y:[-16,16], gx:1, gy:2, ys:4}, a:['極値はなく、つねに減少する'], h:'方眼の上に、指かペンで曲線をかいてください', e:'y′ = -x^2-2 = -(x^2+2) < 0\nつねに減少するので極値はない。接線が水平になるところもない。\n原点を通り、原点について対称。'},
+    {id:'tb-graph-1w2sndt', q:'［問題8(3)］y = -x^4-(4/3)x^3+4x^2 のグラフをかけ', gr:{f:'-x^4-(4/3)x^3+4x^2', x:[-3,2], y:[-12,12], gx:1, gy:2, ys:4}, a:['x = -2 で極大値 32/3、x = 0 で極小値 0、x = 1 で極大値 5/3'], h:'方眼の上に、指かペンで曲線をかいてください', e:'y′ = -4x^3-4x^2+8x = -4x(x+2)(x-1)\ny′ = 0 より x = -2, 0, 1\n極大値 y(-2) = 32/3 ≒ 10.7、極小値 y(0) = 0、極大値 y(1) = 5/3 ≒ 1.7。\n原点で x 軸に接する。'}
+  ]
+},
+{
+  id:'dgraph', name:'グラフをかく練習', desc:'基本の形からたしかめる',
+  qs:[
+    {id:'dgraph-w36w8v', q:'y = x^2 のグラフをかけ', gr:{f:'x^2', x:[-2,2], y:[-1,4], gx:1, gy:1}, a:['原点を頂点とする、下に凸の放物線'], h:'方眼の上に、指かペンで曲線をかいてください', e:'y′ = 2x。x ≦ 0 で減少、0 ≦ x で増加。極小値 y(0) = 0。\n(±1, 1)、(±2, 4) を通る。'},
+    {id:'dgraph-5h9tnx', q:'y = -x^2+4 のグラフをかけ', gr:{f:'-x^2+4', x:[-3,3], y:[-6,5], gx:1, gy:1}, a:['(0, 4) を頂点とする、上に凸の放物線'], h:'方眼の上に、指かペンで曲線をかいてください', e:'y′ = -2x。x ≦ 0 で増加、0 ≦ x で減少。極大値 y(0) = 4。\nx = ±2 で x 軸と交わる。'},
+    {id:'dgraph-3zq33y', q:'y = x^3 のグラフをかけ', gr:{f:'x^3', x:[-2,2], y:[-8,8], gx:1, gy:2, ys:2}, a:['原点を通り、つねに増加する曲線（極値なし）'], h:'方眼の上に、指かペンで曲線をかいてください', e:'y′ = 3x^2 ≧ 0 なのでつねに増加。x = 0 で接線が水平になるが極値ではない。\n(±1, ±1)、(±2, ±8) を通り、原点について対称。'},
+    {id:'dgraph-1d19x2w', q:'y = x^3-3x のグラフをかけ', gr:{f:'x^3-3x', x:[-2,2], y:[-3,3], gx:1, gy:1}, a:['x = -1 で極大値 2、x = 1 で極小値 -2'], h:'方眼の上に、指かペンで曲線をかいてください', e:'y′ = 3x^2-3 = 3(x+1)(x-1)\n極大値 y(-1) = 2、極小値 y(1) = -2。\n原点と x = ±√3 ≒ ±1.73 で x 軸と交わる。'},
+    {id:'dgraph-1uctbpw', q:'y = x^3-3x^2 のグラフをかけ', gr:{f:'x^3-3x^2', x:[-1,3], y:[-5,1], gx:1, gy:1}, a:['x = 0 で極大値 0、x = 2 で極小値 -4'], h:'方眼の上に、指かペンで曲線をかいてください', e:'y′ = 3x^2-6x = 3x(x-2)\n極大値 y(0) = 0、極小値 y(2) = -4。\n原点で x 軸に接し、x = 3 でも x 軸と交わる。'},
+    {id:'dgraph-1hilyfm', q:'y = x^4-2x^2 のグラフをかけ', gr:{f:'x^4-2x^2', x:[-2,2], y:[-2,9], gx:1, gy:1}, a:['x = ±1 で極小値 -1、x = 0 で極大値 0'], h:'方眼の上に、指かペンで曲線をかいてください', e:'y′ = 4x^3-4x = 4x(x+1)(x-1)\n極小値 y(±1) = -1、極大値 y(0) = 0。\n原点と x = ±√2 ≒ ±1.41 で x 軸と交わる。y 軸について対称。'}
+  ]
 }
 ];
 
@@ -1661,11 +1718,11 @@ const MODE_NOTE = {
 const GROUPS = [
   {name:'第1節 微分係数と導関数', ids:['tb-vel','tb-lim','tb-def','tb-calc','tb-fval',
                                 'tb-var','tb-p1']},
-  {name:'第2節 導関数の応用',    ids:['tb-tan','tb-inc','tb-ext','tb-ext4','tb-coef',
+  {name:'第2節 導関数の応用',    ids:['tb-tan','tb-inc','tb-ext','tb-ext4','tb-graph','tb-coef',
                                 'tb-max','tb-nsol','tb-pineq','tb-p2']},
   {name:'第3節 積分法',         ids:['tb-int1','tb-int2','tb-int3','tb-area','tb-p3']},
   {name:'章末の演習問題',        ids:['tb-exam']},
-  {name:'微分の練習',           ids:['dcalc','dtan','dext','dmax','dapp']},
+  {name:'微分の練習',           ids:['dcalc','dtan','dext','dgraph','dmax','dapp']},
   {name:'積分の練習',           ids:['iint','iarea']}
 ];
 
@@ -2748,6 +2805,7 @@ function resetInput(){
   IV = ''; IC = 0;
   $('field').classList.remove('err');
   clearWarn();
+  gReset();            /* グラフの問題なら、かいた線も一緒に消す */
   paintField();
 }
 /* log は「底」と「真数」の2か所を埋める形なので、
@@ -2798,6 +2856,218 @@ function doFn(f){
   clearWarn();
   paintField();
 }
+
+/* =======================================================================
+   グラフをかく問題
+
+   方眼と軸はこちらで描いておいて、曲線だけをペンでかいてもらう。
+   判定は「かいた線」と「正しい曲線」の近さで決める。
+     ・かいた点が、正しい曲線からどれだけ離れているか（よけいな線を見つける）
+     ・正しい曲線の各点に、かいた線がどれだけ近いか（かき残しを見つける）
+   どちらも 9割の点が許容範囲に入っていれば正解にする。
+   手でかく以上ぴったりにはならないので、ゆるめに取ってある。
+   ======================================================================= */
+let drawMode = false;               // グラフをかく問題かどうか
+const gcv = $('gcv');
+const gctx = gcv.getContext('2d');
+let gQ = null, gFor = null;         // いま出ているグラフ問題の設定と、その問題の id
+let gStrokes = [], gCur = null, gDrawing = false, gDpr = 1;
+let gW = 0, gH = 0;                 // 見た目の大きさ（CSSピクセル）
+const GPAD = 6;                     // ふちの余白
+
+function gVal(x){
+  try{
+    const v = evalExpr(nz(gQ.f), {x});
+    return isFinite(v) ? v : NaN;
+  }catch(e){ return NaN; }
+}
+function gPx(x, y){
+  return { x: GPAD + (x - gQ.x[0]) / (gQ.x[1] - gQ.x[0]) * (gW - GPAD*2),
+           y: GPAD + (gQ.y[1] - y) / (gQ.y[1] - gQ.y[0]) * (gH - GPAD*2) };
+}
+function gSetup(){
+  const r = gcv.getBoundingClientRect();
+  if(!r.width || !r.height) return;
+  gDpr = Math.min(window.devicePixelRatio || 1, 2.5);
+  gW = r.width; gH = r.height;
+  gcv.width = Math.round(gW * gDpr);
+  gcv.height = Math.round(gH * gDpr);
+  gPaint();
+}
+function gGrid(c){
+  c.save();
+  c.setTransform(gDpr,0,0,gDpr,0,0);
+  c.clearRect(0,0,gW,gH);
+  c.fillStyle = '#fff'; c.fillRect(0,0,gW,gH);
+  const gx = gQ.gx || 1, gy = gQ.gy || 1;
+  c.lineWidth = 1; c.strokeStyle = '#e8e6e0';
+  c.beginPath();
+  for(let x = Math.ceil(gQ.x[0]/gx)*gx; x <= gQ.x[1]+1e-9; x += gx){
+    const p = gPx(x, 0); c.moveTo(Math.round(p.x)+.5, GPAD); c.lineTo(Math.round(p.x)+.5, gH-GPAD);
+  }
+  for(let y = Math.ceil(gQ.y[0]/gy)*gy; y <= gQ.y[1]+1e-9; y += gy){
+    const p = gPx(0, y); c.moveTo(GPAD, Math.round(p.y)+.5); c.lineTo(gW-GPAD, Math.round(p.y)+.5);
+  }
+  c.stroke();
+  /* 軸 */
+  c.lineWidth = 1.4; c.strokeStyle = '#9a988f';
+  c.beginPath();
+  if(gQ.y[0] <= 0 && 0 <= gQ.y[1]){ const p = gPx(0,0); c.moveTo(GPAD, Math.round(p.y)+.5); c.lineTo(gW-GPAD, Math.round(p.y)+.5); }
+  if(gQ.x[0] <= 0 && 0 <= gQ.x[1]){ const p = gPx(0,0); c.moveTo(Math.round(p.x)+.5, GPAD); c.lineTo(Math.round(p.x)+.5, gH-GPAD); }
+  c.stroke();
+  /* 目盛りの数字（軸の近くだけ、間引いて）。
+     x・y の字と重なるぶんは出さない。数字が2つ並んで読めなくなるため。 */
+  c.fillStyle = '#8a8880'; c.font = '10px system-ui,sans-serif';
+  const o = gPx(0,0), sx = gQ.xs || gx, sy = gQ.ys || gy;
+  const ly = Math.min(Math.max(o.y+3, GPAD), gH-GPAD-12);   /* x の目盛りを書く高さ */
+  const lx = Math.min(Math.max(o.x-4, 24), gW-GPAD);        /* y の目盛りを書く横位置 */
+  const xLet = gW-GPAD-9, yLet = GPAD+1;                    /* x・y の字を置くところ */
+  c.textAlign = 'center'; c.textBaseline = 'top';
+  for(let x = Math.ceil(gQ.x[0]/sx)*sx; x <= gQ.x[1]+1e-9; x += sx){
+    if(Math.abs(x) < 1e-9) continue;
+    const p = gPx(x, 0);
+    if(p.x > xLet - 15) continue;
+    c.fillText(String(+x.toFixed(2)), Math.min(Math.max(p.x, GPAD+11), gW-GPAD-11), ly);
+  }
+  c.textAlign = 'right'; c.textBaseline = 'middle';
+  for(let y = Math.ceil(gQ.y[0]/sy)*sy; y <= gQ.y[1]+1e-9; y += sy){
+    if(Math.abs(y) < 1e-9) continue;
+    const p = gPx(0, y);
+    if(p.y < yLet + 13 && Math.abs(lx - (o.x+4)) < 22) continue;
+    c.fillText(String(+y.toFixed(2)), lx, Math.min(Math.max(p.y, GPAD+6), gH-GPAD-6));
+  }
+  c.textAlign = 'left'; c.textBaseline = 'top';
+  c.fillText('x', xLet, ly);
+  c.fillText('y', Math.min(Math.max(o.x+4, GPAD), gW-GPAD-10), yLet);
+  c.restore();
+}
+function gInk(c, pts, col, w){
+  if(pts.length < 2){
+    if(pts.length===1){ c.beginPath(); c.arc(pts[0].x, pts[0].y, w/2, 0, Math.PI*2); c.fillStyle=col; c.fill(); }
+    return;
+  }
+  c.save(); c.setTransform(gDpr,0,0,gDpr,0,0);
+  c.lineCap = c.lineJoin = 'round'; c.lineWidth = w; c.strokeStyle = col;
+  c.beginPath(); c.moveTo(pts[0].x, pts[0].y);
+  for(let i=1;i<pts.length;i++) c.lineTo(pts[i].x, pts[i].y);
+  c.stroke(); c.restore();
+}
+/* 正しい曲線を、画面の中に入っているところだけ描く */
+function gTruePts(){
+  const out = [], N = 600;
+  for(let i=0;i<=N;i++){
+    const x = gQ.x[0] + (gQ.x[1]-gQ.x[0])*i/N;
+    const y = gVal(x);
+    if(!isFinite(y)) { out.push(null); continue; }
+    out.push((y >= gQ.y[0] && y <= gQ.y[1]) ? gPx(x,y) : null);
+  }
+  return out;
+}
+function gInkTrue(c, col){
+  const pts = gTruePts();
+  c.save(); c.setTransform(gDpr,0,0,gDpr,0,0);
+  c.lineCap = c.lineJoin = 'round'; c.lineWidth = 2.4; c.strokeStyle = col;
+  let run = [];
+  const flush = ()=>{ if(run.length>1){ c.beginPath(); c.moveTo(run[0].x, run[0].y);
+    for(let i=1;i<run.length;i++) c.lineTo(run[i].x, run[i].y); c.stroke(); } run = []; };
+  pts.forEach(p=>{ if(p) run.push(p); else flush(); });
+  flush(); c.restore();
+}
+/* 方眼 → 正しい曲線 → 自分の線 の順。自分の線がいちばん上に来る */
+function gPaintTo(c, showTrue){
+  gGrid(c);
+  if(showTrue) gInkTrue(c, '#c2410c');
+  gStrokes.forEach(s=>gInk(c, s, '#111', 2.6));
+  if(gCur) gInk(c, gCur, '#111', 2.6);
+}
+function gPaint(showTrue){
+  if(!gQ) return;
+  gPaintTo(gctx, showTrue);
+  $('gUndo').disabled = gStrokes.length === 0;
+  $('gClear').disabled = gStrokes.length === 0;
+}
+function gPt(e){
+  const r = gcv.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+gcv.addEventListener('pointerdown', e=>{
+  if(!drawMode || S.locked) return;
+  if(e.pointerType==='mouse' && e.button!==0) return;
+  e.preventDefault();
+  gDrawing = true; gCur = [gPt(e)];
+  try{ gcv.setPointerCapture(e.pointerId); }catch(err){}
+  gPaint();
+});
+gcv.addEventListener('pointermove', e=>{
+  if(!gDrawing || !gCur) return;
+  e.preventDefault();
+  const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+  for(let i=0;i<evs.length;i++){
+    const p = gPt(evs[i]), last = gCur[gCur.length-1];
+    if(Math.abs(p.x-last.x)+Math.abs(p.y-last.y) < 0.8) continue;
+    gCur.push(p);
+  }
+  gPaint();
+});
+function gEnd(){
+  if(!gDrawing) return;
+  gDrawing = false;
+  if(gCur && gCur.length) gStrokes.push(gCur);
+  gCur = null; gPaint();
+}
+gcv.addEventListener('pointerup', gEnd);
+gcv.addEventListener('pointercancel', gEnd);
+/* 計算スペースと同じ。iPad が2回目の合図を飲みこまないように */
+['touchstart','touchmove','touchend'].forEach(t=>
+  gcv.addEventListener(t, e=>{ e.preventDefault(); }, {passive:false}));
+
+$('gUndo').addEventListener('click', ()=>{ if(gStrokes.length){ gStrokes.pop(); gPaint(); buzz(6); } });
+$('gClear').addEventListener('click', ()=>{ gStrokes.length = 0; gCur = null; gPaint(); buzz(6); });
+$('gGo').addEventListener('click', ()=>submit());
+
+/* かいた線と正しい曲線の近さを測る */
+function gJudge(){
+  const mine = [];
+  gStrokes.forEach(s=>s.forEach(p=>mine.push(p)));
+  if(mine.length < 12) return { ok:false, why:'まだ かけていません' };
+  const truth = gTruePts().filter(Boolean);
+  if(!truth.length) return { ok:false, why:'' };
+  const T = Math.max(14, 0.062 * Math.min(gW, gH));      /* 許容するズレ（画面の6%ほど） */
+  const near = (p, arr)=>{
+    let best = 1e9;
+    for(let i=0;i<arr.length;i++){
+      const dx = p.x-arr[i].x, dy = p.y-arr[i].y, d = dx*dx+dy*dy;
+      if(d < best) best = d;
+    }
+    return Math.sqrt(best);
+  };
+  const p90 = a=>{ const b=a.slice().sort((u,v)=>u-v); return b[Math.min(b.length-1, Math.floor(b.length*0.9))]; };
+  const d1 = mine.map(p=>near(p, truth));         /* よけいな線 */
+  const d2 = truth.map(p=>near(p, mine));         /* かき残し */
+  const e1 = p90(d1), e2 = p90(d2);
+  return { ok: e1 <= T && e2 <= T, e1, e2, T,
+           why: e1 > T ? 'ちがう形の線が入っています' : (e2 > T ? 'かき足りないところがあります' : '') };
+}
+/* 結果に出す「自分の線＋正しい曲線」の絵 */
+function gSnapshot(){
+  if(!gQ || !gcv.width) return '';
+  const cv = document.createElement('canvas');
+  cv.width = gcv.width; cv.height = gcv.height;
+  gPaintTo(cv.getContext('2d'), true);   /* 同じ手順で、この一時的な紙に描く */
+  try{ return cv.toDataURL('image/png'); }catch(e){ return ''; }
+}
+/* グラフの問題に入る・出る */
+function gEnter(q){
+  gQ = q.gr; gFor = q.id; gStrokes = []; gCur = null; gDrawing = false;
+  requestAnimationFrame(()=>{ gSetup(); requestAnimationFrame(gSetup); });
+}
+function gReset(){
+  if(!drawMode) return;
+  gStrokes = []; gCur = null; gDrawing = false; gPaint();
+}
+/* 画面の向きが変わっても方眼がずれないように */
+window.addEventListener('resize', ()=>{ if(drawMode && !$('gbox').classList.contains('hide')) gSetup(); });
+
 let pickMode = false;   // 選択式かどうか
 function paintField(){
   const f = $('field');
@@ -2868,6 +3138,8 @@ function syncAnsBtn(){
   const q = curQ();
   if(S.locked && q && S.resFor === q.id){ b.textContent = '判定を見る'; return; }
   if(q && q.self){ b.textContent = '解答を見る'; return; }
+  /* 「かきかけ」はいま開いている問題の線があるときだけ。前の問題の線を数えない */
+  if(q && q.gr){ b.textContent = (gFor===q.id && gStrokes.length) ? 'グラフをかく（かきかけ）' : 'グラフをかく'; return; }
   if(IV==='') b.textContent = '解答する';
   else b.textContent = '解答する（入力中: '+(IV.length>14 ? IV.slice(0,14)+'…' : IV)+'）';
 }
@@ -2999,13 +3271,20 @@ function openAnswer(){
   $('ansRes').classList.add('hide');
   $('ansQ').innerHTML = fmt(q.q) + (q.g ? '<br><span style="color:var(--t3)">ただし '+fmt(q.g)+'</span>' : '');
   pickMode = !!q.c;
+  drawMode = !!q.gr;
   $('hintLine').classList.remove('warn');
-  $('hintLine').textContent = pickMode ? '' : (q.h || '');   /* 選択式に書式のヒントは要らない */
-  $('howBtn').classList.toggle('hide', pickMode);            /* 書き方の早見表も記述式だけ */
+  /* 選択式に書式のヒントは要らない */
+  $('hintLine').textContent = pickMode ? '' : (q.h || (drawMode ? '方眼の上に曲線をかいてください' : ''));
+  $('howBtn').classList.toggle('hide', pickMode || drawMode);  /* 書き方の早見表は記述式だけ */
   showHow(false);                 /* キーボードの表示/非表示もここで決まる */
   $('choices').classList.toggle('hide', !pickMode);
   $('field').classList.toggle('jp', pickMode);
+  /* グラフのときは入力欄も計算スペースの覗き見も要らない。方眼に場所をゆずる */
+  $('field').classList.toggle('hide', drawMode);
+  $('clrIn').classList.toggle('hide', drawMode);
+  $('gbox').classList.toggle('hide', !drawMode);
   if(pickMode) buildChoices(q);
+  if(drawMode) gEnter(q);
   paintField();
   syncClip();
   openSheet($('ansSheet'));
@@ -3031,6 +3310,16 @@ function clearWarn(){
 function submit(){
   const q = curQ();
   if(!q || q.self) return;   /* 証明問題は自己採点なので照合しない */
+  if(q.gr){                  /* グラフはかいた線そのものを見る */
+    if(S.locked && S.resFor === q.id) return;
+    const g = gJudge();
+    if(g.why === 'まだ かけていません'){ warnInput(g.why); return; }
+    clearWarn();
+    g.img = gSnapshot();       /* 判定に出す絵は、消える前にここで焼いておく */
+    score(q, g.ok);
+    showResult(q, g.ok, null, g);
+    return;
+  }
   if(nz(IV)===''){
     warnInput('解答が入力されていません');
     return;
@@ -3098,11 +3387,12 @@ function shownAlts(list){
   return list.slice(1).filter(a=>!/[<>≦≧]/.test(a) && !/[桁位]$/.test(a) && !/^小数第/.test(a));
 }
 
-function showResult(q, ok, given){
+function showResult(q, ok, given, g){
   S.locked = true;
   S.resFor = q.id;
   syncAnsBtn();
   $('ansInput').classList.add('hide');
+  if(q.gr) drawMode = false;   /* 判定を出しているあいだは かけないようにする */
   const r = $('ansRes');
   r.classList.remove('hide');
 
@@ -3112,6 +3402,14 @@ function showResult(q, ok, given){
     : ok
     ? '<div class="rmark ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg>正解</div>'
     : '<div class="rmark ng"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>不正解</div>';
+
+  /* グラフは「自分の線」と「正しい曲線」を重ねた絵で見せるのがいちばん早い */
+  const gimg = (q.gr && g && g.img)
+    ? '<img class="gres" alt="かいた線と正しい曲線" src="'+g.img+'">' +
+      '<div class="glegend"><span><i style="background:#111"></i>自分の線</span>' +
+      '<span><i style="background:#c2410c"></i>正しい曲線</span></div>' +
+      (ok===false && g.why ? '<div class="gwhy">'+esc(g.why)+'</div>' : '')
+    : '';
 
   const your = (ok===false && given!=null && given!=='')
     /* 打った形のまま出すと √[3]{3} のような生の記号が見えるので、
@@ -3127,6 +3425,7 @@ function showResult(q, ok, given){
     /* シートが計算スペースを覆うので、判定側にも問題文を出しておく */
     '<div class="rq mq">'+fmt(q.q)+(q.g?'<span class="rg">（'+fmt(q.g)+'）</span>':'')+'</div>' +
     mark + your +
+    gimg +
     '<div class="rans'+(ok===false?' ngb':'')+'"><div class="lb">答え</div><div class="va mq">'+fmt(q.a[0])+'</div>'+alt+'</div>' +
     (q.e ? '<div class="rexp">'+fmt(q.e)+'</div>' : '') +
     '<div class="rbtns" id="resBtns"></div>';
@@ -3146,6 +3445,7 @@ function showResult(q, ok, given){
     add('もう一度解く', true, ()=>{
       S.locked = false; S.resFor = null;
       closeSheets();
+      if(q.gr){ drawMode = true; gReset(); }
       resetInput();
     });
   }
@@ -3240,7 +3540,7 @@ $('peekBtn').addEventListener('click', closeSheets);   // 入力は残したま�
 /* 早見表とキーボードは入れ替えで出す */
 function showHow(on){
   $('how').classList.toggle('hide', !on);
-  $('kb').classList.toggle('hide', on || pickMode);
+  $('kb').classList.toggle('hide', on || pickMode || drawMode);
   $('howBtn').textContent = on ? '書き方 ▴' : '書き方 ▾';
   $('howBtn').setAttribute('aria-expanded', on?'true':'false');
 }
