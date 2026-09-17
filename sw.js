@@ -5,7 +5,7 @@
    なので、ページ本体は「ネットワーク優先・失敗したらキャッシュ」、
    アイコン等の変わらないものは「キャッシュ優先・裏で更新」にしている。 */
 
-const VERSION = 'v65';                       // 中身を変えたらここを上げる
+const VERSION = 'v66';                       // 中身を変えたらここを上げる
 const CACHE   = 'explog-' + VERSION;
 
 const SHELL = [
@@ -13,12 +13,12 @@ const SHELL = [
   './index.html',
   './koppen.html',
   './kobun.html',
-  './kobun-words.js?v=6.9',
+  './kobun-words.js?v=7.0',
   './manifest.webmanifest',
   './katex.min.js',
   './katex.min.css',
-  './tex.js?v=6.9',
-  './backup.js?v=6.9',
+  './tex.js?v=7.0',
+  './backup.js?v=7.0',
   './fonts/KaTeX_AMS-Regular.woff2',
   './fonts/KaTeX_Caligraphic-Bold.woff2',
   './fonts/KaTeX_Caligraphic-Regular.woff2',
