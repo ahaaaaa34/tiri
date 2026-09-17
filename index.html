@@ -557,7 +557,7 @@
   <!-- ========== トップ（教科書かオリジナルかを選ぶ） ========== -->
   <div id="home">
     <div class="mhead">
-      <p class="ver">v6.8</p>
+      <p class="ver">v6.9</p>
       <h1>微分法と積分法</h1>
       <p class="cap">数学 II　第6章</p>
     </div>
@@ -821,8 +821,8 @@
 </div>
 
 <script src="./katex.min.js"></script>
-<script src="./tex.js?v=6.8"></script>
-<script src="./backup.js?v=6.8"></script>
+<script src="./tex.js?v=6.9"></script>
+<script src="./backup.js?v=6.9"></script>
 <script>
 "use strict";
 
@@ -830,7 +830,7 @@
    キャッシュに古い tex.js が残っていると、数式だけが崩れて出る
    （index.html はネットワーク優先なので新しく、tex.js だけ古い、という食い違い）。
    実機でそれが起きたので、食い違いを見つけたら一度だけ捨てて読み直す。 */
-const APP_V = '6.8';
+const APP_V = '6.9';
 (function(){
   if(typeof TEX_V !== 'undefined' && TEX_V === APP_V) return;
   try{
@@ -1352,6 +1352,36 @@ TOPICS.forEach(t=>{
 const BYID = {};
 ALL.forEach(q=>BYID[q.id]=q);
 
+/* 課題やテストで「この範囲だけ」を通してやりたいときの組み合わせ。
+   問題を増やすのではなく、すでにある問題を教科書の順に並べ替えて呼ぶだけ。
+   記録は元の問題と同じものを見ているので、どちらで解いても1つに積み上がる。 */
+const SETS = [
+  { id:'tb-set1', name:'教科書｜テスト範囲',
+    desc:'練習6・7・8・11・14・15、応用例題3、練習17・19',
+    ids:[
+    'tb-calc-1lwnrpd', 'tb-calc-1geh5ei', 'tb-calc-eugc9o', 'tb-calc-u5l01p',
+    'tb-calc-1rgy2oa', 'tb-calc-1affeth', 'tb-calc-1x5mjgr', 'tb-calc-ec74ve',
+    'tb-fval-sa1sc5', 'tb-fval-1511iif', 'tb-fval-1kp6dbt', 'tb-fval-v0s7y8',
+    'tb-tan-1vykis9', 'tb-tan-yg3te0', 'tb-tan-1taznu0', 'tb-tan-6cx0tw',
+    'tb-tan-psygbp', 'tb-ext-t752l9', 'tb-graph-m1txcc', 'tb-ext-7ez006',
+    'tb-graph-alkdvb', 'tb-ext4-1tmw0wb', 'tb-ext4-1gmqvoi', 'tb-ext4-1tlrsth',
+    'tb-ext4-1ftdd09', 'tb-ext4-1ftdrap', 'tb-graph-1h8jrpf', 'tb-ext4-1juqy4m',
+    'tb-ext4-mootvy', 'tb-graph-p4hs9o', 'tb-ext4-jvko4k', 'tb-ext4-12cj4n8',
+    'tb-graph-np96xq', 'tb-coef-r25ns4', 'tb-coef-r296x3', 'tb-coef-12pebmd',
+    'tb-coef-12pe6yl', 'tb-max-1w2vs3d', 'tb-max-1w2vyc1', 'tb-max-641cq6',
+    'tb-max-6417k6', 'tb-max-p3s3xh', 'tb-max-p3r6od', 'tb-nsol-72n6y2',
+    'tb-nsol-1404pgs', 'tb-nsol-1kjgnus', 'tb-nsol-1uctvqi'
+    ]}
+];
+SETS.forEach(s=>{
+  s.qs = s.ids.map(id=>BYID[id]).filter(Boolean);
+  s.has = {}; s.qs.forEach(q=>s.has[q.id]=true);
+});
+/* 範囲は TOPICS と SETS のどちらにあってもよい */
+function topicById(id){
+  return TOPICS.find(t=>t.id===id) || SETS.find(t=>t.id===id) || null;
+}
+
 /* =======================================================================
    数式マークアップ → HTML
    ======================================================================= */
@@ -1734,6 +1764,7 @@ const MODE_NOTE = {
 
 /* 範囲を区分けして並べる（範囲を素通しにすると探しにくいため） */
 const GROUPS = [
+  {name:'課題の範囲',            ids:['tb-set1']},
   {name:'第1節 微分係数と導関数', ids:['tb-vel','tb-lim','tb-def','tb-calc','tb-fval',
                                 'tb-var','tb-p1']},
   {name:'第2節 導関数の応用',    ids:['tb-tan','tb-inc','tb-ext','tb-ext4','tb-graph','tb-coef',
@@ -1756,7 +1787,12 @@ const SIDES = {
 };
 /* 旧バージョンで保存されたセッション（両方まとめて）も開けるように残しておく */
 const SCOPES = Object.assign({'__all__':{name:'すべての範囲', test:()=>true}}, SIDES);
-function scopeList(id){ return ALL.filter(SCOPES[id].test); }
+SETS.forEach(s=>{ SCOPES[s.id] = {name:s.name, qs:s.qs, test:q=>!!s.has[q.id]}; });
+/* 組み合わせの範囲は、並べた順そのものが出題順になる */
+function scopeList(id){
+  const sc = SCOPES[id];
+  return sc.qs ? sc.qs.slice() : ALL.filter(sc.test);
+}
 
 /* いま選んでいる側。閉じても覚えておく。 */
 const SIDEKEY = 'explog_side_v1';
@@ -1781,7 +1817,7 @@ function renderResume(){
   const box = $('resume');
   const r = readSession();
   if(!r){ box.classList.add('hide'); box.innerHTML=''; return; }
-  const t = SCOPES[r.topic] ? SCOPES[r.topic].name : ((TOPICS.find(x=>x.id===r.topic)||{}).name||'');
+  const t = SCOPES[r.topic] ? SCOPES[r.topic].name : ((topicById(r.topic)||{}).name||'');
   box.classList.remove('hide');
   box.innerHTML =
     '<p class="sec">続きから</p>'+
@@ -1887,7 +1923,7 @@ function renderMenu(){
 
   /* この区分に属する区切りだけを出す */
   GROUPS.forEach(g=>{
-    const ts = g.ids.map(id=>TOPICS.find(t=>t.id===id))
+    const ts = g.ids.map(topicById)
                     .filter(t=>t && sideOfTopic(t.id)===SIDE);
     if(!ts.length) return;
     const pools = ts.map(t=>poolOf(t.id, S.mode));
@@ -2064,7 +2100,7 @@ function renderStats(){
   body.querySelectorAll('.srow[data-topic]').forEach(el=>{
     el.addEventListener('click', ()=>{
       const t = el.dataset.topic;
-      const s = tally(TOPICS.find(x=>x.id===t).qs);
+      const s = tally((topicById(t)||{qs:[]}).qs);
       S.mode = s.todo>0 ? 'wrong' : 'normal';
       startSession(t);
     });
@@ -2185,7 +2221,7 @@ function renderQ(){
   const q = curQ();
   if(!q){ finish(); return; }
   if(posTrackable()) setPos(S.topic, S.idx);
-  const tName = SCOPES[S.topic] ? q.tname : (TOPICS.find(t=>t.id===S.topic)||{}).name;
+  const tName = SCOPES[S.topic] ? q.tname : (topicById(S.topic)||{}).name;
   $('pTitle').textContent = tName || '';
   $('pCount').textContent = (S.idx+1)+' / '+S.queue.length;
   $('progBar').style.width = (S.idx/S.queue.length*100)+'%';
