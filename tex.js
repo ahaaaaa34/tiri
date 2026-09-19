@@ -8,7 +8,7 @@
 
 /* この版。index.html 側と食い違っていたら、古いものがキャッシュに残っている。
    index.html がそれを見つけて読み直す（数式が壊れたまま出るのを防ぐため）。 */
-const TEX_V = '7.0';
+const TEX_V = '7.1';
 
 /* 数式のかたまりに入れる文字 */
 const MCH = "\u0001" + "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
