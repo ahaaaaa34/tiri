@@ -192,6 +192,9 @@
   .tb.on{background:var(--t1); border-color:var(--t1)}
   .tb.on svg{stroke:var(--card)}
   .tb:disabled{opacity:.32}
+  /* 枠の外に書き込みが出ているときだけ、「枠に収める」を目立たせる */
+  .tb.warn{background:#FDF0E6; border-color:#E8C39E}
+  .tb.warn svg{stroke:#B45309}
   .tb:active{background:var(--bg2)}
   .tb.on:active{background:#000}
   .tsp{flex:1}
@@ -564,7 +567,7 @@
   <!-- ========== トップ（教科書かオリジナルかを選ぶ） ========== -->
   <div id="home">
     <div class="mhead">
-      <p class="ver">v7.1</p>
+      <p class="ver">v7.2</p>
       <h1>微分法と積分法</h1>
       <p class="cap">数学 II　第6章</p>
     </div>
@@ -828,8 +831,8 @@
 </div>
 
 <script src="./katex.min.js"></script>
-<script src="./tex.js?v=7.1"></script>
-<script src="./backup.js?v=7.1"></script>
+<script src="./tex.js?v=7.2"></script>
+<script src="./backup.js?v=7.2"></script>
 <script>
 "use strict";
 
@@ -837,7 +840,7 @@
    キャッシュに古い tex.js が残っていると、数式だけが崩れて出る
    （index.html はネットワーク優先なので新しく、tex.js だけ古い、という食い違い）。
    実機でそれが起きたので、食い違いを見つけたら一度だけ捨てて読み直す。 */
-const APP_V = '7.1';
+const APP_V = '7.2';
 (function(){
   if(typeof TEX_V !== 'undefined' && TEX_V === APP_V) return;
   try{
@@ -2174,7 +2177,7 @@ function saveSession(){
     topic:S.topic, mode:S.mode, idx:S.idx, ok:S.okCount,
     ids:S.queue.map(q=>q.id), wrong:S.wrongList, scored:Object.keys(S.scored),
     draft:IV, t:Date.now(),
-    pw:Math.round(baseW), ph:Math.round(baseH)   /* 書いたときの広さ */
+    pw:0, ph:0   /* 昔の版が読んでいた「書いたときの広さ」。いまは使わない */
   };
   try{
     localStorage.setItem(RKEY, JSON.stringify(Object.assign({pad:packStrokes()}, base)));
@@ -2212,7 +2215,8 @@ function resumeSession(r){
   resetPadStore();
   /* 書いたときの広さに物差しを合わせる。合わせないと、画面の向きや
      問題文のたたみ方が変わっているぶんだけ、書いた形がずれて出る。 */
-  baseW = r.pw || 0; baseH = r.ph || 0; baseFixed = !!(baseW && baseH);
+  /* 昔の版で保存されたぶんは、物差しの上の座標で入っている。
+     いまは画面のピクセルで持つので、はみ出していれば setupPad が収めてくれる。 */
   show('play');
   requestAnimationFrame(()=>{
     setupPad();
@@ -2448,10 +2452,15 @@ let eraW = 24;
 let penSeen = false;
 let fromTouch = false;         /* touch のほうで書き始めているか */     // スタイラスを検出したら以後タッチは無視（手のひら対策）
 let dpr = 1;
-/* 書いた中身は「書いたときの広さ」を物差しにして持っておく。
-   画面を回しても、問題文をたたんで広さが変わっても、同じ形のまま戻せる。
-   baseW/baseH がその物差し。ps は今の広さとの比。 */
-let baseW = 0, baseH = 0, ps = 1, baseFixed = false;
+/* 書いたものは、画面のピクセルそのままで持つ。
+   以前は「書いたときの広さ」を物差しにして、今の広さとの比で縮めて出していた。
+   ところが、縮んでいる最中に書いた線はその比で割って保存されるので、
+   画面を戻すと比が戻ったぶんだけ大きくなってしまった（横で書いて縦に戻すと1.33倍）。
+   いまは比をかけない。書いた大きさのまま、ずっと変わらない。
+   画面がせまくなって枠からはみ出しても、こちらでは勝手に縮めない。
+   （縮めると、そのあとに書いた線まで巻きこんでしまうため）
+   はみ出したときは「枠に収める」ボタンが押せるようになるので、
+   縮めるかどうかは自分で決める。画面を戻せば、そのまま元どおり見える。 */
 let padKey = null;
 const padStore = {};     // 問題ごとに計算内容を保持（前の問題に戻っても残る）
 const padOrder = [];     // 古いものから捨てるための順番
@@ -2462,18 +2471,34 @@ function setupPad(){
   dpr = Math.min(window.devicePixelRatio||1, 2.5);
   pad.width  = buf.width  = Math.round(r.width*dpr);
   pad.height = buf.height = Math.round(r.height*dpr);
-  /* まだ何も書いていないうちは、今の広さをそのまま物差しにする。
-     書き始めたところで物差しが決まる。 */
-  if(!baseFixed){ baseW = r.width; baseH = r.height; }
-  /* 狭くなったぶんだけ縮めて収める。広くなったときは大きくせず、
-     余ったところを空けておく（書いたものの大きさは変わらない）。 */
-  ps = Math.min(1, r.width/baseW, r.height/baseH);
   bake();
 }
+/* すべての線の外接。redo に積んだぶんも一緒に動かす（やり直しても形が合うように） */
+function inkBox(){
+  const all = strokes.concat(redoStack);
+  let x0=1e9, y0=1e9, x1=-1e9, y1=-1e9;
+  all.forEach(s=>s.pts.forEach(p=>{
+    if(p.x<x0) x0=p.x;  if(p.y<y0) y0=p.y;
+    if(p.x>x1) x1=p.x;  if(p.y>y1) y1=p.y;
+  }));
+  return x1<x0 ? null : {x0, y0, x1, y1, all};
+}
+function scaleInk(all, k, dx, dy){
+  all.forEach(s=>{
+    s.w *= k;
+    s.pts.forEach(p=>{ p.x = p.x*k + dx; p.y = p.y*k + dy; });
+  });
+}
+/* いまの枠からはみ出しているか（少しの余裕は見逃す） */
+function inkOutside(r){
+  const b = inkBox();
+  return !!b && (b.x1 > r.width - 2 || b.y1 > r.height - 2 || b.x0 < -2 || b.y0 < -2);
+}
+
 function inkStroke(c, s){
   if(!s.pts.length) return;
   c.save();
-  c.setTransform(dpr*ps,0,0,dpr*ps,0,0);
+  c.setTransform(dpr,0,0,dpr,0,0);
   c.lineCap = 'round';
   c.lineJoin = 'round';
   c.lineWidth = s.w;
@@ -2518,13 +2543,18 @@ function paint(){
   const n = strokes.length + (cur?1:0);
   $('padHint').style.opacity = n ? 0 : 1;
   $('tUndo').disabled = strokes.length===0;
-  $('tFit').disabled  = strokes.length===0;
+  /* はみ出していないときは することが無いので押せないようにする。
+     押しても何も起きないと「効かない」に見えるため。
+     逆に、はみ出しているときは目にとまるよう色を変える。 */
+  const out = strokes.length>0 && inkOutside(pad.getBoundingClientRect());
+  $('tFit').disabled = !out;
+  $('tFit').classList.toggle('warn', out);
   $('tRedo').disabled = redoStack.length===0;
 }
 function ptOf(e){
   const r = pad.getBoundingClientRect();
-  /* 物差しの上での位置にして持つ。あとで広さが変わっても崩れない。 */
-  return { x: (e.clientX - r.left)/ps, y: (e.clientY - r.top)/ps };
+  /* 画面のピクセルそのまま。倍率をかけないので、あとから大きさが変わらない。 */
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
 }
 
 /* iPad の Safari は、はやく2回つづけて触ると、2回目を「ジェスチャかも」と
@@ -2583,20 +2613,11 @@ pad.addEventListener('pointermove', e=>{
   }
   paint();
 });
-/* 物差しの外まで書かれたら、物差しのほうを広げておく。
-   （画面の形が変わったあとは、枠の端が物差しの外に来ることがある）
-   ここでは見た目は変えない。次に広さが変わったときに、まとめて収まる。 */
-function growBase(pts){
-  for(let i=0;i<pts.length;i++){
-    if(pts[i].x > baseW) baseW = pts[i].x;
-    if(pts[i].y > baseH) baseH = pts[i].y;
-  }
-}
 function endDraw(){
   if(!drawing) return;
   drawing = false;
   if(lasso){ cutLasso(); return; }
-  if(cur){ baseFixed = true; growBase(cur.pts); strokes.push(cur); inkStroke(bctx, cur); cur = null; }
+  if(cur){ strokes.push(cur); inkStroke(bctx, cur); cur = null; }
   paint();
 }
 pad.addEventListener('pointerup', endDraw);
@@ -2652,31 +2673,25 @@ function endTouchDraw(){ if(!fromTouch) return; fromTouch = false; endDraw(); }
 pad.addEventListener('touchend', endTouchDraw, {passive:true});
 pad.addEventListener('touchcancel', endTouchDraw, {passive:true});
 
-/* 書いたものを、いまの計算スペースいっぱいに収め直す。
-   ふだんは開き直すたびに自動で合うが、物差しを持たずに保存された
-   古い書き込みなど、どうしても位置がおかしいときの逃げ道。 */
+/* 枠の外に出てしまった書き込みを、枠の中に戻す。
+   前は枠いっぱいまで引きのばしていた（最大2.5倍）が、
+   「直すボタンを押したら余計に大きくなる」ので、拡大はしないことにした。
+   入りきらないときだけ縮め、あとは必要なぶんだけ動かす。 */
 function fitPad(){
-  const all = strokes.concat(redoStack);
-  let x0=1e9, y0=1e9, x1=-1e9, y1=-1e9;
-  all.forEach(s=>s.pts.forEach(p=>{
-    if(p.x<x0) x0=p.x;  if(p.y<y0) y0=p.y;
-    if(p.x>x1) x1=p.x;  if(p.y>y1) y1=p.y;
-  }));
-  if(x1 < x0) return;                       /* 何も書いていない */
+  const b = inkBox();
+  if(!b) return;
   const r = pad.getBoundingClientRect();
   if(!r.width || !r.height) return;
-  /* 物差しの上での「見えている広さ」に合わせる。ps はいじらないので
-     ほかの問題に書いたものは動かない。 */
-  const VW = r.width/ps, VH = r.height/ps, m = 10/ps;
-  const bw = Math.max(x1-x0, 1), bh = Math.max(y1-y0, 1);
-  const k = Math.min((VW-m*2)/bw, (VH-m*2)/bh, 2.5);   /* 大きくしすぎない */
-  all.forEach(s=>{
-    s.w *= k;
-    s.pts.forEach(p=>{ p.x = (p.x-x0)*k + m; p.y = (p.y-y0)*k + m; });
-    growBase(s.pts);
-  });
-  /* 収め直した形を、これからの物差しにする */
-  baseFixed = true;
+  const m = 10;
+  const bw = Math.max(b.x1-b.x0, 1), bh = Math.max(b.y1-b.y0, 1);
+  const k = Math.min(1, (r.width-m*2)/bw, (r.height-m*2)/bh);   /* 大きくはしない */
+  /* 動かすのは、はみ出しているぶんだけ。中に収まっている線は動かさない */
+  let dx = 0, dy = 0;
+  if(b.x0*k < m) dx = m - b.x0*k;
+  if(b.y0*k < m) dy = m - b.y0*k;
+  if(b.x1*k + dx > r.width  - m) dx = r.width  - m - b.x1*k;
+  if(b.y1*k + dy > r.height - m) dy = r.height - m - b.y1*k;
+  scaleInk(b.all, k, dx, dy);
   bake();
   buzz(8);
 }
@@ -2707,7 +2722,6 @@ function usePad(key){
 function resetPadStore(){
   for(const k in padStore) delete padStore[k];
   padOrder.length = 0;
-  baseW = baseH = 0; ps = 1; baseFixed = false;   /* 物差しも取り直す */
 }
 
 function setTool(t){
@@ -2750,7 +2764,7 @@ function cutLasso(){
   if(!pts || pts.length < 3){ paint(); return; }
   let x0=1e9, y0=1e9, x1=-1e9, y1=-1e9;
   pts.forEach(p=>{ x0=Math.min(x0,p.x); y0=Math.min(y0,p.y); x1=Math.max(x1,p.x); y1=Math.max(y1,p.y); });
-  const k = dpr*ps;                       /* 物差し1つぶんが、画面では何粒か */
+  const k = dpr;                          /* 1ピクセルが、画面では何粒か */
   const m = 6, W = pad.width/k, H = pad.height/k;
   x0=Math.max(0,x0-m); y0=Math.max(0,y0-m); x1=Math.min(W,x1+m); y1=Math.min(H,y1+m);
   const w = Math.round(x1-x0), h = Math.round(y1-y0);
