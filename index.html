@@ -567,7 +567,7 @@
   <!-- ========== トップ（教科書かオリジナルかを選ぶ） ========== -->
   <div id="home">
     <div class="mhead">
-      <p class="ver">v7.2</p>
+      <p class="ver">v7.3</p>
       <h1>微分法と積分法</h1>
       <p class="cap">数学 II　第6章</p>
     </div>
@@ -831,8 +831,8 @@
 </div>
 
 <script src="./katex.min.js"></script>
-<script src="./tex.js?v=7.2"></script>
-<script src="./backup.js?v=7.2"></script>
+<script src="./tex.js?v=7.3"></script>
+<script src="./backup.js?v=7.3"></script>
 <script>
 "use strict";
 
@@ -840,7 +840,7 @@
    キャッシュに古い tex.js が残っていると、数式だけが崩れて出る
    （index.html はネットワーク優先なので新しく、tex.js だけ古い、という食い違い）。
    実機でそれが起きたので、食い違いを見つけたら一度だけ捨てて読み直す。 */
-const APP_V = '7.2';
+const APP_V = '7.3';
 (function(){
   if(typeof TEX_V !== 'undefined' && TEX_V === APP_V) return;
   try{
@@ -2473,6 +2473,38 @@ function setupPad(){
   pad.height = buf.height = Math.round(r.height*dpr);
   bake();
 }
+/* キャンバスの大きさが、いまの枠と食い違っていないか。
+   食い違ったまま書くと、指の位置と線がずれる。 */
+function padStale(){
+  const r = pad.getBoundingClientRect();
+  if(!r.width || !r.height) return false;
+  return Math.abs(pad.width  - Math.round(r.width *dpr)) > 1
+      || Math.abs(pad.height - Math.round(r.height*dpr)) > 1;
+}
+/* 計算スペースを作り直す。「次の問題へ」で直るのと同じことを、ほかのきっかけでもやる。
+   iPad の Safari は、画面を消したり別のアプリに移ったりすると、
+   キャンバスの中身を捨ててしまうことがある。戻ってきても誰も描き直さないので、
+   書いたものが消えたり、その上にさらに書いて ぐちゃぐちゃになっていた。
+   問題を移ると usePad → bake で焼き直されるので直る、という話だった。
+   ここで同じ焼き直しをする。線そのものは strokes に残っているので、何も失われない。 */
+let rfT = null;
+function refreshPad(tries){
+  if($('play').classList.contains('hide')) return;
+  if(drawing){ refreshPadSoon(); return; }   /* 書いている途中には割りこまない */
+  const r = pad.getBoundingClientRect();
+  if(!r.width || !r.height){        /* まだ形が決まっていない。次の回で */
+    if((tries||0) < 12) requestAnimationFrame(()=>refreshPad((tries||0)+1));
+    return;
+  }
+  setupPad();                       /* 大きさを取り直して、焼き直す */
+}
+function refreshPadSoon(){ clearTimeout(rfT); rfT = setTimeout(()=>refreshPad(0), 60); }
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible') refreshPadSoon();
+});
+window.addEventListener('pageshow', refreshPadSoon);
+window.addEventListener('focus', refreshPadSoon);
+
 /* すべての線の外接。redo に積んだぶんも一緒に動かす（やり直しても形が合うように） */
 function inkBox(){
   const all = strokes.concat(redoStack);
@@ -2583,6 +2615,7 @@ pad.addEventListener('pointerdown', e=>{
   /* 何かの拍子に文字が選ばれていたら、書き始めに解いておく */
   const sel = window.getSelection && window.getSelection();
   if(sel && !sel.isCollapsed) sel.removeAllRanges();
+  if(padStale()) setupPad();        /* 大きさが食い違っていたら、書き始める前に直す */
   beginStroke(ptOf(e));
   /* 画面の外まで手が出ても追えるようにする。
      ここでしくじっても書き始めはもう済んでいるので、線は消えない。 */
