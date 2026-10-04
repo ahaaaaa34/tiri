@@ -6,7 +6,7 @@
    キャッシュに古い tex.js が残っていると、数式だけが崩れて出る
    （index.html はネットワーク優先なので新しく、tex.js だけ古い、という食い違い）。
    実機でそれが起きたので、食い違いを見つけたら一度だけ捨てて読み直す。 */
-const APP_V = '7.5';
+const APP_V = '7.6';
 
 /* 画面のいちばん上と「ほかの科目」は、科目ごとの決めごとから作る。
    HTML は数学と物理で同じものを使うため。 */
@@ -243,7 +243,9 @@ function termKey(s){
    人によって書き方が分かれるものを、実際に数を入れて計算して見くらべる。
    いくつもの数で必ず一致したときだけ「同じ式」とみなす。
    等号・不等号・カンマが入っているものは値では比べられないので対象外。 */
-const EVCH = /^[0-9a-z.+\-\/^()√{}\[\]π]+$/;
+/* 物理の式も見分けられるように、大文字・添え字（v_0）・μ も通す */
+const EVCH = /^[0-9A-Za-z.+\-\/^()√{}\[\]π_μ]+$/;
+const RE_NAME = /[A-Za-zμ](?:_[0-9A-Za-z])?/g;
 const EVPT = [1.31, 1.87, 2.43, 0.57, 3.11, 4.29];
 
 function evalExpr(s, env){
@@ -269,7 +271,13 @@ function evalExpr(s, env){
       if(isNaN(v)) throw 0;
       return v;
     }
-    if(/[a-z]/.test(c)){ i++; if(!(c in env)) throw 0; return env[c]; }
+    if(/[A-Za-zμ]/.test(c)){
+      let n = c; i++;
+      /* v_0 や v_A のような添え字つきは、まとめて1つの文字として読む */
+      if(s[i] === '_' && s[i+1] !== undefined && /[0-9A-Za-z]/.test(s[i+1])){ n += '_' + s[i+1]; i += 2; }
+      if(!(n in env)) throw 0;
+      return env[n];
+    }
     throw 0;
   }
   function power(){
@@ -286,7 +294,7 @@ function evalExpr(s, env){
     let v = unary();
     for(;;){
       if(s[i] === '/'){ i++; const d = unary(); if(d === 0) throw 0; v /= d; }
-      else if(s[i] !== undefined && /[0-9a-z.(√{π]/.test(s[i])) v *= unary();  /* 4x のような省略した掛け算 */
+      else if(s[i] !== undefined && /[0-9A-Za-z.(√{πμ]/.test(s[i])) v *= unary();  /* 4x のような省略した掛け算 */
       else break;
     }
     return v;
@@ -305,15 +313,16 @@ function evalExpr(s, env){
   return out;
 }
 
+/* 式に出てくる文字の一覧。v と v_0 は別の文字として数える。 */
 function letterSet(s){
-  const m = s.match(/[a-z]/g);
-  return m ? Array.from(new Set(m)).sort().join('') : '';
+  const m = s.match(RE_NAME);
+  return m ? Array.from(new Set(m)).sort() : [];
 }
 
 function sameValue(a, b){
   if(!EVCH.test(a) || !EVCH.test(b)) return false;
   const ls = letterSet(a);
-  if(ls !== letterSet(b)) return false;      /* 使っている文字が違えば別の式 */
+  if(ls.join(',') !== letterSet(b).join(',')) return false;   /* 使っている文字が違えば別の式 */
   for(let k = 0; k < EVPT.length; k++){
     const env = {};
     for(let j = 0; j < ls.length; j++) env[ls[j]] = EVPT[k] + (j + 1) * 0.137;
@@ -2054,6 +2063,7 @@ function buildChoices(q){
   q.c.forEach(label=>{
     const b = document.createElement('button');
     b.className = 'ch mq' + (label===IV ? ' on' : '');
+    b.dataset.v = label;          /* 組んだあとの見た目ではなく、元の字を残しておく */
     /* 選択肢も数式として組む。a^{m+n} のような形が生の字で出ないように。 */
     b.innerHTML = fmt(label);
     b.addEventListener('click', ()=>{
