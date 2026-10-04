@@ -8,7 +8,7 @@
 
 /* この版。index.html 側と食い違っていたら、古いものがキャッシュに残っている。
    index.html がそれを見つけて読み直す（数式が壊れたまま出るのを防ぐため）。 */
-const TEX_V = '7.4';
+const TEX_V = '7.5';
 
 /* 数式のかたまりに入れる文字 */
 const MCH = "\u0001" + "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
@@ -241,7 +241,21 @@ function segments(src){
   }
   flush();
   /* 記号らしさが無いかたまり（「6(2)」など）は地の文に戻す */
-  return segs.map(g => (g.math && !MSIG.test(g.s)) ? {math:false, s:g.s} : g);
+  return segs.map(g => (g.math && (!MSIG.test(g.s) || plainRun(g.s))) ? {math:false, s:g.s} : g);
+}
+
+/* 物理のように単位が出てくる科目だけ、単位と略語をそのままの字で出す。
+   数式として組むと 40m/s が「40m ぶんの s」の分数になり、CHECK が斜体の変数になるため。
+   data-*.js で SUBJECT.units を true にしたときだけ効くので、数学の式には影響しない。 */
+const UNIT = '(?:kg|mol|rad|Pa|cm|mm|km|nm|ms|Hz|m|s|g|N|J|W|K|A|V|C|L)';
+const RE_UNIT = new RegExp(
+  '^\\s*(?:[0-9][0-9.]*\\s*)?' + UNIT + '(?:\\^?[0-9])?' +
+  '(?:\\s*[·/]\\s*' + UNIT + '(?:\\^?[0-9])?)*\\s*$');
+const RE_ABBR = /^\s*[A-Z]{2,}[\s0-9()]*$/;    /* CHECK・CHECK 4 のような略語 */
+function plainRun(t){
+  const on = (typeof SUBJECT !== 'undefined') && SUBJECT && SUBJECT.units;
+  if(!on) return false;
+  return RE_UNIT.test(t) || RE_ABBR.test(t);
 }
 
 function toTeXParts(src){

@@ -1,0 +1,545 @@
+  :root{
+    --bg:#FAFAF8;
+    --bg2:#F3F3F0;
+    --card:#FFFFFF;
+    --t1:#111111;
+    --t2:#555555;
+    --t3:#999999;
+    --bd:#E0E0DC;
+    --bd2:#EEEEEA;
+    --err:#8B0000;
+    --ok:#00008B;
+    --numk:#EBF0FA;                /* 数字キーの下地 */
+    --numb:#D3DCEF;                /* 数字キーのふち */
+    --numk2:#D9E3F7;               /* 数字キーを押したとき */
+    --sh:0 1px 2px rgba(17,17,17,.04);
+    --safe-b:env(safe-area-inset-bottom, 0px);
+  }
+  /* 画面の文字は選べないようにする。
+     Apple Pencil で書いていると、手のひらや軸が問題文に触れただけで
+     文字が選ばれて「コピー／調べる／翻訳」の黒いメニューが出てしまう。 */
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none}
+  html,body{height:100%; overflow:hidden}
+  body{
+    margin:0; background:var(--bg); color:var(--t1);
+    font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",Meiryo,system-ui,-apple-system,sans-serif;
+    font-feature-settings:"palt" 1;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.55; font-size:15px;
+    overscroll-behavior:none;
+  }
+  button{font-family:inherit; color:inherit; cursor:pointer; touch-action:manipulation}
+  .app{height:100vh; height:100dvh; display:flex; flex-direction:column; overflow:hidden}
+  .hide{display:none !important}
+
+  /* ---------- 数式表示 ---------- */
+  .mq{font-family:"Times New Roman",'Hiragino Mincho ProN',serif; letter-spacing:.01em}
+  sup,sub{font-size:.68em; line-height:0}
+  sup{vertical-align:.5em} sub{vertical-align:-.28em}
+  .rt{white-space:nowrap}
+  .rt .ri{font-size:.6em; vertical-align:.62em; margin-right:-.28em}
+  .rt .rb{border-top:1px solid currentColor; padding:0 .14em 0 .06em; margin-left:.02em}
+
+  /* ---------- メニュー ---------- */
+  #menu{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 18px calc(40px + var(--safe-b))}
+  .mhead{padding:34px 0 22px; text-align:center}
+  /* 更新が届いたか分かるように、トップに小さく版を出す */
+  .mhead .ver{margin:0 0 6px; font-size:11px; color:var(--t3); letter-spacing:.14em}
+  .mhead h1{margin:0; font-size:25px; font-weight:600; letter-spacing:.06em}
+  .mhead .cap{margin:6px 0 0; font-size:12px; color:var(--t3); letter-spacing:.18em}
+  .sec{margin:0 0 9px; font-size:11px; color:var(--t3); letter-spacing:.14em; font-weight:600}
+
+  .seg{display:flex; gap:2px; background:var(--bg2); border-radius:11px; padding:3px; margin-bottom:8px}
+  .seg button{flex:1; border:0; background:transparent; color:var(--t2); font-size:12.5px; padding:9px 4px; border-radius:8px; letter-spacing:.02em}
+  .seg button.on{background:var(--card); color:var(--t1); font-weight:600; box-shadow:var(--sh)}
+  .modenote{font-size:11.5px; color:var(--t3); margin:0 0 12px; padding:0 2px; line-height:1.6}
+  .toggle{display:flex; align-items:center; gap:10px; border:0; background:transparent; padding:6px 2px; margin-bottom:16px; font-size:13px; color:var(--t2)}
+  .toggle .tk{width:38px; height:22px; border-radius:22px; background:var(--bd2); border:1px solid var(--bd); flex:none; position:relative; transition:background .16s, border-color .16s}
+  .toggle .tk i{position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:var(--card); box-shadow:var(--sh); transition:transform .16s}
+  .toggle[aria-pressed="true"]{color:var(--t1)}
+  .toggle[aria-pressed="true"] .tk{background:var(--t1); border-color:var(--t1)}
+  .toggle[aria-pressed="true"] .tk i{transform:translateX(16px)}
+  .toggle[disabled]{opacity:.35}
+
+  .tlist{display:flex; flex-direction:column; gap:7px; margin-bottom:22px}
+  .gsec{margin:14px 0 -1px; padding-left:2px; font-size:10.5px; color:var(--t3); letter-spacing:.16em; font-weight:600}
+  .mrow{display:flex; align-items:center; justify-content:space-between; gap:12px}
+  .gsec:first-child{margin-top:6px}
+  .titem{
+    display:flex; align-items:center; gap:12px; width:100%; text-align:left;
+    background:var(--card); border:1px solid var(--bd); border-radius:13px;
+    padding:14px 15px; box-shadow:var(--sh); transition:transform .06s, background .12s;
+  }
+  .titem:active{transform:scale(.985); background:var(--bg2)}
+  .titem .nm{flex:1; min-width:0}
+  .titem .nm b{display:block; font-size:15px; font-weight:600; letter-spacing:.01em}
+  .titem .nm span{display:block; font-size:11.5px; color:var(--t3); margin-top:2px}
+  .titem .rt2{display:flex; align-items:center; gap:9px; flex:none}
+  .titem .num{font-size:12px; color:var(--t2); font-variant-numeric:tabular-nums}
+  .titem .arw{color:var(--t3); font-size:17px; line-height:1}
+  .titem.all{background:var(--t1); border-color:var(--t1); color:var(--card)}
+  .titem.all .nm span,.titem.all .num,.titem.all .arw{color:rgba(255,255,255,.62)}
+  .titem.all:active{background:#000}
+  /* 途中でやめた範囲は、カード＋「途中から」の2つ並びにする */
+  .trow{display:flex; gap:7px; align-items:stretch}
+  .trow .titem{flex:1; min-width:0}
+  .tcont{
+    flex:none; width:78px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    background:var(--bg2); border:1px solid var(--bd); border-radius:13px; box-shadow:var(--sh);
+    padding:8px 4px; transition:transform .06s, background .12s;
+  }
+  .tcont:active{transform:scale(.97); background:var(--bd2)}
+  .tcont .cl{font-size:10px; color:var(--t3); letter-spacing:.04em}
+  .tcont b{font-size:13px; font-weight:600; color:var(--t1); font-variant-numeric:tabular-nums}
+  .titem[disabled]{opacity:.4; box-shadow:none}
+  .titem.rsm{border-style:dashed; border-color:var(--bd); margin-bottom:0}
+  .mini-bar{display:block; height:2px; background:var(--bd2); border-radius:2px; margin-top:7px; overflow:hidden}
+  .mini-bar i{display:block; height:100%; background:var(--t3); border-radius:2px}
+  .badge{
+    font-size:11px; font-variant-numeric:tabular-nums; color:var(--err);
+    border:1px solid rgba(139,0,0,.24); border-radius:20px; padding:1px 7px; background:rgba(139,0,0,.04);
+  }
+  .empty{border:1px dashed var(--bd); border-radius:13px; padding:26px 16px; text-align:center; color:var(--t3); font-size:12.5px; line-height:1.8}
+
+  /* ---------- 記録の持ち出し ---------- */
+  .bkrow{display:flex; gap:8px; margin-top:8px}
+  .bkbtn{flex:1; min-height:42px; border-radius:11px; border:1px solid var(--bd);
+         background:var(--card); color:inherit; font-size:13.5px}
+  .bkbtn.go{background:var(--ok); border-color:var(--ok); color:#fff; font-weight:600}
+  .bkbtn:active{opacity:.75}
+  .bknote{font-size:11px; color:var(--t3); line-height:1.85; margin-top:9px}
+  .bkbox{margin-top:12px; padding:12px; border:1px solid var(--bd); border-radius:12px; background:var(--card)}
+  .bkh{margin:0 0 8px; font-size:11.5px; color:var(--t3); line-height:1.8}
+  .bkta{width:100%; height:110px; box-sizing:border-box; padding:9px; border-radius:9px;
+        border:1px solid var(--bd); background:var(--bg2); color:inherit;
+        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px; line-height:1.5;
+        resize:none;
+        /* 記録の書き出し・読みこみ欄だけは、選んで貼りつけできるようにしておく */
+        -webkit-user-select:text; user-select:text; -webkit-touch-callout:default}
+  .bkmsg{margin:8px 0 0; font-size:11.5px; line-height:1.7}
+  .bkmsg.ok{color:var(--ok)} .bkmsg.ng{color:var(--ng)}
+
+  /* ---------- 囲った計算 ---------- */
+  #ansClip{position:relative; margin:0 14px 8px; padding:6px 8px; border:1px solid var(--bd);
+           border-radius:10px; background:var(--bg2); text-align:center}
+  #ansClip img{max-width:100%; max-height:104px; display:inline-block; vertical-align:middle}
+  #ansClip .cx{position:absolute; right:6px; top:6px; font-size:10px; color:var(--t3);
+               background:var(--card); border-radius:99px; padding:3px 8px; line-height:1}
+  .mfoot{display:flex; justify-content:center; padding-top:6px}
+  .lnk{background:none; border:0; color:var(--t3); font-size:11.5px; letter-spacing:.06em; text-decoration:underline; text-underline-offset:3px; padding:8px}
+
+  /* ---------- 演習画面 ---------- */
+  #play{flex:1; display:flex; flex-direction:column; min-height:0}
+  .bar{display:flex; align-items:center; gap:6px; padding:8px 8px 7px; flex:none}
+  .mbar{padding-top:calc(8px + var(--safe-t)); border-bottom:1px solid var(--bd2); margin-bottom:8px}
+  .ib{
+    width:38px; height:38px; flex:none; border:0; background:transparent; border-radius:10px;
+    display:flex; align-items:center; justify-content:center; transition:background .12s;
+  }
+  .ib:active{background:var(--bg2)}
+  .ib svg{width:19px; height:19px; stroke:var(--t1); stroke-width:1.6; fill:none; stroke-linecap:round; stroke-linejoin:round}
+  .ttl{flex:1; text-align:center; min-width:0}
+  .ttl b{display:block; font-size:13px; font-weight:600; letter-spacing:.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .ttl span{display:block; font-size:10.5px; color:var(--t3); font-variant-numeric:tabular-nums; letter-spacing:.06em; margin-top:1px}
+  .prog{height:2px; background:var(--bd2); flex:none}
+  .prog i{display:block; height:100%; background:var(--t1); width:0; transition:width .28s ease}
+
+  .qbox{
+    flex:none; display:block; width:auto; text-align:left;
+    margin:11px 12px 0; background:var(--card); border:1px solid var(--bd);
+    border-radius:13px; padding:12px 14px; box-shadow:var(--sh);
+    max-height:26vh; overflow-y:auto; transition:padding .16s;
+  }
+  .qbox .lb{font-size:10px; color:var(--t3); letter-spacing:.16em; margin-bottom:5px; display:flex; gap:8px; align-items:center}
+  .qbox .lb .wc{color:var(--err); letter-spacing:.02em}
+  .qbox .lb .fold{margin-left:auto; letter-spacing:.04em; text-decoration:underline; text-underline-offset:2px}
+  .qbox .qt{display:block; font-size:17px; line-height:1.75; word-break:break-word}
+  .qbox .gv{display:block; font-size:11.5px; color:var(--t2); margin-top:7px; padding-top:7px; border-top:1px solid var(--bd2)}
+  .qbox .gv.hide{display:none !important}
+  /* たたんだ状態: 1行だけ見せて計算スペースを広げる */
+  .qbox.fold{padding:7px 14px 8px; overflow:hidden}
+  .qbox.fold .lb{margin-bottom:2px}
+  .qbox.fold .qt{
+    font-size:14px; line-height:1.5; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis;
+  }
+  .qbox.fold .gv{display:none}
+
+  .tools{display:flex; align-items:center; gap:4px; padding:9px 12px 7px; flex:none}
+  .tb{
+    height:36px; min-width:44px; padding:0 11px; border:1px solid var(--bd); background:var(--card);
+    border-radius:9px; display:flex; align-items:center; justify-content:center; gap:5px; box-shadow:var(--sh);
+    transition:background .12s, border-color .12s;
+  }
+  .tb svg{width:17px; height:17px; stroke:var(--t1); stroke-width:1.6; fill:none; stroke-linecap:round; stroke-linejoin:round}
+  .tb.on{background:var(--t1); border-color:var(--t1)}
+  .tb.on svg{stroke:var(--card)}
+  .tb:disabled{opacity:.32}
+  /* 枠の外に書き込みが出ているときだけ、「枠に収める」を目立たせる */
+  .tb.warn{background:#FDF0E6; border-color:#E8C39E}
+  .tb.warn svg{stroke:#B45309}
+  .tb:active{background:var(--bg2)}
+  .tb.on:active{background:#000}
+  .tsp{flex:1}
+
+  .padwrap{flex:1; min-height:0; margin:0 12px; position:relative}
+  #pad{
+    position:absolute; inset:0; width:100%; height:100%;
+    background:var(--card); border:1px solid var(--bd); border-radius:13px;
+    box-shadow:var(--sh); touch-action:none; display:block;
+  }
+  .padhint{
+    position:absolute; left:0; right:0; top:50%; transform:translateY(-50%);
+    text-align:center; color:var(--t3); font-size:12px; letter-spacing:.1em; pointer-events:none;
+    transition:opacity .2s;
+  }
+  .padhint small{display:block; font-size:10.5px; letter-spacing:.04em; margin-top:6px; opacity:.75}
+  .foot{flex:none; padding:11px 12px calc(11px + var(--safe-b))}
+  .pbtn{
+    width:100%; height:50px; border:0; border-radius:13px; background:var(--t1); color:var(--card);
+    font-size:15px; font-weight:600; letter-spacing:.08em; transition:transform .06s, opacity .12s;
+  }
+  .pbtn:active{transform:scale(.985); opacity:.86}
+  .pbtn.ghost{background:var(--card); color:var(--t1); border:1px solid var(--bd); box-shadow:var(--sh)}
+
+  /* ---------- 学習状況（ダッシュボード） ----------
+     3つの状態は色だけに頼らせない。凡例を必ず出し、各行に実数を併記する。
+     「未着手」の #EEEEEA は白地とのコントラストが低い（1.13:1）ため、
+     数値ラベルで内容が伝わるようにしている。 */
+  .statlink{
+    display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+    background:var(--card); border:1px solid var(--bd); border-radius:13px;
+    padding:12px 15px; box-shadow:var(--sh); margin-bottom:18px; font-size:14px;
+  }
+  .statlink:active{background:var(--bg2)}
+  .statlink .sl{font-weight:600; flex:none}
+  .statlink .sr{flex:1; text-align:right; font-size:11.5px; color:var(--t3); font-variant-numeric:tabular-nums}
+  .statlink .arw{color:var(--t3); font-size:17px; line-height:1; flex:none}
+
+  /* ---------- KaTeX ----------
+     数式は KaTeX で組む。地の文はこれまでどおりの書体のまま。 */
+  .katex{font-size:1.05em}
+  .mq .katex{font-size:1em}
+  /* 埋めるべき □ */
+  .tbx{color:var(--ng)}
+  /* 入力欄のカーソル */
+  .tcaret{animation:tcar 1.05s steps(1) infinite; font-weight:300}
+  @keyframes tcar{50%{opacity:0}}
+
+  /* 別リポジトリにある「フィード」への行き来。記録は同じものを見ている。 */
+  .feedlink{margin-bottom:0; color:inherit; text-decoration:none}
+  .feedlink .sr{font-size:11px}
+
+  #stats{flex:1; display:flex; flex-direction:column; min-height:0}
+  .stbody{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 18px calc(36px + var(--safe-b))}
+
+  .hero{text-align:center; padding:22px 0 6px}
+  .hero .hv{font-size:52px; font-weight:600; line-height:1; letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+  .hero .hv i{font-style:normal; font-size:22px; color:var(--t3); margin-left:1px}
+  .hero .hl{margin:8px 0 0; font-size:12px; color:var(--t2); letter-spacing:.04em}
+
+  .tiles{display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin:18px 0 6px}
+  .tile{background:var(--card); border:1px solid var(--bd); border-radius:12px; padding:11px 10px; box-shadow:var(--sh)}
+  .tile .tl{font-size:10px; color:var(--t3); letter-spacing:.08em; display:block}
+  .tile .tv{font-size:19px; font-weight:600; font-variant-numeric:tabular-nums; margin-top:3px; display:block}
+  .tile .tv small{font-size:11px; color:var(--t3); font-weight:400; margin-left:1px}
+
+  .verdict{display:flex; flex-direction:column; gap:7px; margin:16px 0 6px}
+  .vrow{display:flex; align-items:baseline; gap:10px; background:var(--card); border:1px solid var(--bd);
+        border-radius:11px; padding:10px 13px; box-shadow:var(--sh); font-size:13px}
+  .vrow .vk{font-size:10.5px; color:var(--t3); letter-spacing:.1em; flex:none; width:52px}
+  .vrow .vn{flex:1; font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .vrow .vp{font-variant-numeric:tabular-nums; color:var(--t2); flex:none; font-size:12px}
+  .vrow.bad .vp{color:var(--err)}
+
+  .legend{display:flex; flex-wrap:wrap; gap:4px 14px; margin:10px 2px 12px; font-size:11px; color:var(--t2)}
+  .legend span{display:flex; align-items:center; gap:6px}
+  .legend i{width:10px; height:10px; border-radius:3px; flex:none}
+  .legend .k1{background:var(--t1)} .legend .k2{background:var(--err)} .legend .k3{background:var(--bd2)}
+
+  .srow{
+    display:block; width:100%; text-align:left; background:var(--card); border:1px solid var(--bd);
+    border-radius:12px; padding:11px 13px 12px; box-shadow:var(--sh); margin-bottom:7px;
+  }
+  .srow:active{background:var(--bg2)}
+  .srow.src{background:var(--bg2); box-shadow:none; pointer-events:none}
+  .srow.src:active{background:var(--bg2)}
+  .srow .sh1{display:flex; align-items:baseline; gap:8px}
+  .srow .sn{flex:1; font-size:14px; font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .srow .sa{font-size:12.5px; font-variant-numeric:tabular-nums; color:var(--t2); flex:none}
+  .srow .sa.none{color:var(--t3); font-size:11px}
+  /* 積み上げ棒: セグメントの間は 2px の余地（背景＝白）で分ける */
+  .sbar{display:flex; gap:2px; height:9px; margin:8px 0 6px}
+  .sbar i{border-radius:4px; min-width:0}
+  .sbar .b1{background:var(--t1)} .sbar .b2{background:var(--err)} .sbar .b3{background:var(--bd2)}
+  .srow .sf{display:flex; gap:12px; font-size:10.5px; color:var(--t3); font-variant-numeric:tabular-nums}
+  .srow .sf b{font-weight:400; color:var(--t2)}
+  .srow .sf .w{color:var(--err)}
+
+  .wq{display:flex; flex-direction:column; gap:7px}
+  .wqi{
+    display:block; width:100%; text-align:left; background:var(--card); border:1px solid var(--bd);
+    border-left:2px solid var(--err); border-radius:11px; padding:10px 13px; box-shadow:var(--sh);
+  }
+  .wqi:active{background:var(--bg2)}
+  .wqi .h{display:flex; align-items:baseline; gap:9px}
+  .wqi .q{flex:1; font-size:13.5px; line-height:1.6; min-width:0}
+  .wqi .n{flex:none; font-size:11px; color:var(--err); font-variant-numeric:tabular-nums}
+  .wqi .t{font-size:10.5px; color:var(--t3); margin-top:3px; display:block}
+  .wqi .x{display:block; font-size:12px; color:var(--t2); line-height:1.8; margin-top:8px; padding-top:8px; border-top:1px solid var(--bd2)}
+  .wqi .x.hide{display:none !important}
+
+  .stempty{border:1px dashed var(--bd); border-radius:13px; padding:34px 18px; text-align:center;
+           color:var(--t3); font-size:12.5px; line-height:1.9; margin-top:20px}
+
+  /* ---------- 結果画面 ---------- */
+  #done{flex:1; overflow-y:auto; padding:0 18px calc(28px + var(--safe-b))}
+  .dhead{text-align:center; padding:40px 0 26px}
+  .dhead .sc{font-size:44px; font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+  .dhead .sc i{font-style:normal; font-size:19px; color:var(--t3); margin-left:2px}
+  .dhead p{margin:6px 0 0; font-size:12px; color:var(--t3); letter-spacing:.12em}
+  .wlist{display:flex; flex-direction:column; gap:7px; margin-bottom:24px}
+  .witem{
+    display:block; width:100%; text-align:left; background:var(--card); border:1px solid var(--bd);
+    border-left:2px solid var(--err); border-radius:11px; padding:11px 13px; box-shadow:var(--sh);
+    transition:background .12s;
+  }
+  .witem:active{background:var(--bg2)}
+  .witem .q{display:block; font-size:14px; line-height:1.7}
+  .witem .q .wg{font-size:11px; color:var(--t3); margin-left:3px}
+  .witem .a{font-size:11.5px; color:var(--t2); margin-top:4px; display:flex; align-items:baseline; gap:6px}
+  .witem .a b{color:var(--t1); font-weight:600}
+  .witem .a .more{margin-left:auto; color:var(--t3); text-decoration:underline; text-underline-offset:3px; flex:none}
+  .witem .wexp{display:block; font-size:12px; color:var(--t2); line-height:1.8; margin-top:9px; padding-top:9px; border-top:1px solid var(--bd2)}
+  .witem .wexp.hide{display:none !important}
+  .dbtns{display:flex; flex-direction:column; gap:8px}
+
+  /* ---------- シート ---------- */
+  .back{position:fixed; inset:0; background:rgba(17,17,17,.28); opacity:0; pointer-events:none; transition:opacity .22s; z-index:40}
+  .back.on{opacity:1; pointer-events:auto}
+  .sheet{
+    position:fixed; left:0; right:0; bottom:0; z-index:50;
+    background:var(--bg); border-top:1px solid var(--bd);
+    border-radius:18px 18px 0 0; box-shadow:0 -6px 24px rgba(17,17,17,.08);
+    transform:translateY(102%); transition:transform .26s cubic-bezier(.22,.68,.3,1);
+    padding-bottom:var(--safe-b); max-height:92vh; max-height:92dvh; display:flex; flex-direction:column;
+  }
+  .sheet.on{transform:translateY(0)}
+  .grip{width:34px; height:4px; background:var(--bd); border-radius:4px; margin:9px auto 4px; flex:none}
+  .sh{padding:6px 16px 10px; display:flex; align-items:center; gap:10px; flex:none}
+  .sh b{flex:1; font-size:12.5px; letter-spacing:.1em; color:var(--t2); font-weight:600}
+  .sh .lnk{padding:4px 2px}
+  /* 小さい端末では項目がシートに収まらないのでここをスクロールさせる（min-height:0 は保険） */
+  .slist{padding:0 12px 14px; display:flex; flex-direction:column; gap:2px; overflow-y:auto; min-height:0; -webkit-overflow-scrolling:touch}
+  .sitem{
+    display:flex; align-items:center; gap:12px; width:100%; text-align:left; border:0;
+    background:transparent; border-radius:11px; padding:14px 12px; font-size:14.5px; transition:background .12s;
+  }
+  .sitem:active{background:var(--bg2)}
+  .sitem svg{width:18px; height:18px; flex:none; stroke:var(--t2); stroke-width:1.6; fill:none; stroke-linecap:round; stroke-linejoin:round}
+  .sitem.dg{color:var(--err)} .sitem.dg svg{stroke:var(--err)}
+  .sitem .sd{display:block; font-size:11px; color:var(--t3); margin-top:1px}
+  .sitem .sw{flex:1; min-width:0}
+  .sitem:disabled{opacity:.32}
+  .shr{height:1px; background:var(--bd2); margin:6px 12px}
+
+  /* ---------- 問題を選ぶ ---------- */
+  .jitem{
+    display:flex; align-items:flex-start; gap:11px; width:100%; text-align:left; border:0;
+    background:transparent; border-radius:11px; padding:11px 10px; transition:background .12s;
+  }
+  .jitem:active{background:var(--bg2)}
+  .jitem.now{background:var(--bg2); box-shadow:inset 0 0 0 1px var(--bd)}
+  .jitem .jn{flex:none; min-width:2.1em; text-align:right; font-size:12px; color:var(--t3);
+             padding-top:3px; font-variant-numeric:tabular-nums}
+  .jitem.now .jn{color:var(--t1); font-weight:700}
+  /* 問題文は長いので2行で切る */
+  .jitem .jq{flex:1; min-width:0; font-size:14px; line-height:1.65; overflow:hidden;
+             display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical}
+  .jitem .jm{flex:none; margin-top:2px; font-size:11px; letter-spacing:.06em;
+             padding:2px 8px; border-radius:999px; border:1px solid var(--bd)}
+  .jitem .jm.ok{color:var(--ok); border-color:var(--ok)}
+  .jitem .jm.ng{color:var(--err); border-color:var(--err)}
+  .jitem .jm.na{color:var(--t3)}
+  .prow{display:flex; align-items:center; gap:12px; padding:6px 12px 4px}
+  .prow .pl{flex:1; font-size:14.5px}
+  .seg.mini{margin:0; width:168px; flex:none}
+  .seg.mini button{font-size:12.5px; padding:7px 4px}
+
+  /* ---------- 解答入力 ---------- */
+  .ansq{padding:0 14px 8px; font-size:13px; color:var(--t2); line-height:1.7; flex:none}
+  .field .fr{margin:0 .18em}
+  .field .fr .fn,.field .fr .fd{font-size:.86em; padding:0 .22em}
+  .field{
+    margin:0 12px 4px; background:var(--card); border:1px solid var(--bd); border-radius:11px;
+    min-height:52px; padding:13px 14px; font-size:19px; line-height:1.4; box-shadow:var(--sh);
+    word-break:break-all; flex:none; font-family:"Times New Roman",serif;
+  }
+  .field.err{border-color:var(--err)}
+  .field.jp{font-family:inherit; font-size:16px}
+  .field .ph{color:var(--t3); font-size:14px; font-family:inherit}
+  .caret{display:inline-block; width:1.5px; height:1.05em; background:var(--t1); vertical-align:-.18em; margin:0 .5px; animation:bl 1.05s steps(1) infinite}
+  @keyframes bl{50%{opacity:0}}
+  .hintline{font-size:11px; color:var(--t3); padding:2px 16px 8px; flex:none; letter-spacing:.02em;
+            display:flex; align-items:baseline; gap:10px}
+  .hintline #hintLine{flex:1; min-width:0}
+  .hintline .lnk{padding:2px 0; flex:none; font-size:11px}
+  .hintline #hintLine.warn{color:var(--err); font-weight:600}
+  .hintline #hintLine.todo{color:var(--err); font-weight:600}
+  /* 埋めるべき □ は入力欄でもプレビューでも目立たせる */
+  .bx{display:inline-block; min-width:.72em; padding:0 .06em; border:1px dashed var(--err);
+      border-radius:3px; color:var(--err); line-height:1.15; text-align:center}
+  /* シートの中身も縦フレックスにして、はみ出す要素だけ縮む／スクロールできるようにする */
+  #ansInput{display:flex; flex-direction:column; min-height:0}
+  /* 書き方の早見表（キーボードの場所に出す） */
+  .how{margin:2px 12px 10px; padding:12px 14px; background:var(--bg2); border:0; border-radius:12px;
+       flex:none; text-align:left; display:grid; grid-template-columns:repeat(2,1fr); gap:9px 14px;
+       overflow-y:auto; min-height:0}
+  .how > span{display:flex; align-items:baseline; gap:9px; font-size:12px; min-width:0}
+  .how b{font-family:"Times New Roman",serif; font-size:15px; font-weight:400; flex:none; min-width:48px}
+  .how > span > span{color:var(--t3); font-size:11px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+            overflow:hidden; text-overflow:ellipsis}
+  .how .hb{grid-column:1/-1; justify-content:center; color:var(--t3); font-size:10.5px;
+           letter-spacing:.08em; padding-top:3px; border-top:1px solid var(--bd); margin-top:1px}
+
+  .kb{padding:2px 6px 8px; flex:none; display:grid; grid-template-columns:repeat(7,1fr); gap:5px}
+  .k{
+    height:44px; border:1px solid var(--bd); background:var(--card); border-radius:9px;
+    font-size:17px; display:flex; align-items:center; justify-content:center; box-shadow:var(--sh);
+    font-family:"Times New Roman",serif; transition:background .08s, transform .05s; user-select:none;
+  }
+  .k:active{background:var(--bg2); transform:scale(.95)}
+  /* 「分の」のような字数の多いキーは、せまい画面で2行に折れないように小さくする */
+  .k.sm{font-size:13.5px; font-family:inherit; white-space:nowrap; letter-spacing:-.02em}
+  @media (max-width:400px){ .k.sm{font-size:12px} }
+  /* 数字のキーはうっすら色を敷いて、ひとかたまりに見えるようにする。
+     数字を目で探す手間を減らすためで、押したときの効きは他のキーと同じ。 */
+  .k.num{background:var(--numk); border-color:var(--numb)}
+  .k.num:active{background:var(--numk2); transform:scale(.95)}
+  .k.fn{background:var(--bg2); font-size:14px; font-family:inherit; color:var(--t2); box-shadow:none}
+  .k.fn:active{background:var(--bd2)}
+  .k.fn svg{width:17px; height:17px; stroke:var(--t2); stroke-width:1.7; fill:none; stroke-linecap:round; stroke-linejoin:round}
+  .k.go{grid-column:span 3; background:var(--t1); border-color:var(--t1); color:var(--card); font-size:14.5px; font-weight:600; font-family:inherit; letter-spacing:.08em}
+  .k.go:active{background:#000}
+  .k .sm{font-size:12px}
+  /* 横棒の分数（入力プレビュー用） */
+  .fr{display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle;
+      margin:0 .14em; line-height:1.12; position:relative; top:-.08em}
+  .fr .fn{font-size:.82em; padding:0 .2em}
+  .fr .fd{font-size:.82em; padding:0 .2em; border-top:1px solid currentColor; margin-top:.08em}
+  /* 分数が入る行は少し行間を広げて、上下の行とぶつからないようにする */
+  .rexp,.wexp,.proof,.qt,.ansq{line-height:2}
+
+  /* 記号で書けない答え（増加/減少・対称の軸など）は選択式にする */
+  /* グラフをかく問題 */
+  .gbox{padding:2px 12px 10px; flex:none; display:flex; flex-direction:column; gap:8px; min-height:0}
+  /* 横長の紙にかくと教科書のグラフと形が変わって見えるので、縦横の比を 4:3 で保つ。
+     横向きの画面でも横に伸びきらないよう、高さから幅の上限を決めて中央に置く。 */
+  .gwrap{position:relative; width:100%; max-width:min(100%, 58vh); aspect-ratio:4/3;
+         margin-inline:auto; background:var(--card);
+         border:1px solid var(--bd); border-radius:12px; overflow:hidden}
+  .gwrap canvas{position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none}
+  .gtools{display:flex; gap:8px; align-items:stretch}
+  .gtools .gb{flex:1 1 0; padding:10px 6px; border:1px solid var(--bd); border-radius:10px;
+              background:var(--card); font-size:13px; color:var(--t2); box-shadow:var(--sh)}
+  .gtools .gb:active{background:var(--bg2)}
+  .gtools .gb:disabled{opacity:.4}
+  .gtools .pbtn{flex:2 1 0; margin-top:0 !important}
+  .gres{display:block; width:100%; border:1px solid var(--bd); border-radius:12px; margin-top:8px}
+  .glegend{display:flex; gap:14px; justify-content:center; font-size:11.5px; color:var(--t3); margin-top:6px}
+  .glegend i{display:inline-block; width:16px; height:3px; border-radius:2px; vertical-align:2px; margin-right:5px}
+  .glegend i.dot{width:9px; height:9px; border-radius:50%; background:#fff; border:2px solid #c2410c;
+                 vertical-align:-1px}
+  .gwhy{margin-top:6px; text-align:center; font-size:12.5px; color:var(--ng)}
+  .chbox{padding:2px 12px 10px; display:flex; flex-direction:column; gap:7px; overflow-y:auto; min-height:0}
+  .ch{
+    min-height:50px; padding:12px 16px; text-align:left; border:1px solid var(--bd);
+    background:var(--card); border-radius:11px; font-size:15px; box-shadow:var(--sh);
+    display:flex; align-items:center; gap:11px; transition:background .12s, border-color .12s;
+  }
+  .ch::before{
+    content:''; width:17px; height:17px; border-radius:50%; border:1.5px solid var(--bd2);
+    flex:none; transition:border-color .12s, box-shadow .12s;
+  }
+  .ch:active{background:var(--bg2)}
+  .ch.on{border-color:var(--t1)}
+  .ch.on::before{border-color:var(--t1); border-width:5px}
+
+  /* ---------- 判定 ---------- */
+  .res{padding:14px 16px 18px; overflow-y:auto}
+  .rq{font-size:14px; color:var(--t2); line-height:1.7; padding-bottom:11px; margin-bottom:12px; border-bottom:1px solid var(--bd2)}
+  .rq .rg{font-size:11.5px; color:var(--t3); margin-left:4px}
+  .rsub{font-size:11.5px; color:var(--t3); margin-top:5px}
+  .proof{font-size:14px; line-height:1.95; color:var(--t1); white-space:pre-line}
+  .selfask{font-size:11.5px; color:var(--t3); margin-top:11px; text-align:center; letter-spacing:.04em}
+  /* 正解か不正解かは一目で分かってほしいので、文字だけでなく地色ごと変える */
+  .rmark{
+    display:inline-flex; align-items:center; gap:8px; font-size:17px; font-weight:600; letter-spacing:.1em;
+    padding:8px 17px 8px 13px; border-radius:999px;
+  }
+  .rmark svg{width:21px; height:21px; stroke-width:2; fill:none; stroke-linecap:round; stroke-linejoin:round}
+  /* 正解は青、不正解は赤で塗りつぶす */
+  .rmark.ok{background:var(--ok); color:var(--card)} .rmark.ok svg{stroke:var(--card)}
+  .rmark.ng{background:var(--err); color:var(--card)} .rmark.ng svg{stroke:var(--card)}
+  .rmark.sk{background:var(--bg2); color:var(--t2); border:1px solid var(--bd)}
+  .rmark.sk svg{stroke:var(--t2); fill:var(--t2)}
+  /* 答えの枠も、不正解のときだけ縁の色を変えて見分けやすくする */
+  .rans.ngb{border-color:var(--err)}
+  .ryour{font-size:12px; color:var(--t3); margin-top:8px}
+  .ryour b{color:var(--err); font-weight:400; font-family:"Times New Roman",serif; font-size:14px}
+  .rans{
+    margin-top:12px; background:var(--card); border:1px solid var(--bd); border-radius:11px;
+    padding:12px 14px; box-shadow:var(--sh);
+  }
+  .rans .lb{font-size:10px; color:var(--t3); letter-spacing:.16em; margin-bottom:4px}
+  .rans .va{font-size:19px; font-family:"Times New Roman",serif}
+  .rexp{margin-top:10px; font-size:12.5px; color:var(--t2); line-height:1.85; padding:0 2px;
+         white-space:pre-line}   /* 解説は行の区切りをそのまま活かす */
+  .rbtns{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px}
+  .rbtns .pbtn{flex:1 1 0; width:auto}
+  /* 4つ並ぶと1行では文字が折れてしまうので、2つずつ2段にする */
+  .rbtns.four .pbtn{flex:1 1 calc(50% - 4px)}
+
+  .cmsg{padding:2px 18px 18px; font-size:14px; line-height:1.8; color:var(--t2)}
+
+  /* ---------- 横向き・画面が低いとき ----------
+     6段のままだと決定キーが画面の外に出てしまうので、
+     横幅を使って12列3段に組み替え、余白も詰める。 */
+  @media (max-height:520px){
+    .mhead{padding:14px 0 10px}
+    .mhead h1{font-size:21px}
+    .mhead .cap{margin-top:3px}
+    .bar{padding:4px 8px}
+    .ib{width:34px; height:34px}
+    .qbox{margin-top:8px; padding:9px 13px; max-height:34vh}
+    .qbox .qt{font-size:16px}
+    .tools{padding:7px 12px 6px}
+    .tb{height:32px}
+    .foot{padding:8px 12px calc(8px + var(--safe-b))}
+    .pbtn{height:44px}
+    .sh{padding:2px 16px 6px}
+    .ansq{padding-bottom:5px}
+    .field{min-height:44px; padding:10px 14px; font-size:18px}
+    .hintline{padding-bottom:5px}
+    .k{height:38px; font-size:16px}
+    .how{margin:0 12px 8px; padding:9px 12px; gap:6px 12px}
+    .how b{font-size:14px; min-width:44px}
+    .ch{min-height:40px; padding:8px 14px; font-size:14px}
+    .ch::before{width:15px; height:15px}
+    .chbox{gap:5px; padding-bottom:8px}
+    .res{padding:10px 16px 14px}
+    .rq{padding-bottom:8px; margin-bottom:9px}
+  }
+  /* 極端に低い画面（小型端末の横向き）は、あると入り切らないものを削る */
+  @media (max-height:365px){
+    .how{max-height:132px; gap:5px 12px; padding:8px 12px}
+    .how .hb{display:none}
+    .ansq{font-size:12px}
+  }
+  @media (max-height:520px) and (min-width:560px){
+    .kb{grid-template-columns:repeat(12,1fr)}
+    .k.go{grid-column:span 4}
+    .chbox{display:grid; grid-template-columns:repeat(2,1fr)}
+    .chbox .pbtn{grid-column:span 2; margin-top:0 !important}
+  }
