@@ -6,7 +6,7 @@
    キャッシュに古い tex.js が残っていると、数式だけが崩れて出る
    （index.html はネットワーク優先なので新しく、tex.js だけ古い、という食い違い）。
    実機でそれが起きたので、食い違いを見つけたら一度だけ捨てて読み直す。 */
-const APP_V = '7.7';
+const APP_V = '7.8';
 
 /* 画面のいちばん上と「ほかの科目」は、科目ごとの決めごとから作る。
    HTML は数学と物理で同じものを使うため。 */
@@ -954,12 +954,24 @@ function renderQ(){
      まだ触っていないなら、画面が低いとき（横向きなど）だけ自動でたたむ
      （与えられた値がある問題は隠れてしまうので開いたまま）。 */
   setFold(foldPref !== null ? foldPref : (innerHeight <= 520 && !q.g));
+  $('qBox').scrollTop = 0;
+  syncQOver();
   usePad(S.idx+'/'+q.id);
   resetInput();
   S.locked = false; S.resFor = null;
   syncPrev();
   saveSession();
 }
+/* 問題文が枠に入りきらないときは、下のふちをぼかして続きがあると知らせる */
+function syncQOver(){
+  const box = $('qBox');
+  if(!box) return;
+  requestAnimationFrame(()=>{
+    box.classList.toggle('over', box.scrollHeight > box.clientHeight + 2);
+  });
+}
+addEventListener('resize', syncQOver);
+
 /* 問題文のたたみ／ひらき。null は「まだ自分で選んでいない」 */
 let foldPref = null;
 function setFold(on){
@@ -967,6 +979,7 @@ function setFold(on){
   box.classList.toggle('fold', on);
   box.setAttribute('aria-expanded', on?'false':'true');
   $('qFold').textContent = on ? 'ひらく' : 'たたむ';
+  syncQOver();
   if(!$('play').classList.contains('hide')) requestAnimationFrame(setupPad);
 }
 $('qBox').addEventListener('click', ()=>{

@@ -5,25 +5,25 @@
    なので、ページ本体は「ネットワーク優先・失敗したらキャッシュ」、
    アイコン等の変わらないものは「キャッシュ優先・裏で更新」にしている。 */
 
-const VERSION = 'v73';                       // 中身を変えたらここを上げる
+const VERSION = 'v74';                       // 中身を変えたらここを上げる
 const CACHE   = 'explog-' + VERSION;
 
 const SHELL = [
   './',
   './index.html',
   './buturi.html',
-  './app.css?v=7.7',
-  './app.js?v=7.7',
-  './data-math.js?v=7.7',
-  './data-buturi.js?v=7.7',
+  './app.css?v=7.8',
+  './app.js?v=7.8',
+  './data-math.js?v=7.8',
+  './data-buturi.js?v=7.8',
   './koppen.html',
   './kobun.html',
-  './kobun-words.js?v=7.7',
+  './kobun-words.js?v=7.8',
   './manifest.webmanifest',
   './katex.min.js',
   './katex.min.css',
-  './tex.js?v=7.7',
-  './backup.js?v=7.7',
+  './tex.js?v=7.8',
+  './backup.js?v=7.8',
   './fonts/KaTeX_AMS-Regular.woff2',
   './fonts/KaTeX_Caligraphic-Bold.woff2',
   './fonts/KaTeX_Caligraphic-Regular.woff2',

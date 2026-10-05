@@ -149,8 +149,17 @@
     flex:none; display:block; width:auto; text-align:left;
     margin:11px 12px 0; background:var(--card); border:1px solid var(--bd);
     border-radius:13px; padding:12px 14px; box-shadow:var(--sh);
-    max-height:26vh; overflow-y:auto; transition:padding .16s;
+    max-height:40vh; overflow-y:auto; transition:padding .16s;
+    -webkit-overflow-scrolling:touch;
   }
+  /* 問題文が入りきらないときだけ、下のふちをぼかして「まだ続く」と見せる */
+  .qbox .qfade{
+    display:none; position:sticky; bottom:-12px; height:30px; margin-top:-30px;
+    background:linear-gradient(to top, var(--card) 30%, transparent);
+    pointer-events:none;
+  }
+  .qbox.over .qfade{display:block}
+  .qbox.fold .qfade{display:none}
   .qbox .lb{font-size:10px; color:var(--t3); letter-spacing:.16em; margin-bottom:5px; display:flex; gap:8px; align-items:center}
   .qbox .lb .wc{color:var(--err); letter-spacing:.02em}
   .qbox .lb .fold{margin-left:auto; letter-spacing:.04em; text-decoration:underline; text-underline-offset:2px}
@@ -512,7 +521,7 @@
     .mhead .cap{margin-top:3px}
     .bar{padding:4px 8px}
     .ib{width:34px; height:34px}
-    .qbox{margin-top:8px; padding:9px 13px; max-height:34vh}
+    .qbox{margin-top:8px; padding:9px 13px; max-height:46vh}
     .qbox .qt{font-size:16px}
     .tools{padding:7px 12px 6px}
     .tb{height:32px}
