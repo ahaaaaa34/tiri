@@ -6,7 +6,7 @@
    キャッシュに古い tex.js が残っていると、数式だけが崩れて出る
    （index.html はネットワーク優先なので新しく、tex.js だけ古い、という食い違い）。
    実機でそれが起きたので、食い違いを見つけたら一度だけ捨てて読み直す。 */
-const APP_V = '7.6';
+const APP_V = '7.7';
 
 /* 画面のいちばん上と「ほかの科目」は、科目ごとの決めごとから作る。
    HTML は数学と物理で同じものを使うため。 */
@@ -22,6 +22,13 @@ addEventListener('DOMContentLoaded', ()=>{
   const ot = document.getElementById('otherBox');
   if(ot) ot.innerHTML = (SUBJECT.others && SUBJECT.others.length)
       ? '<p class="sec">ほかの科目</p>' + SUBJECT.others.map(link).join('') : '';
+  /* 有効数字を見る科目では、書き方の早見表にもそのことを出す */
+  const how = document.getElementById('how');
+  if(how && SUBJECT.sigfig){
+    const li = document.createElement('span');
+    li.innerHTML = '<b>2.0</b><span>けた（有効数字）もそのとおりに。2 は不正解</span>';
+    how.insertBefore(li, how.querySelector('.hb'));
+  }
 });
 (function(){
   if(typeof TEX_V !== 'undefined' && TEX_V === APP_V) return;
@@ -333,6 +340,19 @@ function sameValue(a, b){
   return true;
 }
 
+/* 有効数字。物理のように「けたまで答えのうち」の科目では、
+   数どうしを見くらべるときだけ、書かれたけたもそろっていないと正解にしない。
+   2.0 を 2、0.80 を 0.8 と書いたものは不正解になる。
+   分数や √ の形で答えたときは、これまでどおり値で見くらべる。 */
+const SIGFIG   = !!SUBJECT.sigfig;
+const RE_NUMLIT = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:10\^[+-]?\d+)?$/;
+function decKey(t){
+  t = t.replace(/^\+/, '');
+  if(t.charAt(0) === '.') t = '0' + t;
+  else if(t.charAt(0) === '-' && t.charAt(1) === '.') t = '-0' + t.slice(1);
+  return t.replace(/\.(?![0-9])/g, '');      /* 末尾の「3.」は 3 と同じにする */
+}
+
 function judge(input, list){
   const a = nz(input);
   if(a==='') return false;
@@ -343,6 +363,10 @@ function judge(input, list){
     for(let j=0;j<av.length;j++){
       if(av[j]===b) return true;
       if(noParen(av[j])===noParen(b)) return true;
+    }
+    if(SIGFIG && RE_NUMLIT.test(b)){
+      if(decKey(a) === decKey(b)) return true;
+      continue;     /* 数で答える問題。値が同じでも、けたが違えば次の候補へ */
     }
     const bt = termKey(b);
     if(at && bt && (at===bt || noParen(at)===noParen(bt))) return true;
